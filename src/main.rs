@@ -44,93 +44,81 @@ impl ApplicationHandler for App {
 }
 
 fn main() {
+	// Create window
+
+	let event_loop = winit::event_loop::EventLoop::builder().build().unwrap();
+	let window_builder = winit::window::Window::default_attributes()
+		.with_title("Hello triangle!")
+		.with_inner_size(winit::dpi::LogicalSize::new(1024.0, 768.0));
+
+	let template = ConfigTemplateBuilder::new();
+
+	let display_builder = DisplayBuilder::new().with_window_attributes(Some(window_builder));
+
+	let (window, gl_config) = display_builder.build(&event_loop, template, |configs| {
+		configs.reduce(|accum, config| {
+			if config.num_samples() > accum.num_samples() {
+				config
+			} else {
+				accum
+			}
+		}).unwrap()
+	}).unwrap();
+
+	let raw_window_handle = window
+		.as_ref()
+		.and_then(|window| window.window_handle().map(Into::into).ok());
+
 	unsafe {
-		let shader_version = "#version 410";
-
-		let event_loop = winit::event_loop::EventLoop::builder().build().unwrap();
-		let window_builder = winit::window::Window::default_attributes()
-			.with_title("Hello triangle!")
-			.with_inner_size(winit::dpi::LogicalSize::new(1024.0, 768.0));
-
-		let template = ConfigTemplateBuilder::new();
-
-		let display_builder =
-			DisplayBuilder::new().with_window_attributes(Some(window_builder));
-
-		let (window, gl_config) = display_builder
-			.build(&event_loop, template, |configs| {
-				configs
-					.reduce(|accum, config| {
-						if config.num_samples() > accum.num_samples() {
-							config
-						} else {
-							accum
-						}
-					})
-					.unwrap()
-			})
-			.unwrap();
-
-		let raw_window_handle = window
-			.as_ref()
-			.and_then(|window| window.window_handle().map(Into::into).ok());
+		// Inititalize OpenGL context
 
 		let gl_display = gl_config.display();
 		let context_attributes = ContextAttributesBuilder::new()
 			.with_context_api(ContextApi::OpenGl(Some(glutin::context::Version {
-				major: 4,
-				minor: 1,
+				major: 3,
+				minor: 3,
 			})))
 			.build(raw_window_handle);
 
-		let not_current_gl_context = gl_display
-			.create_context(&gl_config, &context_attributes)
-			.unwrap();
+		let not_current_gl_context = gl_display.create_context(&gl_config, &context_attributes).unwrap();
 
 		let window = window.unwrap();
 
 		let attrs = window.build_surface_attributes(Default::default()).unwrap();
-		let gl_surface = gl_display
-			.create_window_surface(&gl_config, &attrs)
-			.unwrap();
+		let gl_surface = gl_display.create_window_surface(&gl_config, &attrs).unwrap();
 
 		let gl_context = not_current_gl_context.make_current(&gl_surface).unwrap();
 
 		let gl = glow::Context::from_loader_function_cstr(|s| gl_display.get_proc_address(s));
 
-		gl_surface
-			.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap()))
-			.unwrap();
+		gl_surface.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap())).unwrap();
 
-		let vertex_array = gl
-			.create_vertex_array()
-			.expect("Cannot create vertex array");
+		let vertex_array = gl.create_vertex_array().unwrap();
 		gl.bind_vertex_array(Some(vertex_array));
 
-		let program = gl.create_program().expect("Cannot create program");
+		// Load shaders
 
-		let vertex_shader_source = include_str!("main.vert");
-		let fragment_shader_source = include_str!("main.frag");
+		let program = gl.create_program().unwrap();
 
 		let shader_sources = [
-			(glow::VERTEX_SHADER, vertex_shader_source),
-			(glow::FRAGMENT_SHADER, fragment_shader_source),
+			(glow::VERTEX_SHADER, include_str!("main.vert")),
+			(glow::FRAGMENT_SHADER, include_str!("main.frag")),
 		];
 
-		let mut shaders = Vec::with_capacity(shader_sources.len());
+		let shaders = shader_sources.map(|(shader_type, shader_source)| {
+			let shader = gl.create_shader(shader_type).unwrap();
 
-		for (shader_type, shader_source) in shader_sources.iter() {
-			let shader = gl
-				.create_shader(*shader_type)
-				.expect("Cannot create shader");
-			gl.shader_source(shader, &format!("{}\n{}", shader_version, shader_source));
+			gl.shader_source(shader, shader_source);
 			gl.compile_shader(shader);
+
 			if !gl.get_shader_compile_status(shader) {
 				panic!("{}", gl.get_shader_info_log(shader));
 			}
+
 			gl.attach_shader(program, shader);
-			shaders.push(shader);
-		}
+
+			shader
+		});
 
 		gl.link_program(program);
 		if !gl.get_program_link_status(program) {
@@ -144,6 +132,8 @@ fn main() {
 
 		gl.use_program(Some(program));
 		gl.clear_color(0.1, 0.2, 0.3, 1.0);
+
+		// Run our app
 
 		let _ = event_loop.run_app(&mut App {
 			gl,

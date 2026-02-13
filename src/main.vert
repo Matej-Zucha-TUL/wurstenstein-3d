@@ -1,3 +1,5 @@
+#version 330
+
 const vec2 verts[3] = vec2[3](
 	vec2(0.5f, 1.0f),
 	vec2(0.0f, 0.0f),
