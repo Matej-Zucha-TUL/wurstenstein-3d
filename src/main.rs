@@ -116,9 +116,12 @@ fn main() {
 			};
 
 			match event {
+				WindowEvent::KeyboardInput { device_id, event, is_synthetic } => {
+					println!("{:?} {:?}", event.state, event.physical_key);
+				},
 				WindowEvent::CloseRequested => {
 					event_loop.exit();
-				}
+				},
 				WindowEvent::RedrawRequested => {
 					gl.clear(glow::COLOR_BUFFER_BIT);
 					gl.draw_arrays(glow::TRIANGLES, 0, 3);
