@@ -1,47 +1,16 @@
 use glutin::{
 	config::{ConfigTemplateBuilder, GlConfig},
-	context::{ContextApi, ContextAttributesBuilder, NotCurrentGlContext, PossiblyCurrentContext},
+	context::{ContextApi, ContextAttributesBuilder, NotCurrentGlContext},
 	display::{GetGlDisplay, GlDisplay},
-	surface::{GlSurface, SwapInterval, Surface, WindowSurface},
+	surface::{GlSurface, SwapInterval},
 };
-use winit::{
-	application::ApplicationHandler, event::WindowEvent, event_loop::ActiveEventLoop,
-	window::WindowId,
-};
+use winit::event::{Event, WindowEvent};
 use glutin_winit::{DisplayBuilder, GlWindow};
 use raw_window_handle::HasWindowHandle;
 use glow::*;
+use image::ImageReader;
 
 use std::num::NonZeroU32;
-
-struct App {
-	gl: Context,
-	gl_surface: Surface<WindowSurface>,
-	gl_context: PossiblyCurrentContext,
-}
-
-impl ApplicationHandler for App {
-	fn window_event(
-		&mut self,
-		event_loop: &ActiveEventLoop,
-		_window_id: WindowId,
-		event: WindowEvent,
-	) {
-		match event {
-			WindowEvent::CloseRequested => {
-				event_loop.exit();
-			}
-			WindowEvent::RedrawRequested => unsafe {
-				self.gl.clear(glow::COLOR_BUFFER_BIT);
-				self.gl.draw_arrays(glow::TRIANGLES, 0, 3);
-				self.gl_surface.swap_buffers(&self.gl_context).unwrap();
-			},
-			_ => (),
-		}
-	}
-
-	fn resumed(&mut self, _event_loop: &winit::event_loop::ActiveEventLoop) {}
-}
 
 fn main() {
 	// Create window
@@ -133,12 +102,30 @@ fn main() {
 		gl.use_program(Some(program));
 		gl.clear_color(0.1, 0.2, 0.3, 1.0);
 
-		// Run our app
+		let img = ImageReader::open("./assets/textures/ferris.png").unwrap().decode().unwrap().into_rgb8();
+		let imgdata = PixelUnpackData::Slice(Some(img.as_raw()));
 
-		let _ = event_loop.run_app(&mut App {
-			gl,
-			gl_surface,
-			gl_context,
+		let tex = gl.create_texture().unwrap();
+		gl.bind_texture(TEXTURE_2D, Some(tex));
+		gl.tex_image_2d(TEXTURE_2D, 0, RGB as i32, img.width() as i32, img.height() as i32, 0, RGB, UNSIGNED_BYTE, imgdata);
+
+		#[allow(deprecated)] // Fuck you.
+		let _ = event_loop.run(move |event, event_loop| {
+			let Event::WindowEvent { window_id: _, event } = event else {
+				return
+			};
+
+			match event {
+				WindowEvent::CloseRequested => {
+					event_loop.exit();
+				}
+				WindowEvent::RedrawRequested => {
+					gl.clear(glow::COLOR_BUFFER_BIT);
+					gl.draw_arrays(glow::TRIANGLES, 0, 3);
+					gl_surface.swap_buffers(&gl_context).unwrap();
+				},
+				_ => (),
+			}
 		});
 	}
 }
