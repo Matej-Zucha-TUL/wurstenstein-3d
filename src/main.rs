@@ -13,6 +13,8 @@ use image::ImageReader;
 use std::num::NonZeroU32;
 
 fn main() {
+	env_logger::builder().filter_level(log::LevelFilter::Info).init();
+
 	// Create window
 
 	let event_loop = winit::event_loop::EventLoop::builder().build().unwrap();
@@ -117,7 +119,7 @@ fn main() {
 
 			match event {
 				WindowEvent::KeyboardInput { device_id, event, is_synthetic } => {
-					println!("{:?} {:?}", event.state, event.physical_key);
+					log::info!("{:?} {:?}", event.state, event.physical_key);
 				},
 				WindowEvent::CloseRequested => {
 					event_loop.exit();
