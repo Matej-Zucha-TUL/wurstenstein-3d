@@ -8,6 +8,7 @@ use winit::event::{Event, WindowEvent};
 use glutin_winit::{DisplayBuilder, GlWindow};
 use raw_window_handle::HasWindowHandle;
 use glow::*;
+use log::*;
 use image::ImageReader;
 
 use std::num::NonZeroU32;
@@ -55,12 +56,16 @@ fn main() {
 
 		let window = window.unwrap();
 
+		window.set_title("Triangle");
+
 		let attrs = window.build_surface_attributes(Default::default()).unwrap();
 		let gl_surface = gl_display.create_window_surface(&gl_config, &attrs).unwrap();
 
 		let gl_context = not_current_gl_context.make_current(&gl_surface).unwrap();
 
 		let gl = glow::Context::from_loader_function_cstr(|s| gl_display.get_proc_address(s));
+
+		let mut vsync = true;
 
 		gl_surface.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap())).unwrap();
 
@@ -111,6 +116,10 @@ fn main() {
 		gl.bind_texture(TEXTURE_2D, Some(tex));
 		gl.tex_image_2d(TEXTURE_2D, 0, RGB as i32, img.width() as i32, img.height() as i32, 0, RGB, UNSIGNED_BYTE, imgdata);
 
+		let mut last_time = std::time::SystemTime::now();
+		let mut last_update = std::time::SystemTime::now();
+		let fps_update_interval_secs = 0.5;
+
 		#[allow(deprecated)] // Fuck you.
 		let _ = event_loop.run(move |event, event_loop| {
 			let Event::WindowEvent { window_id: _, event } = event else {
@@ -119,7 +128,19 @@ fn main() {
 
 			match event {
 				WindowEvent::KeyboardInput { device_id, event, is_synthetic } => {
-					log::info!("{:?} {:?}", event.state, event.physical_key);
+					log::info!("{:?} key: {:?}, repeat: {:?}", event.state, event.physical_key, event.repeat);
+					if event.state == winit::event::ElementState::Pressed
+						&& !event.repeat
+						&& event.physical_key == winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::KeyV)
+					{
+						vsync = !vsync;
+						if vsync {
+							gl_surface.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap())).unwrap();
+						} else {
+							gl_surface.set_swap_interval(&gl_context, SwapInterval::DontWait).unwrap();
+						}
+						info!("VSync = {}", vsync);
+					}
 				},
 				WindowEvent::CloseRequested => {
 					event_loop.exit();
@@ -128,6 +149,18 @@ fn main() {
 					gl.clear(glow::COLOR_BUFFER_BIT);
 					gl.draw_arrays(glow::TRIANGLES, 0, 3);
 					gl_surface.swap_buffers(&gl_context).unwrap();
+
+					let new_time = std::time::SystemTime::now();
+					let frame_dur = 1.0 / new_time.duration_since(last_time).unwrap().as_secs_f32();
+					last_time = new_time;
+
+					if last_update.elapsed().unwrap().as_secs_f32() >= fps_update_interval_secs {
+						window.set_title(&format!("Triangle - FPS = {:.1}", frame_dur));
+						info!("FPS = {}", frame_dur);
+						last_update = std::time::SystemTime::now();
+					}
+
+					window.request_redraw();
 				},
 				_ => (),
 			}
