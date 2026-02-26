@@ -4,7 +4,10 @@ use glutin::{
 	display::{GetGlDisplay, GlDisplay},
 	surface::{GlSurface, SwapInterval},
 };
-use winit::event::{Event, WindowEvent};
+use winit::{
+	event::{ElementState, Event, WindowEvent},
+	keyboard::{KeyCode, PhysicalKey}
+};
 use glutin_winit::{DisplayBuilder, GlWindow};
 use raw_window_handle::HasWindowHandle;
 use glow::*;
@@ -12,6 +15,7 @@ use log::*;
 use image::ImageReader;
 
 use std::num::NonZeroU32;
+use std::time::SystemTime;
 
 fn main() {
 	env_logger::builder().filter_level(log::LevelFilter::Info).init();
@@ -116,8 +120,8 @@ fn main() {
 		gl.bind_texture(TEXTURE_2D, Some(tex));
 		gl.tex_image_2d(TEXTURE_2D, 0, RGB as i32, img.width() as i32, img.height() as i32, 0, RGB, UNSIGNED_BYTE, imgdata);
 
-		let mut last_time = std::time::SystemTime::now();
-		let mut last_update = std::time::SystemTime::now();
+		let mut last_time = SystemTime::now();
+		let mut last_update = SystemTime::now();
 		let fps_update_interval_secs = 0.5;
 
 		#[allow(deprecated)] // Fuck you.
@@ -127,11 +131,11 @@ fn main() {
 			};
 
 			match event {
-				WindowEvent::KeyboardInput { device_id, event, is_synthetic } => {
+				WindowEvent::KeyboardInput { event, .. } => {
 					log::info!("{:?} key: {:?}, repeat: {:?}", event.state, event.physical_key, event.repeat);
-					if event.state == winit::event::ElementState::Pressed
+					if event.state == ElementState::Pressed
 						&& !event.repeat
-						&& event.physical_key == winit::keyboard::PhysicalKey::Code(winit::keyboard::KeyCode::KeyV)
+						&& event.physical_key == PhysicalKey::Code(KeyCode::KeyV)
 					{
 						vsync = !vsync;
 						if vsync {
@@ -150,14 +154,14 @@ fn main() {
 					gl.draw_arrays(glow::TRIANGLES, 0, 3);
 					gl_surface.swap_buffers(&gl_context).unwrap();
 
-					let new_time = std::time::SystemTime::now();
+					let new_time = SystemTime::now();
 					let frame_dur = 1.0 / new_time.duration_since(last_time).unwrap().as_secs_f32();
 					last_time = new_time;
 
 					if last_update.elapsed().unwrap().as_secs_f32() >= fps_update_interval_secs {
 						window.set_title(&format!("Triangle - FPS = {:.1}", frame_dur));
 						info!("FPS = {}", frame_dur);
-						last_update = std::time::SystemTime::now();
+						last_update = SystemTime::now();
 					}
 
 					window.request_redraw();
