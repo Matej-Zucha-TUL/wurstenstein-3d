@@ -6,7 +6,7 @@ use glutin::{
 };
 use winit::{
 	event::{ElementState, Event, WindowEvent},
-	keyboard::{KeyCode, PhysicalKey}
+	keyboard::Key
 };
 use glutin_winit::{DisplayBuilder, GlWindow};
 use raw_window_handle::HasWindowHandle;
@@ -135,7 +135,7 @@ fn main() {
 					log::info!("{:?} key: {:?}, repeat: {:?}", event.state, event.physical_key, event.repeat);
 					if event.state == ElementState::Pressed
 						&& !event.repeat
-						&& event.physical_key == PhysicalKey::Code(KeyCode::KeyV)
+						&& event.logical_key == Key::Character("v".into())
 					{
 						vsync = !vsync;
 						if vsync {
