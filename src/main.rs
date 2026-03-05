@@ -167,6 +167,7 @@ fn main() {
 							egui::Window::new("Wokýnko").resizable(false).show(ctx, |ui| {
 								ui.heading("Hello World!");
 								ui.label(&fps_string);
+								ui.checkbox(&mut vsync, "Enable Vsync");
 								if ui.button("Quit").clicked() {
 									event_loop.exit();
 								}
