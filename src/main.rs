@@ -6,7 +6,7 @@ use glutin::{
 };
 use winit::{
 	event::{ElementState, Event, WindowEvent},
-	keyboard::Key
+	keyboard::Key, window::Fullscreen
 };
 use glutin_winit::{DisplayBuilder, GlWindow};
 use raw_window_handle::HasWindowHandle;
@@ -70,8 +70,6 @@ fn main() {
 
 		let gl = glow::Context::from_loader_function_cstr(|s| gl_display.get_proc_address(s));
 
-		let mut vsync = true;
-
 		gl_surface.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap())).unwrap();
 
 		let vertex_array = gl.create_vertex_array().unwrap();
@@ -127,6 +125,8 @@ fn main() {
 
 		let mut egui = None;
 		let mut fps_string = String::new();
+		let mut vsync = true;
+		let mut fullscreen = true;
 
 		#[allow(deprecated)] // Fuck you.
 		let _ = event_loop.run(move |event, event_loop| {
@@ -150,6 +150,15 @@ fn main() {
 						vsync = !vsync;
 						info!("VSync = {}", vsync);
 					}
+
+					if event.state == ElementState::Pressed
+						&& !event.repeat
+						&& event.logical_key == Key::Character("f".into())
+					{
+						fullscreen = !fullscreen;
+						info!("Fullscreen = {}", fullscreen);
+					}
+
 				},
 				WindowEvent::CloseRequested => {
 					event_loop.exit();
@@ -193,6 +202,8 @@ fn main() {
 				},
 				_ => (),
 			}
+
+			window.set_fullscreen(fullscreen.then_some(Fullscreen::Borderless(window.current_monitor())));
 
 			if vsync {
 				gl_surface.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap())).unwrap();
