@@ -123,6 +123,7 @@ fn main() {
 		let mut vsync = true;
 		let mut fullscreen = false;
 		let mut triangle_color = [0.5; 3];
+		let mut file_dialog = egui_file_dialog::FileDialog::new().movable(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0));
 
 		#[allow(deprecated)] // Fuck you.
 		let _ = event_loop.run(move |event, event_loop| {
@@ -181,11 +182,16 @@ fn main() {
 								ui.heading("Hello World!");
 								ui.label(&fps_string);
 								ui.checkbox(&mut vsync, "Enable Vsync");
+								if ui.button("Pick model").clicked() {
+									file_dialog.pick_file();
+								}
 								ui.color_edit_button_rgb(&mut triangle_color);
 								if ui.button("Quit").clicked() {
 									event_loop.exit();
 								}
 							});
+
+							file_dialog.update(ctx);
 						});
 
 					egui.as_mut().unwrap().paint(&window);
