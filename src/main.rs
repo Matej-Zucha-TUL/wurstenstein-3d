@@ -75,7 +75,6 @@ fn main() {
 		gl_surface.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap())).unwrap();
 
 		let vertex_array = gl.create_vertex_array().unwrap();
-		gl.bind_vertex_array(Some(vertex_array));
 
 		// Load shaders
 
@@ -111,7 +110,6 @@ fn main() {
 			gl.delete_shader(shader);
 		}
 
-		gl.use_program(Some(program));
 		gl.clear_color(0.1, 0.2, 0.3, 1.0);
 
 		let img = ImageReader::open("./assets/textures/ferris.png").unwrap().decode().unwrap().into_rgb8();
@@ -157,8 +155,10 @@ fn main() {
 					event_loop.exit();
 				},
 				WindowEvent::RedrawRequested => {
+					gl.bind_vertex_array(Some(vertex_array));
+					gl.use_program(Some(program));
 					gl.clear(glow::COLOR_BUFFER_BIT);
-					// gl.draw_arrays(glow::TRIANGLES, 0, 3);
+					gl.draw_arrays(glow::TRIANGLES, 0, 3);
 
 					egui
 						.as_mut()
