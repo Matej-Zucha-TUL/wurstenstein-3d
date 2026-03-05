@@ -163,6 +163,13 @@ fn main() {
 				WindowEvent::CloseRequested => {
 					event_loop.exit();
 				},
+				WindowEvent::Resized(new_size) => {
+					gl_surface.resize(
+						&gl_context,
+						new_size.width.try_into().unwrap(),
+						new_size.height.try_into().unwrap()
+					);
+				},
 				WindowEvent::RedrawRequested => {
 					gl.bind_vertex_array(Some(vertex_array));
 					gl.use_program(Some(program));
