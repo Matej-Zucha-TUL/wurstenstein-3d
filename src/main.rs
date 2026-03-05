@@ -127,6 +127,7 @@ fn main() {
 		let mut fps_string = String::new();
 		let mut vsync = true;
 		let mut fullscreen = true;
+		let mut triangle_color = [0.5; 3];
 
 		#[allow(deprecated)] // Fuck you.
 		let _ = event_loop.run(move |event, event_loop| {
@@ -184,6 +185,7 @@ fn main() {
 								ui.heading("Hello World!");
 								ui.label(&fps_string);
 								ui.checkbox(&mut vsync, "Enable Vsync");
+								ui.color_edit_button_rgb(&mut triangle_color);
 								if ui.button("Quit").clicked() {
 									event_loop.exit();
 								}
