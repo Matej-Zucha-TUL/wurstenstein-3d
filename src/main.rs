@@ -110,13 +110,6 @@ fn main() {
 
 		gl.clear_color(0.1, 0.2, 0.3, 1.0);
 
-		let img = ImageReader::open("./assets/textures/ferris.png").unwrap().decode().unwrap().into_rgb8();
-		let imgdata = PixelUnpackData::Slice(Some(img.as_raw()));
-
-		let tex = gl.create_texture().unwrap();
-		gl.bind_texture(TEXTURE_2D, Some(tex));
-		gl.tex_image_2d(TEXTURE_2D, 0, RGB as i32, img.width() as i32, img.height() as i32, 0, RGB, UNSIGNED_BYTE, imgdata);
-
 		let mut last_time = SystemTime::now();
 		let mut last_update = SystemTime::now();
 		let fps_update_interval_secs = 0.5;
