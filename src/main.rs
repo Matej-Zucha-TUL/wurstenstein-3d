@@ -103,6 +103,8 @@ fn main() {
 			panic!("{}", gl.get_program_info_log(program));
 		}
 
+		let shader_color_loc = gl.get_uniform_location(program, "selected_color");
+
 		for shader in shaders {
 			gl.detach_shader(program, shader);
 			gl.delete_shader(shader);
@@ -119,7 +121,7 @@ fn main() {
 		let mut egui = None;
 		let mut fps_string = String::new();
 		let mut vsync = true;
-		let mut fullscreen = true;
+		let mut fullscreen = false;
 		let mut triangle_color = [0.5; 3];
 
 		#[allow(deprecated)] // Fuck you.
@@ -167,6 +169,7 @@ fn main() {
 				WindowEvent::RedrawRequested => {
 					gl.bind_vertex_array(Some(vertex_array));
 					gl.use_program(Some(program));
+					gl.uniform_4_f32(shader_color_loc.as_ref(), triangle_color[0], triangle_color[1], triangle_color[2], 1.0);
 					gl.clear(glow::COLOR_BUFFER_BIT);
 					gl.draw_arrays(glow::TRIANGLES, 0, 3);
 
