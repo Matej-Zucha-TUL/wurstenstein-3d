@@ -16,6 +16,7 @@ use image::ImageReader;
 
 use std::num::NonZeroU32;
 use std::time::SystemTime;
+use std::sync::Arc;
 
 fn main() {
 	env_logger::builder().filter_level(log::LevelFilter::Info).init();
@@ -124,11 +125,22 @@ fn main() {
 		let mut last_update = SystemTime::now();
 		let fps_update_interval_secs = 0.5;
 
+		let gl = Arc::new(gl);
+
+		let mut egui = None;
+		let mut fps_string = String::new();
+
 		#[allow(deprecated)] // Fuck you.
 		let _ = event_loop.run(move |event, event_loop| {
+			if egui.is_none() {
+				egui = Some(egui_glow::EguiGlow::new(event_loop, gl.clone(), None, None, true));
+			}
+
 			let Event::WindowEvent { window_id: _, event } = event else {
 				return
 			};
+
+			let _ = egui.as_mut().unwrap().on_window_event(&window, &event);
 
 			match event {
 				WindowEvent::KeyboardInput { event, .. } => {
@@ -138,11 +150,6 @@ fn main() {
 						&& event.logical_key == Key::Character("v".into())
 					{
 						vsync = !vsync;
-						if vsync {
-							gl_surface.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap())).unwrap();
-						} else {
-							gl_surface.set_swap_interval(&gl_context, SwapInterval::DontWait).unwrap();
-						}
 						info!("VSync = {}", vsync);
 					}
 				},
@@ -151,7 +158,23 @@ fn main() {
 				},
 				WindowEvent::RedrawRequested => {
 					gl.clear(glow::COLOR_BUFFER_BIT);
-					gl.draw_arrays(glow::TRIANGLES, 0, 3);
+					// gl.draw_arrays(glow::TRIANGLES, 0, 3);
+
+					egui
+						.as_mut()
+						.unwrap()
+						.run(&window, |ctx| {
+							egui::Window::new("Wokýnko").resizable(false).show(ctx, |ui| {
+								ui.heading("Hello World!");
+								ui.label(&fps_string);
+								if ui.button("Quit").clicked() {
+									event_loop.exit();
+								}
+							});
+						});
+
+					egui.as_mut().unwrap().paint(&window);
+
 					gl_surface.swap_buffers(&gl_context).unwrap();
 
 					let new_time = SystemTime::now();
@@ -159,14 +182,21 @@ fn main() {
 					last_time = new_time;
 
 					if last_update.elapsed().unwrap().as_secs_f32() >= fps_update_interval_secs {
-						window.set_title(&format!("Triangle - FPS = {:.1}", frame_dur));
-						info!("FPS = {}", frame_dur);
+						fps_string = format!("FPS = {:.1}", frame_dur);
+						window.set_title(&format!("Triangle - {}", fps_string));
+						info!("{}", fps_string);
 						last_update = SystemTime::now();
 					}
 
 					window.request_redraw();
 				},
 				_ => (),
+			}
+
+			if vsync {
+				gl_surface.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap())).unwrap();
+			} else {
+				gl_surface.set_swap_interval(&gl_context, SwapInterval::DontWait).unwrap();
 			}
 		});
 	}

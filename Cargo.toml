@@ -4,6 +4,8 @@ version = "0.1.0"
 edition = "2024"
 
 [dependencies]
+egui = "0.33.3"
+egui_glow = { version = "0.33.3", features = ["winit"] }
 env_logger = "0.11.9"
 glow = "0.16.0"
 glutin = "0.32.3"
