@@ -79,8 +79,8 @@ fn main() {
 		let program = gl.create_program().unwrap();
 
 		let shader_sources = [
-			(glow::VERTEX_SHADER, include_str!("main.vert")),
-			(glow::FRAGMENT_SHADER, include_str!("main.frag")),
+			(glow::VERTEX_SHADER, include_str!("./../assets/shaders/vert/main.vert")),
+			(glow::FRAGMENT_SHADER, include_str!("./../assets/shaders/frag/main.frag")),
 		];
 
 		let shaders = shader_sources.map(|(shader_type, shader_source)| {
