@@ -114,7 +114,7 @@ fn main() {
 		let fps_update_interval_secs = 0.5;
 
 		let mut egui = None;
-		let mut fps_string = String::new();
+		let mut fps_string = "FPS = ???".to_string();
 		let mut vsync = true;
 		let mut fullscreen = false;
 		let mut cursor_lock = true;
@@ -208,9 +208,12 @@ fn main() {
 						.unwrap()
 						.run(&window, |ctx| {
 							egui::Window::new("Wokýnko").resizable(false).show(ctx, |ui| {
-								ui.heading("Hello World!");
-
 								ui.label(&fps_string);
+
+								if cursor_lock {
+									ui.label("Cursor is locked.");
+									return
+								}
 
 								ui.checkbox(&mut vsync, "Enable Vsync");
 
