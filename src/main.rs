@@ -1,3 +1,4 @@
+use env_logger::try_init_from_env;
 use glutin::{
 	config::{ConfigTemplateBuilder, GlConfig},
 	context::{ContextApi, ContextAttributesBuilder, NotCurrentGlContext},
@@ -17,6 +18,10 @@ use image::ImageReader;
 use std::num::NonZeroU32;
 use std::time::SystemTime;
 use std::sync::Arc;
+
+use crate::shader::{ProgramBuilder, ShaderType};
+
+mod shader;
 
 fn main() {
 	env_logger::builder().filter_level(log::LevelFilter::Info).init();
@@ -69,6 +74,7 @@ fn main() {
 		let gl_context = not_current_gl_context.make_current(&gl_surface).unwrap();
 
 		let gl = glow::Context::from_loader_function_cstr(|s| gl_display.get_proc_address(s));
+		let gl = Arc::new(gl);
 
 		gl_surface.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap())).unwrap();
 
@@ -76,39 +82,10 @@ fn main() {
 
 		// Load shaders
 
-		let program = gl.create_program().unwrap();
-
-		let shader_sources = [
-			(glow::VERTEX_SHADER, include_str!("./../assets/shaders/vert/main.vert")),
-			(glow::FRAGMENT_SHADER, include_str!("./../assets/shaders/frag/main.frag")),
-		];
-
-		let shaders = shader_sources.map(|(shader_type, shader_source)| {
-			let shader = gl.create_shader(shader_type).unwrap();
-
-			gl.shader_source(shader, shader_source);
-			gl.compile_shader(shader);
-
-			if !gl.get_shader_compile_status(shader) {
-				panic!("{}", gl.get_shader_info_log(shader));
-			}
-
-			gl.attach_shader(program, shader);
-
-			shader
-		});
-
-		gl.link_program(program);
-		if !gl.get_program_link_status(program) {
-			panic!("{}", gl.get_program_info_log(program));
-		}
-
-		let shader_color_loc = gl.get_uniform_location(program, "selected_color");
-
-		for shader in shaders {
-			gl.detach_shader(program, shader);
-			gl.delete_shader(shader);
-		}
+		let program = ProgramBuilder::new(gl.clone())
+			.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/main.vert"))
+			.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/main.frag"))
+			.link();
 
 		gl.clear_color(0.1, 0.2, 0.3, 1.0);
 
@@ -116,13 +93,11 @@ fn main() {
 		let mut last_update = SystemTime::now();
 		let fps_update_interval_secs = 0.5;
 
-		let gl = Arc::new(gl);
-
 		let mut egui = None;
 		let mut fps_string = String::new();
 		let mut vsync = true;
 		let mut fullscreen = false;
-		let mut triangle_color = [0.5; 3];
+		let mut triangle_color = [0.5, 0.5, 0.5, 1.0];
 		let mut file_dialog = egui_file_dialog::FileDialog::new().movable(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0));
 
 		#[allow(deprecated)] // Fuck you.
@@ -169,8 +144,8 @@ fn main() {
 				},
 				WindowEvent::RedrawRequested => {
 					gl.bind_vertex_array(Some(vertex_array));
-					gl.use_program(Some(program));
-					gl.uniform_4_f32(shader_color_loc.as_ref(), triangle_color[0], triangle_color[1], triangle_color[2], 1.0);
+					program.activate();
+					program.set_uniform_f32_4("selected_color", &triangle_color);
 					gl.clear(glow::COLOR_BUFFER_BIT);
 					gl.draw_arrays(glow::TRIANGLES, 0, 3);
 
@@ -185,7 +160,7 @@ fn main() {
 								if ui.button("Pick model").clicked() {
 									file_dialog.pick_file();
 								}
-								ui.color_edit_button_rgb(&mut triangle_color);
+								ui.color_edit_button_rgb((&mut triangle_color[..3]).try_into().unwrap());
 								if ui.button("Quit").clicked() {
 									event_loop.exit();
 								}

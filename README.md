@@ -85,7 +85,7 @@ Fun learning materials: https://github.com/afaber999/rust_learn_opengl_glow/blob
 
 - [x] Current state: shader hard-coded into .rs source file as a string
   - Never happened lol
-- [ ] Target: two external files (suffixes .vert for vertex shader, .frag for fragment shader; if you use different suffixes, GLSL plugin can not perform syntax check and highlighting). Implemented class, that will load both shader files files, and get shader program ready. Create functions to set uniform variables for CPU-GPU communication.
+- [X] Target: two external files (suffixes .vert for vertex shader, .frag for fragment shader; if you use different suffixes, GLSL plugin can not perform syntax check and highlighting). Implemented class, that will load both shader files files, and get shader program ready. Create functions to set uniform variables for CPU-GPU communication.
   - Kind of done already, we just need to wrap everything into a nice class
 
 ## ⏱️ Task 2 - Explore directory __02 shader examples__

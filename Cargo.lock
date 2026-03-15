@@ -1778,6 +1778,7 @@ dependencies = [
  "glutin-winit",
  "image",
  "log",
+ "paste",
  "raw-window-handle",
  "winit",
 ]
