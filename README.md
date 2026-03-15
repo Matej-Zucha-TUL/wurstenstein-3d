@@ -54,7 +54,7 @@ Fun learning materials: https://github.com/afaber999/rust_learn_opengl_glow/blob
 
 
 
-# ❌ 3rd lab: GUI - User Interface
+# ✅ 3rd lab: GUI - User Interface
 
 ## ✔️ Task 1 - Implement GUI, mouse cursor catch, hidden window during startup
 
@@ -70,11 +70,12 @@ Fun learning materials: https://github.com/afaber999/rust_learn_opengl_glow/blob
   - [ ] ~The other idea is to display some kind of loadscreen. That would also require some init & draw, so you must choose it carefully.~
     - nah fuck that
 
-## ⏱️ Task 2 - Implement toggle Window Mode <---> Full-screeen mode
+## ✔️ Task 2 - Implement toggle Window Mode <---> Full-screeen mode
 
-- [ ] Properly save and restore window position and size, including multimonitor setup.
+- [ ] ~Properly save and restore window position and size, including multimonitor setup.~
   - Not possible on Wayland lol
   - We can give it a shot on X11 (big sad)
+    - Does not work in dwm either. Also, this is just terrible, why would anyone want this?
 
 
 
