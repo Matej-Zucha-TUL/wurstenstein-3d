@@ -56,14 +56,14 @@ Fun learning materials: https://github.com/afaber999/rust_learn_opengl_glow/blob
 
 # ❌ 3rd lab: GUI - User Interface
 
-## ⏱️ Task 1 - Implement GUI, mouse cursor catch, hidden window during startup
+## ✔️ Task 1 - Implement GUI, mouse cursor catch, hidden window during startup
 
 - [x] 1. When in fullscreen, you can not see FPS values in window title or debug output in console window. To overcome this, implement simple GUI using ImGUI library.
   - we decided to use egui
 
-- [ ] 2. When the app is in windowed mode and cursor is enabled, it can leave the app window, and mouse events will not be received. You can disable cursor - but then you can not click on close button in application title bar.
-  - [ ] See how you can capture and release mouse button
-  - [ ] You can modify the application logic: cursor can be released by e.g. TAB key, or first ESC (second ESC will terminate), etc.
+- [x] 2. When the app is in windowed mode and cursor is enabled, it can leave the app window, and mouse events will not be received. You can disable cursor - but then you can not click on close button in application title bar.
+  - [x] See how you can capture and release mouse button
+  - [x] You can modify the application logic: cursor can be released by e.g. TAB key, or first ESC (second ESC will terminate), etc.
 
 - [x] 3. During start-up, loading assets (models, textures, compiling shaders etc.) can take a long time. In the meantime, application window does not respond and is empty - and this could disturb the user (may think, that the app hang...).
   - [x] See how to hide the window during initialization

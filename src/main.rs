@@ -6,7 +6,7 @@ use glutin::{
 };
 use winit::{
 	event::{ElementState, Event, WindowEvent},
-	keyboard::Key, window::Fullscreen
+	keyboard::Key, window::{Window, CursorGrabMode, Fullscreen}
 };
 use glutin_winit::{DisplayBuilder, GlWindow};
 use raw_window_handle::HasWindowHandle;
@@ -22,6 +22,20 @@ use config::Config;
 
 mod shader;
 use shader::{ProgramBuilder, ShaderType};
+
+fn lock_cursor(window: &Window) {
+	if let Err(err) = window.set_cursor_grab(CursorGrabMode::Confined)
+		.or_else(|_| window.set_cursor_grab(CursorGrabMode::Locked))
+	{
+		log::error!("Could not enable cursor grab: {}", err);
+	}
+}
+
+fn unlock_cursor(window: &Window) {
+	if let Err(err) = window.set_cursor_grab(CursorGrabMode::None) {
+		log::error!("Could not disable cursor grab: {}", err);
+	}
+}
 
 fn main() {
 	env_logger::builder().filter_level(log::LevelFilter::Info).init();
@@ -105,8 +119,15 @@ fn main() {
 		let mut fps_string = String::new();
 		let mut vsync = true;
 		let mut fullscreen = false;
+		let mut cursor_lock = true;
 		let mut triangle_color = [0.5, 0.5, 0.5, 1.0];
 		let mut file_dialog = egui_file_dialog::FileDialog::new().movable(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0));
+
+		if cursor_lock {
+			lock_cursor(&window);
+		} else {
+			unlock_cursor(&window);
+		}
 
 		window.set_visible(true);
 
@@ -141,6 +162,19 @@ fn main() {
 						info!("Fullscreen = {}", fullscreen);
 					}
 
+					if event.state == ElementState::Pressed
+						&& !event.repeat
+						&& event.logical_key == Key::Character("l".into())
+					{
+						cursor_lock = !cursor_lock;
+						info!("Cursor lock = {}", cursor_lock);
+
+						if cursor_lock {
+							lock_cursor(&window);
+						} else {
+							unlock_cursor(&window);
+						}
+					}
 				},
 				WindowEvent::CloseRequested => {
 					event_loop.exit();
@@ -153,6 +187,13 @@ fn main() {
 					);
 				},
 				WindowEvent::RedrawRequested => {
+					if cursor_lock {
+						window.set_cursor_visible(false);
+						let _ = window.set_cursor_position(winit::dpi::LogicalPosition::new(window.inner_size().width / 2, window.inner_size().height / 2));
+					} else {
+						window.set_cursor_visible(true);
+					}
+
 					gl.bind_vertex_array(Some(vertex_array));
 					program.activate();
 					program.set_uniform_f32_4("selected_color", &triangle_color);
@@ -190,8 +231,9 @@ fn main() {
 					if last_update.elapsed().unwrap().as_secs_f32() >= fps_update_interval_secs {
 						fps_string = format!("FPS = {:.1}", frame_dur);
 						let vsync_string = format!("VSync = {}", if vsync { "on" } else { "off" });
-						window.set_title(&format!("Triangle - {}, {}", fps_string, vsync_string));
-						info!("{}, {}", fps_string, vsync_string);
+						let cursor_lock_string = format!("Cursor lock = {}", if cursor_lock { "on" } else { "off" });
+						window.set_title(&format!("Triangle - {}, {}, {}", fps_string, vsync_string, cursor_lock_string));
+						info!("{}, {}, {}", fps_string, vsync_string, cursor_lock_string);
 						last_update = SystemTime::now();
 					}
 
