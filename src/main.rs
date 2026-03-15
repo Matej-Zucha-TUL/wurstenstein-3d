@@ -109,8 +109,6 @@ fn main() {
 			.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/main.frag"))
 			.link();
 
-		gl.clear_color(0.1, 0.2, 0.3, 1.0);
-
 		let mut last_time = SystemTime::now();
 		let mut last_update = SystemTime::now();
 		let fps_update_interval_secs = 0.5;
@@ -120,6 +118,7 @@ fn main() {
 		let mut vsync = true;
 		let mut fullscreen = false;
 		let mut cursor_lock = true;
+		let mut background_color = [0.1, 0.2, 0.3, 1.0];
 		let mut triangle_color = [0.5, 0.5, 0.5, 1.0];
 		let mut file_dialog = egui_file_dialog::FileDialog::new().movable(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0));
 
@@ -197,7 +196,11 @@ fn main() {
 					gl.bind_vertex_array(Some(vertex_array));
 					program.activate();
 					program.set_uniform_f32_4("selected_color", &triangle_color);
+
+					let [r, g, b, a] = background_color;
+					gl.clear_color(r, g, b, a);
 					gl.clear(glow::COLOR_BUFFER_BIT);
+
 					gl.draw_arrays(glow::TRIANGLES, 0, 3);
 
 					egui
@@ -206,12 +209,25 @@ fn main() {
 						.run(&window, |ctx| {
 							egui::Window::new("Wokýnko").resizable(false).show(ctx, |ui| {
 								ui.heading("Hello World!");
+
 								ui.label(&fps_string);
+
 								ui.checkbox(&mut vsync, "Enable Vsync");
+
 								if ui.button("Pick model").clicked() {
 									file_dialog.pick_file();
 								}
-								ui.color_edit_button_rgb((&mut triangle_color[..3]).try_into().unwrap());
+
+								ui.horizontal(|ui| {
+									ui.color_edit_button_rgb((&mut triangle_color[..3]).try_into().unwrap());
+									ui.label("Triangle");
+								});
+
+								ui.horizontal(|ui| {
+									ui.color_edit_button_rgb((&mut background_color[..3]).try_into().unwrap());
+									ui.label("Background");
+								});
+
 								if ui.button("Quit").clicked() {
 									event_loop.exit();
 								}
