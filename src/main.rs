@@ -1,4 +1,3 @@
-use env_logger::try_init_from_env;
 use glutin::{
 	config::{ConfigTemplateBuilder, GlConfig},
 	context::{ContextApi, ContextAttributesBuilder, NotCurrentGlContext},
@@ -13,25 +12,33 @@ use glutin_winit::{DisplayBuilder, GlWindow};
 use raw_window_handle::HasWindowHandle;
 use glow::*;
 use log::*;
-use image::ImageReader;
 
 use std::num::NonZeroU32;
 use std::time::SystemTime;
 use std::sync::Arc;
 
-use crate::shader::{ProgramBuilder, ShaderType};
+mod config;
+use config::Config;
 
 mod shader;
+use shader::{ProgramBuilder, ShaderType};
 
 fn main() {
 	env_logger::builder().filter_level(log::LevelFilter::Info).init();
+
+	// Load config
+
+	let config = std::fs::read_to_string("config.toml").unwrap();
+	let config = Config::from_toml(&config);
+
+	log::info!("Loaded config:\n{:#?}", config);
 
 	// Create window
 
 	let event_loop = winit::event_loop::EventLoop::builder().build().unwrap();
 	let window_builder = winit::window::Window::default_attributes()
 		.with_title("Hello triangle!")
-		.with_inner_size(winit::dpi::LogicalSize::new(1024.0, 768.0));
+		.with_inner_size(winit::dpi::LogicalSize::new(config.window.width as f32, config.window.height as f32));
 
 	let template = ConfigTemplateBuilder::new();
 

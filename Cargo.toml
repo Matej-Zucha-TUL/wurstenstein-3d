@@ -15,4 +15,6 @@ image = "0.25.9"
 log = "0.4.29"
 paste = "1.0.15"
 raw-window-handle = "0.6.2"
+serde = { version = "1.0.228", features = ["derive"] }
+toml = "1.0.6"
 winit = "0.30.12"
