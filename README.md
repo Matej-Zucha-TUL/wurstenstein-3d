@@ -11,14 +11,14 @@ Fun learning materials: https://github.com/afaber999/rust_learn_opengl_glow/blob
 
 
 # ✅ 1st lab: Project setup
-## ✔️Task 1 - Setting up the compiler, OpenGL Hello world
+## ✔️ Task 1 - Setting up the compiler, OpenGL Hello world
   - We use the `Rust` programming language with `glow` and `egui` libraries
 
 
 
 
 
-# ❌ 2nd lab: OpenGL, FPS, VSync
+# ✅ 2nd lab: OpenGL, FPS, VSync
 
 ## ✔️ Task 1 - allow OpenGL debugging
 
@@ -82,7 +82,7 @@ Fun learning materials: https://github.com/afaber999/rust_learn_opengl_glow/blob
 
 # ❌ 4th lab: Implementation of generic resource load
 
-## ⏱️ Task 1 - Generic shader loader - directory __01 shader class__
+## ✔️ Task 1 - Generic shader loader - directory __01 shader class__
 
 - [x] Current state: shader hard-coded into .rs source file as a string
   - Never happened lol
