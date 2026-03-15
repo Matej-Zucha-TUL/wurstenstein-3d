@@ -45,7 +45,7 @@ Fun learning materials: https://github.com/afaber999/rust_learn_opengl_glow/blob
 ## ⏱️ Task 4 - implement VSync toggle
 
 - [x] Create key callback to toggle vsync
-  - [ ] Modify window title to show vsync off, on
+  - [x] Modify window title to show vsync off, on
   - [x] Note: see the FPS difference  
 - [ ] Create and use ~JSON~ TOML config file to set initial size of the GLFW window
   -  ̶O̶r̶ ̶n̶o̶n̶e̶,̶ ̶a̶s̶ ̶w̶e̶ ̶u̶s̶e̶ ̶t̶i̶l̶i̶n̶g̶ ̶w̶i̶n̶d̶o̶w̶ ̶m̶a̶n̶a̶g̶e̶r̶s̶ ̶l̶o̶l̶  I use Plasma @home sometimes, I will implement it

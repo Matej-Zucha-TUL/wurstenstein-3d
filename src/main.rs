@@ -179,8 +179,9 @@ fn main() {
 
 					if last_update.elapsed().unwrap().as_secs_f32() >= fps_update_interval_secs {
 						fps_string = format!("FPS = {:.1}", frame_dur);
-						window.set_title(&format!("Triangle - {}", fps_string));
-						info!("{}", fps_string);
+						let vsync_string = format!("VSync = {}", if vsync { "on" } else { "off" });
+						window.set_title(&format!("Triangle - {}, {}", fps_string, vsync_string));
+						info!("{}, {}", fps_string, vsync_string);
 						last_update = SystemTime::now();
 					}
 
