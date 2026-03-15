@@ -65,9 +65,10 @@ Fun learning materials: https://github.com/afaber999/rust_learn_opengl_glow/blob
   - [ ] See how you can capture and release mouse button
   - [ ] You can modify the application logic: cursor can be released by e.g. TAB key, or first ESC (second ESC will terminate), etc.
 
-- [ ] 3. During start-up, loading assets (models, textures, compiling shaders etc.) can take a long time. In the meantime, application window does not respond and is empty - and this could disturb the user (may think, that the app hang...).
-  - [ ] See how to hide the window during initialization
-  - [ ] The other idea is to display some kind of loadscreen. That would also require some init & draw, so you must choose it carefully.
+- [x] 3. During start-up, loading assets (models, textures, compiling shaders etc.) can take a long time. In the meantime, application window does not respond and is empty - and this could disturb the user (may think, that the app hang...).
+  - [x] See how to hide the window during initialization
+  - [ ] ~The other idea is to display some kind of loadscreen. That would also require some init & draw, so you must choose it carefully.~
+    - nah fuck that
 
 ## ⏱️ Task 2 - Implement toggle Window Mode <---> Full-screeen mode
 

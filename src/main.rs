@@ -74,6 +74,7 @@ fn main() {
 		let window = window.unwrap();
 
 		window.set_title("Triangle");
+		window.set_visible(false);
 
 		let attrs = window.build_surface_attributes(Default::default()).unwrap();
 		let gl_surface = gl_display.create_window_surface(&gl_config, &attrs).unwrap();
@@ -106,6 +107,8 @@ fn main() {
 		let mut fullscreen = false;
 		let mut triangle_color = [0.5, 0.5, 0.5, 1.0];
 		let mut file_dialog = egui_file_dialog::FileDialog::new().movable(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0));
+
+		window.set_visible(true);
 
 		#[allow(deprecated)] // Fuck you.
 		let _ = event_loop.run(move |event, event_loop| {
