@@ -73,6 +73,27 @@ impl ProgramBuilder {
 }
 
 macro_rules! gen_uniform_setter {
+	([matrix $ty:ty; $len:literal]) => { paste::paste! {
+		pub fn [<set_uniform_matrix_ $ty _ $len>](&self, name: &str, val: &[$ty; $len * $len]) {
+			unsafe {
+				let loc = self.gl.get_uniform_location(self.program, name);
+
+				if loc.is_none() {
+					log::warn!(concat!(
+						"Attempted to access uniform {:?} (type matrix [",
+						stringify!($ty),
+						"; ",
+						stringify!($len),
+						"]), which does not exist"
+					), name);
+					return
+				}
+
+				self.gl.[<uniform_matrix_ $len _ $ty _slice>](loc.as_ref(), false, val);
+			}
+		}
+	} };
+
 	([$ty:ty; $len:literal]) => { paste::paste! {
 		pub fn [<set_uniform_ $ty _ $len>](&self, name: &str, val: &[$ty; $len]) {
 			unsafe {
@@ -132,7 +153,8 @@ impl Program {
 	gen_uniform_setter!(
 		f32, [f32; 1], [f32; 2], [f32; 3], [f32; 4],
 		i32, [i32; 1], [i32; 2], [i32; 3], [i32; 4],
-		u32, [u32; 1], [u32; 2], [u32; 3], [u32; 4]
+		u32, [u32; 1], [u32; 2], [u32; 3], [u32; 4],
+		[matrix f32; 4]
 	);
 }
 

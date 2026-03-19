@@ -12,16 +12,22 @@ use glutin_winit::{DisplayBuilder, GlWindow};
 use raw_window_handle::HasWindowHandle;
 use glow::*;
 use log::*;
+use nalgebra_glm as glm;
 
-use std::num::NonZeroU32;
+use std::{io::Cursor, num::NonZeroU32};
 use std::time::SystemTime;
 use std::sync::Arc;
+
+mod camera;
+use camera::Camera;
 
 mod config;
 use config::Config;
 
 mod shader;
 use shader::{ProgramBuilder, ShaderType};
+
+use crate::camera::Directions;
 
 fn lock_cursor(window: &Window) {
 	if let Err(err) = window.set_cursor_grab(CursorGrabMode::Confined)
@@ -100,14 +106,41 @@ fn main() {
 
 		gl_surface.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap())).unwrap();
 
-		let vertex_array = gl.create_vertex_array().unwrap();
-
 		// Load shaders
 
 		let program = ProgramBuilder::new(gl.clone())
 			.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/main.vert"))
 			.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/main.frag"))
 			.link();
+
+		let mut model_data = Cursor::new(include_bytes!("./../assets/objects/teapot_tri_vnt.obj"));
+		let (model, _) = tobj::load_obj_buf(&mut model_data, &tobj::GPU_LOAD_OPTIONS, |_| Err(tobj::LoadError::ReadError)).unwrap();
+		let model = model.into_iter().next().unwrap();
+		let mesh = model.mesh;
+
+		let vao = Some(gl.create_vertex_array().unwrap());
+		let vbo_position = Some(gl.create_buffer().unwrap());
+		let vbo_normal = Some(gl.create_buffer().unwrap());
+		let ebo = Some(gl.create_buffer().unwrap());
+
+		gl.bind_vertex_array(vao);
+
+		gl.bind_buffer(glow::ARRAY_BUFFER, vbo_position);
+		gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, bytemuck::cast_slice(&mesh.positions), glow::STATIC_DRAW);
+		gl.vertex_attrib_pointer_f32(0, 3, glow::FLOAT, false, 0, 0);
+		gl.enable_vertex_attrib_array(0);
+
+		gl.bind_buffer(glow::ARRAY_BUFFER, vbo_normal);
+		gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, bytemuck::cast_slice(&mesh.normals), glow::STATIC_DRAW);
+		gl.vertex_attrib_pointer_f32(1, 3, glow::FLOAT, false, 0, 0);
+		gl.enable_vertex_attrib_array(1);
+
+		gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, ebo);
+		gl.buffer_data_u8_slice(glow::ELEMENT_ARRAY_BUFFER, bytemuck::cast_slice(&mesh.indices), glow::STATIC_DRAW);
+
+		gl.bind_vertex_array(None);
+
+		let mut camera = Camera::new(glm::vec3(2.0, 2.0, 10.0));
 
 		let mut last_time = SystemTime::now();
 		let mut last_update = SystemTime::now();
@@ -123,6 +156,11 @@ fn main() {
 		let mut file_dialog = egui_file_dialog::FileDialog::new().movable(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0));
 		let mut cursor_x = 0.0;
 		let mut cursor_y = 0.0;
+
+		let mut move_forward = false;
+		let mut move_backward = false;
+		let mut move_left = false;
+		let mut move_right = false;
 
 		if cursor_lock {
 			lock_cursor(&window);
@@ -145,6 +183,7 @@ fn main() {
 				&& let DeviceEvent::MouseMotion { delta } = event
 				&& cursor_lock
 			{
+				camera.mouse_interact(delta.0 as f32, delta.1 as f32);
 				cursor_x += delta.0;
 				cursor_y += delta.1;
 			}
@@ -155,33 +194,61 @@ fn main() {
 				match event {
 					WindowEvent::KeyboardInput { event, .. } => {
 						log::info!("{:?} key: {:?}, repeat: {:?}", event.state, event.physical_key, event.repeat);
-						if event.state == ElementState::Pressed
-							&& !event.repeat
-							&& event.logical_key == Key::Character("v".into())
-						{
-							vsync = !vsync;
-							info!("VSync = {}", vsync);
+
+						if event.state == ElementState::Pressed && !event.repeat {
+							if event.logical_key == Key::Character("v".into()) {
+								vsync = !vsync;
+								info!("VSync = {}", vsync);
+							}
+
+							if event.logical_key == Key::Character("f".into()) {
+								fullscreen = !fullscreen;
+								info!("Fullscreen = {}", fullscreen);
+							}
+
+							if event.logical_key == Key::Character("l".into()) {
+								cursor_lock = !cursor_lock;
+								info!("Cursor lock = {}", cursor_lock);
+
+								if cursor_lock {
+									lock_cursor(&window);
+								} else {
+									unlock_cursor(&window);
+								}
+							}
+
+							if event.logical_key == Key::Character("w".into()) {
+								move_forward = true;
+							}
+
+							if event.logical_key == Key::Character("s".into()) {
+								move_backward = true;
+							}
+
+							if event.logical_key == Key::Character("a".into()) {
+								move_left = true;
+							}
+
+							if event.logical_key == Key::Character("d".into()) {
+								move_right = true;
+							}
 						}
 
-						if event.state == ElementState::Pressed
-							&& !event.repeat
-							&& event.logical_key == Key::Character("f".into())
-						{
-							fullscreen = !fullscreen;
-							info!("Fullscreen = {}", fullscreen);
-						}
+						if event.state == ElementState::Released {
+							if event.logical_key == Key::Character("w".into()) {
+								move_forward = false;
+							}
 
-						if event.state == ElementState::Pressed
-							&& !event.repeat
-							&& event.logical_key == Key::Character("l".into())
-						{
-							cursor_lock = !cursor_lock;
-							info!("Cursor lock = {}", cursor_lock);
+							if event.logical_key == Key::Character("s".into()) {
+								move_backward = false;
+							}
 
-							if cursor_lock {
-								lock_cursor(&window);
-							} else {
-								unlock_cursor(&window);
+							if event.logical_key == Key::Character("a".into()) {
+								move_left = false;
+							}
+
+							if event.logical_key == Key::Character("d".into()) {
+								move_right = false;
 							}
 						}
 					},
@@ -199,6 +266,10 @@ fn main() {
 						);
 					},
 					WindowEvent::RedrawRequested => {
+						let new_time = SystemTime::now();
+						let dt = new_time.duration_since(last_time).unwrap().as_secs_f32();
+						last_time = new_time;
+
 						if cursor_lock {
 							window.set_cursor_visible(false);
 							let _ = window.set_cursor_position(middle_point);
@@ -206,15 +277,41 @@ fn main() {
 							window.set_cursor_visible(true);
 						}
 
-						gl.bind_vertex_array(Some(vertex_array));
-						program.activate();
-						program.set_uniform_f32_4("selected_color", &triangle_color);
+						if move_forward {
+							camera.key_interact(Directions::Forward, dt);
+						}
+
+						if move_backward {
+							camera.key_interact(Directions::Backward, dt);
+						}
+
+						if move_left {
+							camera.key_interact(Directions::Left, dt);
+						}
+
+						if move_right {
+							camera.key_interact(Directions::Right, dt);
+						}
 
 						let [r, g, b, a] = background_color;
-						gl.clear_color(r, g, b, a);
-						gl.clear(glow::COLOR_BUFFER_BIT);
 
-						gl.draw_arrays(glow::TRIANGLES, 0, 3);
+						gl.clear_color(r, g, b, a);
+						gl.enable(glow::DEPTH_TEST);
+						gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+
+						gl.bind_vertex_array(vao);
+
+						let aspect = window.inner_size().width as f32 / window.inner_size().height as f32;
+						let projection_mtx = glm::perspective(aspect, camera.get_zoom().to_radians(), 0.1f32, 100.0f32);
+						let model_mtx = glm::translate(&glm::Mat4::identity(), &glm::vec3(0.0, 0.0, -10.0));
+
+						program.activate();
+						program.set_uniform_f32_4("selected_color", &triangle_color);
+						program.set_uniform_matrix_f32_4("view", camera.get_view_matrix().as_slice().try_into().unwrap());
+						program.set_uniform_matrix_f32_4("projection", projection_mtx.as_slice().try_into().unwrap());
+						program.set_uniform_matrix_f32_4("model", model_mtx.as_slice().try_into().unwrap());
+
+						gl.draw_elements(glow::TRIANGLES, mesh.indices.len() as i32, glow::UNSIGNED_INT, 0);
 
 						egui
 							.as_mut()
@@ -259,12 +356,10 @@ fn main() {
 
 						gl_surface.swap_buffers(&gl_context).unwrap();
 
-						let new_time = SystemTime::now();
-						let frame_dur = 1.0 / new_time.duration_since(last_time).unwrap().as_secs_f32();
-						last_time = new_time;
+						let fps = 1.0 / dt;
 
 						if last_update.elapsed().unwrap().as_secs_f32() >= fps_update_interval_secs {
-							fps_string = format!("FPS = {:.1}", frame_dur);
+							fps_string = format!("FPS = {:.1}", fps);
 							let vsync_string = format!("VSync = {}", if vsync { "on" } else { "off" });
 							let cursor_lock_string = format!("Cursor lock = {}", if cursor_lock { "on" } else { "off" });
 							window.set_title(&format!("Triangle - {}, {}, {}", fps_string, vsync_string, cursor_lock_string));
