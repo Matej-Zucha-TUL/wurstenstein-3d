@@ -97,22 +97,22 @@ Fun learning materials: https://github.com/afaber999/rust_learn_opengl_glow/blob
 
 ## ⏱️ Task 3 - Simple generic model loader - directory __03 vertex-mesh-model class__
 
-- [ ] Current state: triangle vertex data are hard-coded into source code
-- [ ] Resources: in subdirectory of _04 loading assets_ you can find file __triangle.obj__ with following content:
+- [X] Current state: triangle vertex data are hard-coded into source code
+- [X] Resources: in subdirectory of _04 loading assets_ you can find file __triangle.obj__ with following content:
 - [ ] Target: implemented class that will load .OBJ file, parse the content and create VAO, VBO, set parameters etc., so the triangle data will be stored outside the source code. Use also __EBO__ (see lectures) for indirect vertex addressing.
 
 - [ ] Modify your __assets.hpp__, so that vertex structure contains normal and texture coordinate.
 - [ ] Copy partially implemented classes (Mesh.hpp, Model.hpp) into your project directory and add to project.
-- [ ] Explore OBJloader.cpp and OBJloader.hpp from __04 loading assets__, that can  load OBJ file. The loader is simple and limited: it expects, that model in .OBJ file __always contains texture coordinates and normals, and uses triangles__.
+- [X] Explore OBJloader.cpp and OBJloader.hpp from __04 loading assets__, that can  load OBJ file. The loader is simple and limited: it expects, that model in .OBJ file __always contains texture coordinates and normals, and uses triangles__.
 - [ ] Use the lecture to implement missing parts - marked as "TODO". Fully setup and initialize VAO. __Use DSA.__
 - [ ] Draw the triangle.
 
 ### ⏱️ Task 3a (OPTIONAL) - Modify and extend the functionality of OBJ loader
 
-- [ ] Loader expects triangles. Modify it, so that if it finds Quad, it will break it in two triangles.
+- [X] Loader expects triangles. Modify it, so that if it finds Quad, it will break it in two triangles.
 - [ ] Loader expects normals coordinates. Modify it, so that if no normals are found, it will calculate it: for triangle, it is
 - [ ] Loader expects texture coordinates. Modify it, so that if no texcoords are found, it will provide fake fixed coordinate glm::vec2(0.0f)
 
-### ⏱️ Task 3b (superOPTIONAL) - Meshlab
+### ✔️ Task 3b (superOPTIONAL) - Meshlab
 
-- [ ] Download Meshlab, load some model, try to convert it to .OBJ format. Try other functions of Meshlab, like increasing/decreasing triangle count. This can be used to implement simple LOD (Level Of Detail).
+- [X] Download Meshlab, load some model, try to convert it to .OBJ format. Try other functions of Meshlab, like increasing/decreasing triangle count. This can be used to implement simple LOD (Level Of Detail).
