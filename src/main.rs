@@ -5,8 +5,8 @@ use glutin::{
 	surface::{GlSurface, SwapInterval},
 };
 use winit::{
-	event::{ElementState, Event, WindowEvent},
-	keyboard::Key, window::{Window, CursorGrabMode, Fullscreen}
+	event::{DeviceEvent, ElementState, Event, WindowEvent},
+	keyboard::Key, window::{CursorGrabMode, Fullscreen, Window}
 };
 use glutin_winit::{DisplayBuilder, GlWindow};
 use raw_window_handle::HasWindowHandle;
@@ -121,6 +121,8 @@ fn main() {
 		let mut background_color = [0.1, 0.2, 0.3, 1.0];
 		let mut triangle_color = [0.5, 0.5, 0.5, 1.0];
 		let mut file_dialog = egui_file_dialog::FileDialog::new().movable(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0));
+		let mut cursor_x = 0.0;
+		let mut cursor_y = 0.0;
 
 		if cursor_lock {
 			lock_cursor(&window);
@@ -132,141 +134,156 @@ fn main() {
 
 		#[allow(deprecated)] // Fuck you.
 		let _ = event_loop.run(move |event, event_loop| {
+			let middle_point = winit::dpi::LogicalPosition::new(window.inner_size().width / 2, window.inner_size().height / 2);
+
 			if egui.is_none() {
 				egui = Some(egui_glow::EguiGlow::new(event_loop, gl.clone(), None, None, true));
 			}
 
-			let Event::WindowEvent { window_id: _, event } = event else {
-				return
-			};
-
-			let _ = egui.as_mut().unwrap().on_window_event(&window, &event);
-
-			match event {
-				WindowEvent::KeyboardInput { event, .. } => {
-					log::info!("{:?} key: {:?}, repeat: {:?}", event.state, event.physical_key, event.repeat);
-					if event.state == ElementState::Pressed
-						&& !event.repeat
-						&& event.logical_key == Key::Character("v".into())
-					{
-						vsync = !vsync;
-						info!("VSync = {}", vsync);
-					}
-
-					if event.state == ElementState::Pressed
-						&& !event.repeat
-						&& event.logical_key == Key::Character("f".into())
-					{
-						fullscreen = !fullscreen;
-						info!("Fullscreen = {}", fullscreen);
-					}
-
-					if event.state == ElementState::Pressed
-						&& !event.repeat
-						&& event.logical_key == Key::Character("l".into())
-					{
-						cursor_lock = !cursor_lock;
-						info!("Cursor lock = {}", cursor_lock);
-
-						if cursor_lock {
-							lock_cursor(&window);
-						} else {
-							unlock_cursor(&window);
-						}
-					}
-				},
-				WindowEvent::CloseRequested => {
-					event_loop.exit();
-				},
-				WindowEvent::Resized(new_size) => {
-					gl_surface.resize(
-						&gl_context,
-						new_size.width.try_into().unwrap(),
-						new_size.height.try_into().unwrap()
-					);
-				},
-				WindowEvent::RedrawRequested => {
-					if cursor_lock {
-						window.set_cursor_visible(false);
-						let _ = window.set_cursor_position(winit::dpi::LogicalPosition::new(window.inner_size().width / 2, window.inner_size().height / 2));
-					} else {
-						window.set_cursor_visible(true);
-					}
-
-					gl.bind_vertex_array(Some(vertex_array));
-					program.activate();
-					program.set_uniform_f32_4("selected_color", &triangle_color);
-
-					let [r, g, b, a] = background_color;
-					gl.clear_color(r, g, b, a);
-					gl.clear(glow::COLOR_BUFFER_BIT);
-
-					gl.draw_arrays(glow::TRIANGLES, 0, 3);
-
-					egui
-						.as_mut()
-						.unwrap()
-						.run(&window, |ctx| {
-							egui::Window::new("Wokýnko").resizable(false).show(ctx, |ui| {
-								ui.label(&fps_string);
-
-								if cursor_lock {
-									ui.label("Cursor is locked.");
-									return
-								}
-
-								ui.checkbox(&mut vsync, "Enable Vsync");
-
-								if ui.button("Pick model").clicked() {
-									file_dialog.pick_file();
-								}
-
-								ui.horizontal(|ui| {
-									ui.color_edit_button_rgb((&mut triangle_color[..3]).try_into().unwrap());
-									ui.label("Triangle");
-								});
-
-								ui.horizontal(|ui| {
-									ui.color_edit_button_rgb((&mut background_color[..3]).try_into().unwrap());
-									ui.label("Background");
-								});
-
-								if ui.button("Quit").clicked() {
-									event_loop.exit();
-								}
-							});
-
-							file_dialog.update(ctx);
-						});
-
-					egui.as_mut().unwrap().paint(&window);
-
-					gl_surface.swap_buffers(&gl_context).unwrap();
-
-					let new_time = SystemTime::now();
-					let frame_dur = 1.0 / new_time.duration_since(last_time).unwrap().as_secs_f32();
-					last_time = new_time;
-
-					if last_update.elapsed().unwrap().as_secs_f32() >= fps_update_interval_secs {
-						fps_string = format!("FPS = {:.1}", frame_dur);
-						let vsync_string = format!("VSync = {}", if vsync { "on" } else { "off" });
-						let cursor_lock_string = format!("Cursor lock = {}", if cursor_lock { "on" } else { "off" });
-						window.set_title(&format!("Triangle - {}, {}, {}", fps_string, vsync_string, cursor_lock_string));
-						info!("{}, {}, {}", fps_string, vsync_string, cursor_lock_string);
-						last_update = SystemTime::now();
-					}
-
-					window.request_redraw();
-				},
-				_ => (),
+			// We're capturing the mouse movement through DeviceEvents, as they provide direct relative coordinates straight from the mouse.
+			if let Event::DeviceEvent { event, .. } = &event
+				&& let DeviceEvent::MouseMotion { delta } = event
+				&& cursor_lock
+			{
+				cursor_x += delta.0;
+				cursor_y += delta.1;
 			}
 
-			window.set_fullscreen(fullscreen.then_some(Fullscreen::Borderless(window.current_monitor())));
+			if let Event::WindowEvent { window_id: _, event } = event {
+				let _ = egui.as_mut().unwrap().on_window_event(&window, &event);
 
-			if vsync {
-				gl_surface.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap())).unwrap();
-			} else {
-				gl_surface.set_swap_interval(&gl_context, SwapInterval::DontWait).unwrap();
+				match event {
+					WindowEvent::KeyboardInput { event, .. } => {
+						log::info!("{:?} key: {:?}, repeat: {:?}", event.state, event.physical_key, event.repeat);
+						if event.state == ElementState::Pressed
+							&& !event.repeat
+							&& event.logical_key == Key::Character("v".into())
+						{
+							vsync = !vsync;
+							info!("VSync = {}", vsync);
+						}
+
+						if event.state == ElementState::Pressed
+							&& !event.repeat
+							&& event.logical_key == Key::Character("f".into())
+						{
+							fullscreen = !fullscreen;
+							info!("Fullscreen = {}", fullscreen);
+						}
+
+						if event.state == ElementState::Pressed
+							&& !event.repeat
+							&& event.logical_key == Key::Character("l".into())
+						{
+							cursor_lock = !cursor_lock;
+							info!("Cursor lock = {}", cursor_lock);
+
+							if cursor_lock {
+								lock_cursor(&window);
+							} else {
+								unlock_cursor(&window);
+							}
+						}
+					},
+					WindowEvent::MouseInput { state, button, .. } => {
+						info!("Mouse - {:?} {:?}", state, button);
+					},
+					WindowEvent::CloseRequested => {
+						event_loop.exit();
+					},
+					WindowEvent::Resized(new_size) => {
+						gl_surface.resize(
+							&gl_context,
+							new_size.width.try_into().unwrap(),
+							new_size.height.try_into().unwrap()
+						);
+					},
+					WindowEvent::RedrawRequested => {
+						if cursor_lock {
+							window.set_cursor_visible(false);
+							let _ = window.set_cursor_position(middle_point);
+						} else {
+							window.set_cursor_visible(true);
+						}
+
+						gl.bind_vertex_array(Some(vertex_array));
+						program.activate();
+						program.set_uniform_f32_4("selected_color", &triangle_color);
+
+						let [r, g, b, a] = background_color;
+						gl.clear_color(r, g, b, a);
+						gl.clear(glow::COLOR_BUFFER_BIT);
+
+						gl.draw_arrays(glow::TRIANGLES, 0, 3);
+
+						egui
+							.as_mut()
+							.unwrap()
+							.run(&window, |ctx| {
+								egui::Window::new("Wokýnko").resizable(false).show(ctx, |ui| {
+									ui.label(&fps_string);
+
+									ui.label(format!("Cursor X: {}", cursor_x));
+									ui.label(format!("Cursor Y: {}", cursor_y));
+
+									if cursor_lock {
+										ui.label("Cursor is locked.");
+										return
+									}
+
+									ui.checkbox(&mut vsync, "Enable Vsync");
+
+									if ui.button("Pick model").clicked() {
+										file_dialog.pick_file();
+									}
+
+									ui.horizontal(|ui| {
+										ui.color_edit_button_rgb((&mut triangle_color[..3]).try_into().unwrap());
+										ui.label("Triangle");
+									});
+
+									ui.horizontal(|ui| {
+										ui.color_edit_button_rgb((&mut background_color[..3]).try_into().unwrap());
+										ui.label("Background");
+									});
+
+									if ui.button("Quit").clicked() {
+										event_loop.exit();
+									}
+								});
+
+								file_dialog.update(ctx);
+							});
+
+						egui.as_mut().unwrap().paint(&window);
+
+						gl_surface.swap_buffers(&gl_context).unwrap();
+
+						let new_time = SystemTime::now();
+						let frame_dur = 1.0 / new_time.duration_since(last_time).unwrap().as_secs_f32();
+						last_time = new_time;
+
+						if last_update.elapsed().unwrap().as_secs_f32() >= fps_update_interval_secs {
+							fps_string = format!("FPS = {:.1}", frame_dur);
+							let vsync_string = format!("VSync = {}", if vsync { "on" } else { "off" });
+							let cursor_lock_string = format!("Cursor lock = {}", if cursor_lock { "on" } else { "off" });
+							window.set_title(&format!("Triangle - {}, {}, {}", fps_string, vsync_string, cursor_lock_string));
+							info!("{}, {}, {}", fps_string, vsync_string, cursor_lock_string);
+							last_update = SystemTime::now();
+						}
+
+						window.request_redraw();
+
+						window.set_fullscreen(fullscreen.then_some(Fullscreen::Borderless(window.current_monitor())));
+
+						if vsync {
+							gl_surface.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap())).unwrap();
+						} else {
+							gl_surface.set_swap_interval(&gl_context, SwapInterval::DontWait).unwrap();
+						}
+					},
+					_ => {},
+				}
 			}
 		});
 	}
