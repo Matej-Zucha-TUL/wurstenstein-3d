@@ -95,17 +95,17 @@ Fun learning materials: https://github.com/afaber999/rust_learn_opengl_glow/blob
 - [ ] See directory description, and explore the shader functionality
 - [ ] Some functions will be used in following lectures
 
-## ⏱️ Task 3 - Simple generic model loader - directory __03 vertex-mesh-model class__
+## ✔️ Task 3 - Simple generic model loader - directory __03 vertex-mesh-model class__
 
 - [X] Current state: triangle vertex data are hard-coded into source code
 - [X] Resources: in subdirectory of _04 loading assets_ you can find file __triangle.obj__ with following content:
-- [ ] Target: implemented class that will load .OBJ file, parse the content and create VAO, VBO, set parameters etc., so the triangle data will be stored outside the source code. Use also __EBO__ (see lectures) for indirect vertex addressing.
+- [X] Target: implemented class that will load .OBJ file, parse the content and create VAO, VBO, set parameters etc., so the triangle data will be stored outside the source code. Use also __EBO__ (see lectures) for indirect vertex addressing.
 
-- [ ] Modify your __assets.hpp__, so that vertex structure contains normal and texture coordinate.
-- [ ] Copy partially implemented classes (Mesh.hpp, Model.hpp) into your project directory and add to project.
+- [X] Modify your __assets.hpp__, so that vertex structure contains normal and texture coordinate.
+- [X] Copy partially implemented classes (Mesh.hpp, Model.hpp) into your project directory and add to project.
 - [X] Explore OBJloader.cpp and OBJloader.hpp from __04 loading assets__, that can  load OBJ file. The loader is simple and limited: it expects, that model in .OBJ file __always contains texture coordinates and normals, and uses triangles__.
-- [ ] Use the lecture to implement missing parts - marked as "TODO". Fully setup and initialize VAO. __Use DSA.__
-- [ ] Draw the triangle.
+- [X] Use the lecture to implement missing parts - marked as "TODO". Fully setup and initialize VAO. __Use DSA.__
+- [X] Draw the triangle.
 
 ### ⏱️ Task 3a (OPTIONAL) - Modify and extend the functionality of OBJ loader
 
