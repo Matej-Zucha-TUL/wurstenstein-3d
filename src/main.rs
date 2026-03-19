@@ -6,7 +6,7 @@ use glutin::{
 };
 use winit::{
 	event::{DeviceEvent, ElementState, Event, WindowEvent},
-	keyboard::Key, window::{CursorGrabMode, Fullscreen, Window}
+	keyboard::{Key, KeyCode, PhysicalKey}, window::{CursorGrabMode, Fullscreen, Window}
 };
 use glutin_winit::{DisplayBuilder, GlWindow};
 use raw_window_handle::HasWindowHandle;
@@ -104,6 +104,12 @@ fn main() {
 		let gl = glow::Context::from_loader_function_cstr(|s| gl_display.get_proc_address(s));
 		let gl = Arc::new(gl);
 
+		gl.enable(glow::CULL_FACE);
+		gl.cull_face(glow::FRONT);
+		gl.front_face(glow::CCW);
+
+		gl.enable(glow::DEPTH_TEST);
+
 		gl_surface.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap())).unwrap();
 
 		// Load shaders
@@ -140,7 +146,7 @@ fn main() {
 
 		gl.bind_vertex_array(None);
 
-		let mut camera = Camera::new(glm::vec3(2.0, 2.0, 10.0));
+		let mut camera = Camera::new(glm::vec3(0.0, 0.0, 10.0));
 
 		let mut last_time = SystemTime::now();
 		let mut last_update = SystemTime::now();
@@ -161,6 +167,9 @@ fn main() {
 		let mut move_backward = false;
 		let mut move_left = false;
 		let mut move_right = false;
+		let mut move_fast = false;
+
+		let mut model_rotate = 0.0;
 
 		if cursor_lock {
 			lock_cursor(&window);
@@ -192,10 +201,10 @@ fn main() {
 				let _ = egui.as_mut().unwrap().on_window_event(&window, &event);
 
 				match event {
-					WindowEvent::KeyboardInput { event, .. } => {
-						log::info!("{:?} key: {:?}, repeat: {:?}", event.state, event.physical_key, event.repeat);
+					WindowEvent::KeyboardInput { event, .. } if !event.repeat => {
+						log::info!("{:?} key: {:?}", event.state, event.physical_key);
 
-						if event.state == ElementState::Pressed && !event.repeat {
+						if event.state == ElementState::Pressed {
 							if event.logical_key == Key::Character("v".into()) {
 								vsync = !vsync;
 								info!("VSync = {}", vsync);
@@ -217,37 +226,45 @@ fn main() {
 								}
 							}
 
-							if event.logical_key == Key::Character("w".into()) {
+							if event.physical_key == PhysicalKey::Code(KeyCode::ShiftLeft) {
+								move_fast = true;
+							}
+
+							if event.physical_key == PhysicalKey::Code(KeyCode::KeyW) {
 								move_forward = true;
 							}
 
-							if event.logical_key == Key::Character("s".into()) {
+							if event.physical_key == PhysicalKey::Code(KeyCode::KeyS) {
 								move_backward = true;
 							}
 
-							if event.logical_key == Key::Character("a".into()) {
+							if event.physical_key == PhysicalKey::Code(KeyCode::KeyA) {
 								move_left = true;
 							}
 
-							if event.logical_key == Key::Character("d".into()) {
+							if event.physical_key == PhysicalKey::Code(KeyCode::KeyD) {
 								move_right = true;
 							}
 						}
 
 						if event.state == ElementState::Released {
-							if event.logical_key == Key::Character("w".into()) {
+							if event.physical_key == PhysicalKey::Code(KeyCode::ShiftLeft) {
+								move_fast = false;
+							}
+
+							if event.physical_key == PhysicalKey::Code(KeyCode::KeyW) {
 								move_forward = false;
 							}
 
-							if event.logical_key == Key::Character("s".into()) {
+							if event.physical_key == PhysicalKey::Code(KeyCode::KeyS) {
 								move_backward = false;
 							}
 
-							if event.logical_key == Key::Character("a".into()) {
+							if event.physical_key == PhysicalKey::Code(KeyCode::KeyA) {
 								move_left = false;
 							}
 
-							if event.logical_key == Key::Character("d".into()) {
+							if event.physical_key == PhysicalKey::Code(KeyCode::KeyD) {
 								move_right = false;
 							}
 						}
@@ -277,33 +294,39 @@ fn main() {
 							window.set_cursor_visible(true);
 						}
 
-						if move_forward {
-							camera.key_interact(Directions::Forward, dt);
-						}
+						{
+							let dt = if move_fast { dt * 3.0 } else { dt };
 
-						if move_backward {
-							camera.key_interact(Directions::Backward, dt);
-						}
+							if move_forward {
+								camera.key_interact(Directions::Forward, dt);
+							}
 
-						if move_left {
-							camera.key_interact(Directions::Left, dt);
-						}
+							if move_backward {
+								camera.key_interact(Directions::Backward, dt);
+							}
 
-						if move_right {
-							camera.key_interact(Directions::Right, dt);
+							if move_left {
+								camera.key_interact(Directions::Left, dt);
+							}
+
+							if move_right {
+								camera.key_interact(Directions::Right, dt);
+							}
 						}
 
 						let [r, g, b, a] = background_color;
 
 						gl.clear_color(r, g, b, a);
-						gl.enable(glow::DEPTH_TEST);
 						gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
 
 						gl.bind_vertex_array(vao);
 
+						model_rotate += dt * 50.0;
+
 						let aspect = window.inner_size().width as f32 / window.inner_size().height as f32;
 						let projection_mtx = glm::perspective(aspect, camera.get_zoom().to_radians(), 0.1f32, 100.0f32);
 						let model_mtx = glm::translate(&glm::Mat4::identity(), &glm::vec3(0.0, 0.0, -10.0));
+						let model_mtx = glm::rotate_y(&model_mtx, model_rotate.to_radians());
 
 						program.activate();
 						program.set_uniform_f32_4("selected_color", &triangle_color);
@@ -320,8 +343,30 @@ fn main() {
 								egui::Window::new("Wokýnko").resizable(false).show(ctx, |ui| {
 									ui.label(&fps_string);
 
-									ui.label(format!("Cursor X: {}", cursor_x));
-									ui.label(format!("Cursor Y: {}", cursor_y));
+									ui.add_space(4.0);
+
+									ui.label(format!("Cursor X: {:.3}", cursor_x));
+									ui.label(format!("Cursor Y: {:.3}", cursor_y));
+
+									ui.add_space(4.0);
+
+									let [x, y, z] = camera.get_position().as_slice().try_into().unwrap();
+									let (yaw, pitch) = camera.get_yaw_pitch();
+
+									ui.horizontal(|ui| {
+										ui.vertical(|ui| {
+											ui.label(format!("Camera X: {:.3}", x));
+											ui.label(format!("Camera Y: {:.3}", y));
+											ui.label(format!("Camera Z: {:.3}", z));
+										});
+
+										ui.vertical(|ui| {
+											ui.label(format!("Camera yaw: {:.3}", yaw));
+											ui.label(format!("Camera pitch: {:.3}", pitch));
+										})
+									});
+
+									ui.add_space(4.0);
 
 									if cursor_lock {
 										ui.label("Cursor is locked.");

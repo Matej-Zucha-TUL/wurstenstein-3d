@@ -52,6 +52,7 @@ impl Camera {
 	pub fn get_zoom(&self) -> f32 {self.zoom}
 	pub fn get_position(&self) -> &glm::Vec3 {&self.position}
 	pub fn get_front(&self) -> &glm::Vec3 {&self.front}
+	pub fn get_yaw_pitch(&self) -> (f32, f32) { (self.yaw, self.pitch) }
 
 	pub fn get_view_matrix(&self) -> glm::Mat4 {
 		glm::look_at(&self.position, &(self.position + self.front), &self.up)
