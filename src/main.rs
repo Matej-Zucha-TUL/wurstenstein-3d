@@ -148,8 +148,9 @@ fn main() {
 
 		let mut camera = Camera::new(glm::vec3(0.0, 0.0, 10.0));
 
-		let mut last_time = SystemTime::now();
-		let mut last_update = SystemTime::now();
+		let start_time = SystemTime::now();
+		let mut last_time = start_time;
+		let mut last_update = start_time;
 		let fps_update_interval_secs = 0.5;
 
 		let mut egui = None;
@@ -159,6 +160,7 @@ fn main() {
 		let mut cursor_lock = true;
 		let mut background_color = [0.1, 0.2, 0.3, 1.0];
 		let mut triangle_color = [0.5, 0.5, 0.5, 1.0];
+		let mut rizz_mode = false;
 		let mut file_dialog = egui_file_dialog::FileDialog::new().movable(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0));
 		let mut cursor_x = 0.0;
 		let mut cursor_y = 0.0;
@@ -333,6 +335,10 @@ fn main() {
 						program.set_uniform_matrix_f32_4("view", camera.get_view_matrix().as_slice().try_into().unwrap());
 						program.set_uniform_matrix_f32_4("projection", projection_mtx.as_slice().try_into().unwrap());
 						program.set_uniform_matrix_f32_4("model", model_mtx.as_slice().try_into().unwrap());
+						program.set_uniform_f32("screen_w", window.inner_size().width as f32);
+						program.set_uniform_f32("screen_h", window.inner_size().height as f32);
+						program.set_uniform_f32("time", SystemTime::now().duration_since(start_time).unwrap().as_secs_f32());
+						program.set_uniform_u32("rizz_mode", rizz_mode as u32);
 
 						gl.draw_elements(glow::TRIANGLES, mesh.indices.len() as i32, glow::UNSIGNED_INT, 0);
 
@@ -374,6 +380,8 @@ fn main() {
 									}
 
 									ui.checkbox(&mut vsync, "Enable Vsync");
+
+									ui.checkbox(&mut rizz_mode, "Rizz mode");
 
 									if ui.button("Pick model").clicked() {
 										file_dialog.pick_file();
