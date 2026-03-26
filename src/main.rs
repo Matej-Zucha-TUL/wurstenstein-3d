@@ -66,7 +66,7 @@ fn main() {
 
 	let (window, gl_config) = display_builder.build(&event_loop, template, |configs| {
 		configs.reduce(|accum, config| {
-			if config.num_samples() > accum.num_samples() {
+			if config.num_samples() == 4 {
 				config
 			} else {
 				accum

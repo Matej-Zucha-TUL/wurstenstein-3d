@@ -204,9 +204,9 @@ There are even more realistic (complicated) models (object mass, applied force, 
 
 # ❌ 7th lab: Textures
 
-## ⏱️ Task 1: Antialiasing
+## ✔️ Task 1: Antialiasing
 
-- [ ] Use GLFW hint to initialize antialiasing with level 4. Use glEnable/glDisable(GL_MULTISAMPLE) to compare FPS with/without antialiasing.
+- [X] Use GLFW hint to initialize antialiasing with level 4. Use glEnable/glDisable(GL_MULTISAMPLE) to compare FPS with/without antialiasing.
 
 ## ⏱️ Task 2: Screenshot
 
