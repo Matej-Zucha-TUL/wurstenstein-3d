@@ -81,7 +81,7 @@ Fun learning materials: https://github.com/afaber999/rust_learn_opengl_glow/blob
 
 
 
-# ❌ 4th lab: Implementation of generic resource load
+# ✅ 4th lab: Implementation of generic resource load
 
 ## ✔️ Task 1 - Generic shader loader - directory __01 shader class__
 
@@ -90,10 +90,10 @@ Fun learning materials: https://github.com/afaber999/rust_learn_opengl_glow/blob
 - [X] Target: two external files (suffixes .vert for vertex shader, .frag for fragment shader; if you use different suffixes, GLSL plugin can not perform syntax check and highlighting). Implemented class, that will load both shader files files, and get shader program ready. Create functions to set uniform variables for CPU-GPU communication.
   - Kind of done already, we just need to wrap everything into a nice class
 
-## ⏱️ Task 2 - Explore directory __02 shader examples__
+## ✔️ Task 2 - Explore directory __02 shader examples__
 
-- [ ] See directory description, and explore the shader functionality
-- [ ] Some functions will be used in following lectures
+- [X] See directory description, and explore the shader functionality
+- [X] Some functions will be used in following lectures
 
 ## ✔️ Task 3 - Simple generic model loader - directory __03 vertex-mesh-model class__
 
