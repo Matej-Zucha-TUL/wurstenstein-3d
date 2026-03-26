@@ -129,25 +129,25 @@ Fun learning materials: https://github.com/afaber999/rust_learn_opengl_glow/blob
 
 # ❌ 6th lab: 
 
-## ⏱️ Task 1 - See how to set all transformations
+## ✔️ Task 1 - See how to set all transformations
 
-- [ ] Read _transform00-basic explanation.cpp_. This file is __NOT__ meant to be included in your project, it is only explanation.
+- [X] Read _transform00-basic explanation.cpp_. This file is __NOT__ meant to be included in your project, it is only explanation.
 See, how __model__, __view__, __projection__ and __viewport__ transformations are set, and how they are received in vertex shader __basic_core.vert__
 
-## ⏱️ Task 2: Implementing transformations in our App
+## ✔️ Task 2: Implementing transformations in our App
 
 To use transformations, we must add code into various parts of our program. Modify __Model__ and __Mesh__ classes, so that they are cabable to draw itself with transformations (see _Model-extended.h_ for inspiration). Modify callbacks and main app loop to use transformations.
 
-- [ ] In vertex shader, transformation matrices are defaulted to diagonal matrix = identity. This is the safe default - if you do not set some matrix, it will not change passed values in any way. That means, you can implement transformations step-by-step and the application will gradually improve.
+- [X] In vertex shader, transformation matrices are defaulted to diagonal matrix = identity. This is the safe default - if you do not set some matrix, it will not change passed values in any way. That means, you can implement transformations step-by-step and the application will gradually improve.
   1) implement model matrix setting: try to move the object using time. Modify model matrix of the object and use shader.setUniform() to set uniform variable in a shader.
   2) implement view matrix setting: implement camera movement using key polling, create view matrix using glm::lookAt()
   3) when window size or FOV changes, set projection matrix and viewport (do not forget to set it at the app start)
   4) implement mouse control of the camera
-- [ ] create new variables in _private_ to store projection matrix and related values (e.g. fov). There is no need to recompute projection matrix each frame, it should be updated only by:
-  - [ ] resizing window (callback)
-  - [ ] changing field-of-view (callback)
-- [ ] view matrix is computed from position and orientation of the viewer (i.e. player i.e. camera) - it is probably changing in each frame. For now, it is hardcoded, we will create dynamic camera in Task 3.
-- [ ] model matrix can be set by several different ways, see examples
+- [X] create new variables in _private_ to store projection matrix and related values (e.g. fov). There is no need to recompute projection matrix each frame, it should be updated only by:
+  - [X] resizing window (callback)
+  - [X] changing field-of-view (callback)
+- [X] view matrix is computed from position and orientation of the viewer (i.e. player i.e. camera) - it is probably changing in each frame. For now, it is hardcoded, we will create dynamic camera in Task 3.
+- [X] model matrix can be set by several different ways, see examples
 
 ## ⏱️ Task 3: Implement camera, that can move and look around (keyboard + mouse)
 
