@@ -4,6 +4,7 @@ use glutin::{
 	display::{GetGlDisplay, GlDisplay},
 	surface::{GlSurface, SwapInterval},
 };
+use image::{ExtendedColorType, ImageEncoder, codecs::png::PngEncoder};
 use winit::{
 	event::{DeviceEvent, ElementState, Event, WindowEvent},
 	keyboard::{Key, KeyCode, PhysicalKey}, window::{CursorGrabMode, Fullscreen, Window}
@@ -41,6 +42,28 @@ fn unlock_cursor(window: &Window) {
 	if let Err(err) = window.set_cursor_grab(CursorGrabMode::None) {
 		log::error!("Could not disable cursor grab: {}", err);
 	}
+}
+
+fn screenshot(gl: &Context, window: &Window) {
+	let width = window.inner_size().width as usize;
+	let height = window.inner_size().height as usize;
+
+	let mut buf = vec![0; width * height * 4];
+
+	unsafe {
+		gl.read_pixels(0, 0, width as i32, height as i32, RGBA, UNSIGNED_BYTE, PixelPackData::Slice(Some(buf.as_mut_slice())));
+	}
+
+	let mut out_file = std::fs::File::create("skibidi.png").unwrap();
+
+	let buf = buf.chunks(width * 4)
+		.rev()
+		.flatten()
+		.copied()
+		.collect::<Vec<_>>();
+
+	let encoder = PngEncoder::new(&mut out_file);
+	encoder.write_image(buf.as_slice(), width as u32, height as u32, ExtendedColorType::Rgba8).unwrap();
 }
 
 fn main() {
@@ -215,6 +238,10 @@ fn main() {
 							if event.logical_key == Key::Character("f".into()) {
 								fullscreen = !fullscreen;
 								info!("Fullscreen = {}", fullscreen);
+							}
+
+							if event.logical_key == Key::Character("o".into()) {
+								screenshot(&gl, &window);
 							}
 
 							if event.logical_key == Key::Character("l".into()) {

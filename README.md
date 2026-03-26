@@ -208,9 +208,9 @@ There are even more realistic (complicated) models (object mass, applied force, 
 
 - [X] Use GLFW hint to initialize antialiasing with level 4. Use glEnable/glDisable(GL_MULTISAMPLE) to compare FPS with/without antialiasing.
 
-## ⏱️ Task 2: Screenshot
+## ✔️ Task 2: Screenshot
 
-- [ ] Implement screenshot functionality. Create two screenshots - with and without antialiasing. Open them in an image viewer, zoom in and compare image quality.
+- [X] Implement screenshot functionality. Create two screenshots - with and without antialiasing. Open them in an image viewer, zoom in and compare image quality.
 
 ## ⏱️ Task 3: Explore the source code of the GL demonstration
 
