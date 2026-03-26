@@ -197,3 +197,29 @@ position += velocity * deltaTime;
 ```
 
 There are even more realistic (complicated) models (object mass, applied force, drag force dependent on speed etc.).
+
+
+
+
+
+# ❌ 7th lab: Textures
+
+## ⏱️ Task 1: Antialiasing
+
+- [ ] Use GLFW hint to initialize antialiasing with level 4. Use glEnable/glDisable(GL_MULTISAMPLE) to compare FPS with/without antialiasing.
+
+## ⏱️ Task 2: Screenshot
+
+- [ ] Implement screenshot functionality. Create two screenshots - with and without antialiasing. Open them in an image viewer, zoom in and compare image quality.
+
+## ⏱️ Task 3: Explore the source code of the GL demonstration
+
+## ⏱️ Task 4: Display textured object
+
+- [ ] implement: loading texture from file
+- [ ] do __NOT__ use stbi_image library! We already have OpenCV...
+
+- [ ] use example to extend functionality of Model+Mesh class
+- [ ] use shader example to implement texture support
+- [ ] load OBJ model with texture coordinates
+- [ ] ...enjoy
