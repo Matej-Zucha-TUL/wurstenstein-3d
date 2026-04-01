@@ -184,6 +184,7 @@ fn main() {
 		let mut background_color = [0.1, 0.2, 0.3, 1.0];
 		let mut triangle_color = [0.5, 0.5, 0.5, 1.0];
 		let mut rizz_mode = false;
+    let mut pov_camera = false;
 		let mut file_dialog = egui_file_dialog::FileDialog::new().movable(false).resizable(false).anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0));
 		let mut cursor_x = 0.0;
 		let mut cursor_y = 0.0;
@@ -233,6 +234,11 @@ fn main() {
 							if event.logical_key == Key::Character("v".into()) {
 								vsync = !vsync;
 								info!("VSync = {}", vsync);
+							}
+
+							if event.logical_key == Key::Character("p".into()) {
+								pov_camera = !pov_camera;
+								info!("POV camera = {}", pov_camera);
 							}
 
 							if event.logical_key == Key::Character("f".into()) {
@@ -323,6 +329,8 @@ fn main() {
 							window.set_cursor_visible(true);
 						}
 
+            camera.set_pov(pov_camera);
+
 						{
 							let dt = if move_fast { dt * 3.0 } else { dt };
 
@@ -409,6 +417,8 @@ fn main() {
 									ui.checkbox(&mut vsync, "Enable Vsync");
 
 									ui.checkbox(&mut rizz_mode, "Rizz mode");
+
+									ui.checkbox(&mut pov_camera, "POV camera");
 
 									if ui.button("Pick model").clicked() {
 										file_dialog.pick_file();
