@@ -12,7 +12,7 @@ use nalgebra_glm as glm;
 use raw_window_handle::HasWindowHandle;
 use winit::{
 	event::{DeviceEvent, ElementState, Event, WindowEvent},
-	keyboard::{Key, KeyCode, PhysicalKey},
+	keyboard::{Key, KeyCode, NamedKey, PhysicalKey},
 	window::{CursorGrabMode, Fullscreen, Window},
 };
 
@@ -301,6 +301,10 @@ fn main() {
 						log::info!("{:?} key: {:?}", event.state, event.physical_key);
 
 						if event.state == ElementState::Pressed {
+							if event.logical_key == Key::Named(NamedKey::Escape) {
+								event_loop.exit();
+							}
+
 							if event.logical_key == Key::Character("v".into()) {
 								vsync = !vsync;
 								info!("VSync = {}", vsync);
