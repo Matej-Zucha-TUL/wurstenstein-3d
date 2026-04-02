@@ -127,7 +127,7 @@ Fun learning materials: https://github.com/afaber999/rust_learn_opengl_glow/blob
 
 
 
-# ❌ 6th lab: 
+# ✅ 6th lab: 
 
 ## ✔️ Task 1 - See how to set all transformations
 
