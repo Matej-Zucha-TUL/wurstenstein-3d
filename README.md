@@ -217,9 +217,9 @@ There are even more realistic (complicated) models (object mass, applied force, 
 ## ⏱️ Task 4: Display textured object
 
 - [ ] implement: loading texture from file
-- [ ] do __NOT__ use stbi_image library! We already have OpenCV...
+- [X] do __NOT__ use stbi_image library! We already have OpenCV...
 
 - [ ] use example to extend functionality of Model+Mesh class
 - [ ] use shader example to implement texture support
 - [ ] load OBJ model with texture coordinates
-- [ ] ...enjoy
+- [X] ...enjoy
