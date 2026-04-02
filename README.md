@@ -202,7 +202,7 @@ There are even more realistic (complicated) models (object mass, applied force, 
 
 
 
-# ❌ 7th lab: Textures
+# ✅ 7th lab: Textures
 
 ## ✔️ Task 1: Antialiasing
 
@@ -212,16 +212,16 @@ There are even more realistic (complicated) models (object mass, applied force, 
 
 - [X] Implement screenshot functionality. Create two screenshots - with and without antialiasing. Open them in an image viewer, zoom in and compare image quality.
 
-## ⏱️ Task 3: Explore the source code of the GL demonstration
+## ✔️ Task 3: Explore the source code of the GL demonstration
 
-## ⏱️ Task 4: Display textured object
+## ✔️ Task 4: Display textured object
 
-- [ ] implement: loading texture from file
+- [X] implement: loading texture from file
 - [X] do __NOT__ use stbi_image library! We already have OpenCV...
 
-- [ ] use example to extend functionality of Model+Mesh class
-- [ ] use shader example to implement texture support
-- [ ] load OBJ model with texture coordinates
+- [X] use example to extend functionality of Model+Mesh class
+- [X] use shader example to implement texture support
+- [X] load OBJ model with texture coordinates
 - [X] ...enjoy
 
 # ❌ 8th lab: Lighting
