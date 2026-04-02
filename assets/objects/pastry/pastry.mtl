@@ -1,0 +1,13 @@
+newmtl pastry
+Ns 50
+Ka 1 1 1
+Kd 1 1 1
+Ks 0.1 0.1 0.1
+Ke 0 0 0
+Ni 1.45
+d 1.000000
+illum 2
+map_Kd pastry_tex.png
+# map_bump -bm 1 3DPastry002_SQ-1K-PNG_NormalGL.png
+# map_Ka 3DPastry002_SQ-1K-PNG_AmbientOcclusion.png
+
