@@ -158,7 +158,7 @@ Camera rotation (looking around) and movement must be handled differently: read 
   - [X] free floating camera
   - [X] POV camera (locked to some visible object)
 
-## ✔️ Task 4 (OPTIONAL): changing movement speed
+## ⏱️ Task 4 (OPTIONAL): changing movement speed
 
 Most simple movement is _key=move_ approach, or _shift+key=faster_move_. That is unrealistic. You can implement more realistic approach: acceleration + friction (for movement on the ground) or drag (movement in the air) - or combination.
 
@@ -226,17 +226,17 @@ There are even more realistic (complicated) models (object mass, applied force, 
 
 # ❌ 8th lab: Lighting
 
-## ❌ Task 1: Implement most simple light source - directional light (sun)
+## ⏱️ Task 1: Implement most simple light source - directional light (sun)
 
 - [ ] implement Phong lighting model for directional light
   - [ ] start with shaders: create static light source with hardcoded settings - create light model parameters as __uniforms with default value__. This will later allow you to override them from CPU side (C++).
   - [ ] if it works for default values, go to C++ and create data structures for light parameters. Modify params in time (moving sun, sun changing color, etc.) and update uniforms dynamically.
 
-## ❌ Task 2: Implement at least 3 different point lights
+## ⏱️ Task 2: Implement at least 3 different point lights
 
 - [ ] Create at least 3 point lights with different parameters.
 - [ ] Move lights independently: light position is just point in space. Create model matrix for some model transformations (translate, rotate, scale), and transform original position of the light (point) to new position by matrix multiplication.
 
-## ❌ Task 3: Implement at least one spot light
+## ⏱️ Task 3: Implement at least one spot light
 
 - [ ] Implement spot light = reflector light source, for example as a light attached to the camera (headlight).
