@@ -250,6 +250,8 @@ fn main() {
 		let mut move_backward = false;
 		let mut move_left = false;
 		let mut move_right = false;
+		let mut move_up = false;
+		let mut move_down = false;
 		let mut move_fast = false;
 
 		let mut model_rotate = 0.0;
@@ -354,6 +356,14 @@ fn main() {
 							if event.physical_key == PhysicalKey::Code(KeyCode::KeyD) {
 								move_right = true;
 							}
+
+							if event.physical_key == PhysicalKey::Code(KeyCode::ControlLeft) {
+								move_down = true;
+							}
+
+							if event.physical_key == PhysicalKey::Code(KeyCode::Space) {
+								move_up = true;
+							}
 						}
 
 						if event.state == ElementState::Released {
@@ -375,6 +385,14 @@ fn main() {
 
 							if event.physical_key == PhysicalKey::Code(KeyCode::KeyD) {
 								move_right = false;
+							}
+
+							if event.physical_key == PhysicalKey::Code(KeyCode::ControlLeft) {
+								move_down = false;
+							}
+
+							if event.physical_key == PhysicalKey::Code(KeyCode::Space) {
+								move_up = false;
 							}
 						}
 					}
@@ -423,6 +441,14 @@ fn main() {
 
 							if move_right {
 								camera.key_interact(Directions::Right, dt);
+							}
+
+							if move_up {
+								camera.key_interact(Directions::Up, dt);
+							}
+
+							if move_down {
+								camera.key_interact(Directions::Down, dt);
 							}
 						}
 
