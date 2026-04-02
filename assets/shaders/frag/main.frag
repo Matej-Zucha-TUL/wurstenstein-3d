@@ -12,6 +12,9 @@ uniform float screen_w;
 uniform float screen_h;
 uniform float time;
 
+in vec2 tex_coord;
+uniform sampler2D tex_unit;
+
 uniform bool rizz_mode;
 
 in vec2 vert;
@@ -26,7 +29,7 @@ void main() {
 		float b = sin(time * 5 * M_PI) * 0.5 + 0.5;
 		color = vec4(r, g, b, 1);
 	} else {
-		color = selected_color;
+		color = selected_color * texture(tex_unit, tex_coord);
 	}
 }
 

@@ -6,7 +6,7 @@ use glutin::{
 	surface::{GlSurface, SwapInterval},
 };
 use glutin_winit::{DisplayBuilder, GlWindow};
-use image::{ExtendedColorType, ImageEncoder, codecs::png::PngEncoder};
+use image::{ExtendedColorType, ImageEncoder, ImageReader, codecs::png::PngEncoder};
 use log::*;
 use nalgebra_glm as glm;
 use raw_window_handle::HasWindowHandle;
@@ -158,12 +158,6 @@ fn main() {
 		let gl = glow::Context::from_loader_function_cstr(|s| gl_display.get_proc_address(s));
 		let gl = Arc::new(gl);
 
-		gl.enable(glow::CULL_FACE);
-		gl.cull_face(glow::FRONT);
-		gl.front_face(glow::CCW);
-
-		gl.enable(glow::DEPTH_TEST);
-
 		gl_surface
 			.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap()))
 			.unwrap();
@@ -181,17 +175,20 @@ fn main() {
 			)
 			.link();
 
-		let mut model_data = Cursor::new(include_bytes!("./../assets/objects/teapot_tri_vnt.obj"));
+		let mut model_data = Cursor::new(include_bytes!("./../assets/objects/pastry/pastry.obj"));
 		let (model, _) = tobj::load_obj_buf(&mut model_data, &tobj::GPU_LOAD_OPTIONS, |_| {
 			Err(tobj::LoadError::ReadError)
 		})
 		.unwrap();
 		let model = model.into_iter().next().unwrap();
-		let mesh = model.mesh;
+		let mut mesh = model.mesh;
+
+		mesh.positions.iter_mut().for_each(|x| *x *= 20.0);
 
 		let vao = Some(gl.create_vertex_array().unwrap());
 		let vbo_position = Some(gl.create_buffer().unwrap());
 		let vbo_normal = Some(gl.create_buffer().unwrap());
+		let vbo_tex = Some(gl.create_buffer().unwrap());
 		let ebo = Some(gl.create_buffer().unwrap());
 
 		gl.bind_vertex_array(vao);
@@ -214,6 +211,15 @@ fn main() {
 		gl.vertex_attrib_pointer_f32(1, 3, glow::FLOAT, false, 0, 0);
 		gl.enable_vertex_attrib_array(1);
 
+		gl.bind_buffer(glow::ARRAY_BUFFER, vbo_tex);
+		gl.buffer_data_u8_slice(
+			glow::ARRAY_BUFFER,
+			bytemuck::cast_slice(&mesh.texcoords),
+			glow::STATIC_DRAW,
+		);
+		gl.vertex_attrib_pointer_f32(2, 2, glow::FLOAT, false, 0, 0);
+		gl.enable_vertex_attrib_array(2);
+
 		gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, ebo);
 		gl.buffer_data_u8_slice(
 			glow::ELEMENT_ARRAY_BUFFER,
@@ -222,6 +228,26 @@ fn main() {
 		);
 
 		gl.bind_vertex_array(None);
+
+		let image = ImageReader::open("assets/objects/pastry/pastry_tex.png").unwrap().decode().unwrap();
+		let width = image.width() as i32;
+		let height = image.height() as i32;
+		let raw_img = image.flipv().into_rgb8().into_raw();
+
+		assert_eq!(width * height * 3, raw_img.len() as i32);
+
+		let tex = gl.create_texture().unwrap();
+		gl.bind_texture(TEXTURE_2D, Some(tex));
+		gl.tex_image_2d(TEXTURE_2D, 0, RGB as i32, width, height, 0, RGB, UNSIGNED_BYTE, PixelUnpackData::Slice(Some(&raw_img)));
+		gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST as i32);
+		gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR as i32);
+
+		// does not work fsr
+		// let tex = gl.create_named_texture(TEXTURE_2D).unwrap();
+		// gl.texture_sub_image_2d(tex, 0, 0, 0, width, height, RGB8, UNSIGNED_BYTE, PixelUnpackData::Slice(Some(&raw_img)));
+		// println!("{}", gl.get_error());
+		// gl.texture_parameter_i32(tex, TEXTURE_MIN_FILTER, NEAREST as i32);
+		// gl.texture_parameter_i32(tex, TEXTURE_MAG_FILTER, LINEAR as i32);
 
 		let mut camera = Camera::new(glm::vec3(0.0, 0.0, 10.0));
 
@@ -454,10 +480,18 @@ fn main() {
 
 						let [r, g, b, a] = background_color;
 
+						gl.enable(glow::CULL_FACE);
+						gl.cull_face(glow::FRONT);
+						gl.front_face(glow::CW);
+
+						gl.enable(glow::DEPTH_TEST);
+
 						gl.clear_color(r, g, b, a);
 						gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
 
 						gl.bind_vertex_array(vao);
+						gl.bind_texture(TEXTURE_2D, Some(tex));
+						gl.bind_texture_unit(0, Some(tex));
 
 						model_rotate += dt * 50.0;
 
@@ -497,6 +531,7 @@ fn main() {
 								.as_secs_f32(),
 						);
 						program.set_uniform_u32("rizz_mode", rizz_mode as u32);
+						program.set_uniform_i32("tex_unit", 0);
 
 						gl.draw_elements(
 							glow::TRIANGLES,
