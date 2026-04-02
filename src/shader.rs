@@ -4,75 +4,75 @@ use std::sync::Arc;
 
 #[derive(Debug, PartialEq, Eq)]
 pub enum ShaderType {
-    Vertex,
-    Fragment,
+	Vertex,
+	Fragment,
 }
 
 pub struct ProgramBuilder {
-    gl: Arc<Context>,
-    program: NativeProgram,
-    shaders: Vec<NativeShader>,
+	gl: Arc<Context>,
+	program: NativeProgram,
+	shaders: Vec<NativeShader>,
 }
 
 impl ProgramBuilder {
-    pub fn new(gl: Arc<Context>) -> Self {
-        let program = unsafe { gl.create_program().unwrap() };
+	pub fn new(gl: Arc<Context>) -> Self {
+		let program = unsafe { gl.create_program().unwrap() };
 
-        Self {
-            gl,
-            program,
-            shaders: Vec::new(),
-        }
-    }
+		Self {
+			gl,
+			program,
+			shaders: Vec::new(),
+		}
+	}
 
-    pub fn add_shader(mut self, ty: ShaderType, source: &str) -> Self {
-        let ty = match ty {
-            ShaderType::Vertex => glow::VERTEX_SHADER,
-            ShaderType::Fragment => glow::FRAGMENT_SHADER,
-        };
+	pub fn add_shader(mut self, ty: ShaderType, source: &str) -> Self {
+		let ty = match ty {
+			ShaderType::Vertex => glow::VERTEX_SHADER,
+			ShaderType::Fragment => glow::FRAGMENT_SHADER,
+		};
 
-        let shader = unsafe {
-            let shader = self.gl.create_shader(ty).unwrap();
+		let shader = unsafe {
+			let shader = self.gl.create_shader(ty).unwrap();
 
-            self.gl.shader_source(shader, source);
-            self.gl.compile_shader(shader);
+			self.gl.shader_source(shader, source);
+			self.gl.compile_shader(shader);
 
-            if !self.gl.get_shader_compile_status(shader) {
-                log::warn!(
-                    "Shader failed to compile: {}",
-                    self.gl.get_shader_info_log(shader)
-                );
-                return self;
-            }
+			if !self.gl.get_shader_compile_status(shader) {
+				log::warn!(
+					"Shader failed to compile: {}",
+					self.gl.get_shader_info_log(shader)
+				);
+				return self;
+			}
 
-            self.gl.attach_shader(self.program, shader);
+			self.gl.attach_shader(self.program, shader);
 
-            shader
-        };
+			shader
+		};
 
-        self.shaders.push(shader);
+		self.shaders.push(shader);
 
-        self
-    }
+		self
+	}
 
-    pub fn link(self) -> Program {
-        unsafe {
-            self.gl.link_program(self.program);
-            if !self.gl.get_program_link_status(self.program) {
-                panic!("{}", self.gl.get_program_info_log(self.program));
-            }
+	pub fn link(self) -> Program {
+		unsafe {
+			self.gl.link_program(self.program);
+			if !self.gl.get_program_link_status(self.program) {
+				panic!("{}", self.gl.get_program_info_log(self.program));
+			}
 
-            for shader in self.shaders {
-                self.gl.detach_shader(self.program, shader);
-                self.gl.delete_shader(shader);
-            }
-        }
+			for shader in self.shaders {
+				self.gl.detach_shader(self.program, shader);
+				self.gl.delete_shader(shader);
+			}
+		}
 
-        Program {
-            gl: self.gl,
-            program: self.program,
-        }
-    }
+		Program {
+			gl: self.gl,
+			program: self.program,
+		}
+	}
 }
 
 macro_rules! gen_uniform_setter {
@@ -144,21 +144,21 @@ macro_rules! gen_uniform_setter {
 }
 
 pub struct Program {
-    gl: Arc<Context>,
-    program: NativeProgram,
+	gl: Arc<Context>,
+	program: NativeProgram,
 }
 
 impl Program {
-    pub fn activate(&self) {
-        unsafe {
-            self.gl.use_program(Some(self.program));
-        }
-    }
+	pub fn activate(&self) {
+		unsafe {
+			self.gl.use_program(Some(self.program));
+		}
+	}
 
-    gen_uniform_setter!(
-        f32, [f32; 1], [f32; 2], [f32; 3], [f32; 4],
-        i32, [i32; 1], [i32; 2], [i32; 3], [i32; 4],
-        u32, [u32; 1], [u32; 2], [u32; 3], [u32; 4],
-        [matrix f32; 4]
-    );
+	gen_uniform_setter!(
+		f32, [f32; 1], [f32; 2], [f32; 3], [f32; 4],
+		i32, [i32; 1], [i32; 2], [i32; 3], [i32; 4],
+		u32, [u32; 1], [u32; 2], [u32; 3], [u32; 4],
+		[matrix f32; 4]
+	);
 }
