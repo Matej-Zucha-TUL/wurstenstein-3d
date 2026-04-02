@@ -12,17 +12,32 @@ uniform float screen_w;
 uniform float screen_h;
 uniform float time;
 
+uniform vec3 ambient_material = vec3(0.5, 0.5, 0.5);
+uniform vec3 diffuse_material = vec3(0.5, 0.5, 0.5);
+uniform vec3 specular_material = vec3(0.5, 0.5, 0.5);
+uniform float specular_shininess = 5.0;
+
 in vec2 tex_coord;
+in vec3 normal; // N
+in vec3 obj_to_light; // L
+in vec3 obj_to_camera; // V
+
 uniform sampler2D tex_unit;
 
 uniform bool rizz_mode;
 
-in vec2 vert;
 out vec4 color;
 
-uniform vec4 selected_color;
-
 void main() {
+	vec3 normal = normalize(normal);
+	vec3 obj_to_light = normalize(obj_to_light);
+	vec3 obj_to_camera = normalize(obj_to_camera);
+	vec3 reflection = reflect(-obj_to_light, normal);
+
+	vec3 ambient = ambient_material;
+	vec3 diffuse = max(dot(normal, obj_to_light), 0.0) * diffuse_material;
+	vec3 specular = pow(max(dot(reflection, obj_to_camera), 0.0), specular_shininess) * specular_material;
+
 	if(rizz_mode) {
 		float r_mul = sin(time) * 0.25 + 0.75;
 		float g_mul = sin(time * 0.67 + 1) * 0.25 + 0.75;
@@ -33,7 +48,8 @@ void main() {
 		float b = sin(time * M_PI * b_mul) * 0.5 + 0.5;
 		color = vec4(r, g, b, 1) * texture(tex_unit, tex_coord);
 	} else {
-		color = selected_color * texture(tex_unit, tex_coord);
+		color = vec4(ambient + diffuse, 1.0) * texture(tex_unit, tex_coord) + vec4(specular, 1.0);
+		// color = vec4(ambient + diffuse, 1.0) * texture(tex_unit, tex_coord);
 	}
 }
 

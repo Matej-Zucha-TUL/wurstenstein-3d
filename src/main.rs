@@ -260,7 +260,10 @@ fn main() {
 		let mut fullscreen = false;
 		let mut cursor_lock = true;
 		let mut background_color = [0.1, 0.2, 0.3, 1.0];
-		let mut triangle_color = [0.5, 0.5, 0.5, 1.0];
+		let mut ambient_color = [0.5, 0.5, 0.5];
+		let mut diffuse_color = [0.5, 0.5, 0.5];
+		let mut specular_color = [0.5, 0.5, 0.5];
+		let mut specular_shininess = 5.0;
 		let mut rizz_mode = false;
 		let mut pov_camera = false;
 		let mut file_dialog = egui_file_dialog::FileDialog::new()
@@ -507,7 +510,7 @@ fn main() {
 						let model_mtx = glm::rotate_y(&model_mtx, model_rotate.to_radians());
 
 						program.activate();
-						program.set_uniform_f32_4("selected_color", &triangle_color);
+						// program.set_uniform_f32_4("selected_color", &triangle_color);
 						program.set_uniform_matrix_f32_4(
 							"view",
 							camera.get_view_matrix().as_slice().try_into().unwrap(),
@@ -532,6 +535,10 @@ fn main() {
 						program.set_uniform_u32("rizz_mode", rizz_mode as u32);
 						program.set_uniform_i32("tex_unit", 0);
 						program.set_uniform_f32("scale", scale);
+						program.set_uniform_f32("specular_shininess", specular_shininess);
+						program.set_uniform_f32_3("ambient_material", &ambient_color);
+						program.set_uniform_f32_3("diffuse_material", &diffuse_color);
+						program.set_uniform_f32_3("specular_material", &specular_color);
 
 						gl.draw_elements(
 							glow::TRIANGLES,
@@ -590,11 +597,22 @@ fn main() {
 									}
 
 									ui.horizontal(|ui| {
-										ui.color_edit_button_rgb(
-											(&mut triangle_color[..3]).try_into().unwrap(),
-										);
-										ui.label("Triangle");
+										ui.color_edit_button_rgb(&mut ambient_color);
+										ui.label("Ambient color");
 									});
+
+									ui.horizontal(|ui| {
+										ui.color_edit_button_rgb(&mut diffuse_color);
+										ui.label("Diffuse color");
+									});
+
+									ui.horizontal(|ui| {
+										ui.color_edit_button_rgb(&mut specular_color);
+										ui.label("Specular color");
+									});
+
+									ui.label("Specular shininess");
+									ui.add(egui::Slider::new(&mut specular_shininess, 1.0..=100.0));
 
 									ui.horizontal(|ui| {
 										ui.color_edit_button_rgb(
