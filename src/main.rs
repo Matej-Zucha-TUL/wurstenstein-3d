@@ -183,8 +183,6 @@ fn main() {
 		let model = model.into_iter().next().unwrap();
 		let mut mesh = model.mesh;
 
-		mesh.positions.iter_mut().for_each(|x| *x *= 20.0);
-
 		let vao = Some(gl.create_vertex_array().unwrap());
 		let vbo_position = Some(gl.create_buffer().unwrap());
 		let vbo_normal = Some(gl.create_buffer().unwrap());
@@ -271,6 +269,7 @@ fn main() {
 			.anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0));
 		let mut cursor_x = 0.0;
 		let mut cursor_y = 0.0;
+		let mut scale = 50.0;
 
 		let mut move_forward = false;
 		let mut move_backward = false;
@@ -532,6 +531,7 @@ fn main() {
 						);
 						program.set_uniform_u32("rizz_mode", rizz_mode as u32);
 						program.set_uniform_i32("tex_unit", 0);
+						program.set_uniform_f32("scale", scale);
 
 						gl.draw_elements(
 							glow::TRIANGLES,
@@ -576,6 +576,8 @@ fn main() {
 										ui.label("Cursor is locked.");
 										return;
 									}
+
+									ui.add(egui::Slider::new(&mut scale, 0.0..=100.0));
 
 									ui.checkbox(&mut vsync, "Enable Vsync");
 
