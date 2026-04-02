@@ -149,7 +149,7 @@ To use transformations, we must add code into various parts of our program. Modi
 - [X] view matrix is computed from position and orientation of the viewer (i.e. player i.e. camera) - it is probably changing in each frame. For now, it is hardcoded, we will create dynamic camera in Task 3.
 - [X] model matrix can be set by several different ways, see examples
 
-## ⏱️ Task 3: Implement camera, that can move and look around (keyboard + mouse)
+## ✔️ Task 3: Implement camera, that can move and look around (keyboard + mouse)
 
 Camera rotation (looking around) and movement must be handled differently: read _transform.cpp_ to get an idea, how to implement cursorPositionCallback() for look-around and direct key state polling for camera movement.
 
@@ -158,7 +158,7 @@ Camera rotation (looking around) and movement must be handled differently: read 
   - [X] free floating camera
   - [X] POV camera (locked to some visible object)
 
-## ⏱️ Task 4 (OPTIONAL): changing movement speed
+## ✔️ Task 4 (OPTIONAL): changing movement speed
 
 Most simple movement is _key=move_ approach, or _shift+key=faster_move_. That is unrealistic. You can implement more realistic approach: acceleration + friction (for movement on the ground) or drag (movement in the air) - or combination.
 
