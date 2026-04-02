@@ -154,9 +154,9 @@ To use transformations, we must add code into various parts of our program. Modi
 Camera rotation (looking around) and movement must be handled differently: read _transform.cpp_ to get an idea, how to implement cursorPositionCallback() for look-around and direct key state polling for camera movement.
 
 - [X] finish implementation of __camera.hpp__
-- [ ] implement:
+- [X] implement:
   - [X] free floating camera
-  - [ ] POV camera (locked to some visible object)
+  - [X] POV camera (locked to some visible object)
 
 ## ⏱️ Task 4 (OPTIONAL): changing movement speed
 
