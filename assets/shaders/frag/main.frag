@@ -24,10 +24,14 @@ uniform vec4 selected_color;
 
 void main() {
 	if(rizz_mode) {
-		float r = sin((gl_FragCoord[0] / screen_w + time / 5) * M_PI * 10) * 0.5 + 0.5;
-		float g = sin((gl_FragCoord[1] / screen_h + time) * M_PI * 10) * 0.5 + 0.5;
-		float b = sin(time * 5 * M_PI) * 0.5 + 0.5;
-		color = vec4(r, g, b, 1);
+		float r_mul = sin(time) * 0.25 + 0.75;
+		float g_mul = sin(time * 0.67 + 1) * 0.25 + 0.75;
+		float b_mul = sin(time * 2) * 0.25 + 0.75;
+
+		float r = sin((gl_FragCoord[0] / screen_w + time / 5) * M_PI * 10 * r_mul) * 0.5 + 0.5;
+		float g = sin((gl_FragCoord[1] / screen_h + time / 3.7) * M_PI * 10 * g_mul) * 0.5 + 0.5;
+		float b = sin(time * M_PI * b_mul) * 0.5 + 0.5;
+		color = vec4(r, g, b, 1) * texture(tex_unit, tex_coord);
 	} else {
 		color = selected_color * texture(tex_unit, tex_coord);
 	}
