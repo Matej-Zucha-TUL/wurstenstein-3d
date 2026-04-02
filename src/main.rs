@@ -181,7 +181,7 @@ fn main() {
 		})
 		.unwrap();
 		let model = model.into_iter().next().unwrap();
-		let mut mesh = model.mesh;
+		let mesh = model.mesh;
 
 		let vao = Some(gl.create_vertex_array().unwrap());
 		let vbo_position = Some(gl.create_buffer().unwrap());
