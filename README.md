@@ -240,3 +240,54 @@ There are even more realistic (complicated) models (object mass, applied force, 
 ## ⏱️ Task 3: Implement at least one spot light
 
 - [ ] Implement spot light = reflector light source, for example as a light attached to the camera (headlight).
+
+
+
+
+
+# ❌ 9th lab: TBD
+
+
+
+
+
+# ❌ 10th lab: TBD
+
+
+
+
+
+# Final criteria:
+
+- Default value is 100 points
+- It is required to send full project and installation procedures in advance (using gitlab.tul.cz, GitHub, Gitlab, etc.)
+
+## Essentials:
+
+Each missing (non-functional) Essential nets -25 points (partial functionality => partial decrenent)
+
+- [ ] 3D GL Core profile + shaders version 4.6, GL debug enabled, JSON config file
+- [ ] high performance => at least 60 FPS (display FPS)
+- [ ] allow VSync control, antialiasing, fullscreen vs. windowed switching (restore window position & size)
+- [ ] event processing (camera, object, app behaviour, ...): mouse (both axes, wheel), keyboard
+- [ ] multiple different independently moving 3D models, at leats two loaded from file
+- [ ] at least three different textures (or subtextures from texture atlas etc.)
+- [ ] lighting model, all basic lights types (1x anbient, min. 1x directional, min. 2x point, min. Ix reflector; at least two are moving independently
+- [ ] correct full alpha scale transparency (at least two transparent objects; NOT if(alpha<0.1) {discard;} )
+- [ ] correct collisions
+
+## Extras:
+
+Each working Extra nets +10 points
+
+- [ ] height map textured by height t proper player height coords
+- [ ] audio (better than just background)
+- [ ] particle effects
+- [ ] scripting (useful)
+- [ ] some other nice complicated effect..
+
+## Instafail
+
+Any of these criteria met will result in instant rejection of the work
+
+- [ ] TBD
