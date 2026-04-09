@@ -245,7 +245,32 @@ There are even more realistic (complicated) models (object mass, applied force, 
 
 
 
-# ❌ 9th lab: TBD
+# ❌ 9th lab: Transparency, Physics
+
+## ⏱️ Task 1: Transparency
+
+Allow the App to correctly draw transparent objects.
+
+- [ ] create at least 3 (semi)transparent objects. Use either material with A<1.0 or texture with alpha channel.
+- [ ] use correct, full scale transparency (NOT if(alpha<0.1) {discard;} )
+
+## ⏱️ Task 2: Implement collision detection
+
+The very basic collision detection is to disallow the player to leave the map. Better version should be implemented.
+
+- [ ] implement at least two of
+  - [ ] correct beahviour of hit-wall (sliding)
+  - [ ] detect hit of some object with projectile (touch player-object)
+  - [ ] detect hit (touch) of the enemy with player
+  - [ ] some other idea...
+
+## ⏱️ Task 3: Implement simple particle effect
+
+Particles exists only for short time, no collision detection is usually performed. You can dynamically add simple object to the scene, and after short moment (lifetime of whole particle effect) remove it. You can implement particles with several simple methods:
+
+- [ ] point cloud (GL_POINT)
+- [ ] small non-textured mesh (minimal mesh is tetraedron - four vertices forming GL_TRIANGLE_STRIP)
+- [ ] (OPTIONAL) point sprites
 
 
 
