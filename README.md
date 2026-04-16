@@ -23,11 +23,8 @@ Fun learning materials: https://github.com/afaber999/rust_learn_opengl_glow/blob
 ## ✔️ Task 1 - allow OpenGL debugging
 
 - [x] Check for OpenGL debug extension (if you succeeded to open GL context version 4.6 in last lab, it should be present)
-  - egui does this for us
 - [x] Create debug callback (copy from lecture)
-  - egui does this for us
 - [x] Activate debug output. If it is too noisy, use filter to suppress notifications, etc.
-  - well, you guessed it... egui does this for us
 
 ## ✔️ Task 2 - use GLFW (a bit more) safely
 
@@ -285,11 +282,16 @@ Particles exists only for short time, no collision detection is usually performe
 
 Each missing (non-functional) Essential nets -25 points (partial functionality => partial decrenent)
 
-- [ ] 3D GL Core profile + shaders version 4.6, GL debug enabled, JSON config file
-- [ ] high performance => at least 60 FPS (display FPS)
-- [ ] allow VSync control, antialiasing, fullscreen vs. windowed switching (restore window position & size)
-- [ ] event processing (camera, object, app behaviour, ...): mouse (both axes, wheel), keyboard
-- [ ] multiple different independently moving 3D models, at leats two loaded from file
+- [X] 3D GL Core profile + shaders version 4.6
+- [X] GL debug enabled
+- [ ] JSON config file
+- [X] high performance => at least 60 FPS (display FPS)
+- [X] allow VSync control
+- [ ] allow antialiasing
+- [X] fullscreen vs. windowed switching
+- [ ] restore window position & size
+- [X] event processing (camera, object, app behaviour, ...): mouse (both axes, wheel), keyboard
+- [ ] multiple different independently moving 3D models, at least two loaded from file
 - [ ] at least three different textures (or subtextures from texture atlas etc.)
 - [ ] lighting model, all basic lights types (1x anbient, min. 1x directional, min. 2x point, min. Ix reflector; at least two are moving independently
 - [ ] correct full alpha scale transparency (at least two transparent objects; NOT if(alpha<0.1) {discard;} )
