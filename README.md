@@ -276,12 +276,6 @@ Particles exists only for short time, no collision detection is usually performe
 
 
 
-# ❌ 10th lab: TBD
-
-
-
-
-
 # Final criteria:
 
 - Default value is 100 points
