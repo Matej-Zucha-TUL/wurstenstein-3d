@@ -32,59 +32,6 @@ use crate::config::Config;
 use crate::camera::{Camera, Directions};
 use crate::shader::{ProgramBuilder, ShaderType, Program};
 
-fn lock_cursor(window: &Window) {
-	if let Err(err) = window
-		.set_cursor_grab(CursorGrabMode::Confined)
-		.or_else(|_| window.set_cursor_grab(CursorGrabMode::Locked))
-	{
-		error!("Could not enable cursor grab: {}", err);
-	}
-}
-
-fn unlock_cursor(window: &Window) {
-	if let Err(err) = window.set_cursor_grab(CursorGrabMode::None) {
-		error!("Could not disable cursor grab: {}", err);
-	}
-}
-
-fn screenshot(gl: &Context, window: &Window) {
-	let width = window.inner_size().width as usize;
-	let height = window.inner_size().height as usize;
-
-	let mut buf = vec![0; width * height * 4];
-
-	unsafe {
-		gl.read_pixels(
-			0,
-			0,
-			width as i32,
-			height as i32,
-			RGBA,
-			UNSIGNED_BYTE,
-			PixelPackData::Slice(Some(buf.as_mut_slice())),
-		);
-	}
-
-	let mut out_file = std::fs::File::create("skibidi.png").unwrap();
-
-	let buf = buf
-		.chunks(width * 4)
-		.rev()
-		.flatten()
-		.copied()
-		.collect::<Vec<_>>();
-
-	let encoder = PngEncoder::new(&mut out_file);
-	encoder
-		.write_image(
-			buf.as_slice(),
-			width as u32,
-			height as u32,
-			ExtendedColorType::Rgba8,
-		)
-		.unwrap();
-}
-
 fn opengl_callback(src: u32, kind: u32, id: u32, severity: u32, msg: &str) {
 	let src = match src {
 		DEBUG_SOURCE_API => "API",
@@ -411,12 +358,6 @@ impl App {
 
 		let screen_config = ScreenConfig::default();
 
-		if screen_config.cursor_lock {
-			lock_cursor(&window);
-		} else {
-			unlock_cursor(&window);
-		}
-
 		window.set_visible(true);
 
 		let egui = egui_glow::EguiGlow::new(
@@ -440,7 +381,7 @@ impl App {
 		let debug = DebugStuff::default();
 		let state = State::default();
 
-		App {
+		let mut app = App {
 			window,
 			egui,
 			gl,
@@ -454,7 +395,11 @@ impl App {
 			world,
 			state,
 			debug
-		}
+		};
+
+		app.update_cursor_lock();
+
+		app
 	}
 
 	fn handle_key_event(&mut self, event_loop: &ActiveEventLoop, event: KeyEvent) {
@@ -481,18 +426,14 @@ impl App {
 			}
 
 			if event.logical_key == Key::Character("o".into()) {
-				screenshot(&self.gl, &self.window);
+				self.take_screenshot();
 			}
 
 			if event.logical_key == Key::Character("l".into()) {
 				self.screen_config.cursor_lock = !self.screen_config.cursor_lock;
 				info!("Cursor lock = {}", self.screen_config.cursor_lock);
 
-				if self.screen_config.cursor_lock {
-					lock_cursor(&self.window);
-				} else {
-					unlock_cursor(&self.window);
-				}
+				self.update_cursor_lock();
 			}
 
 			if event.physical_key == PhysicalKey::Code(KeyCode::ShiftLeft) {
@@ -561,124 +502,38 @@ impl App {
 		self.debug.cursor_y += delta.1;
 	}
 
-	unsafe fn redraw(&mut self, event_loop: &ActiveEventLoop) {
-		let middle_point = winit::dpi::LogicalPosition::new(
-			self.window.inner_size().width / 2,
-			self.window.inner_size().height / 2,
-		);
-
-		let new_time = SystemTime::now();
-		let dt = new_time.duration_since(self.perf.last_time).unwrap().as_secs_f32();
-		self.perf.last_time = new_time;
-
-		if self.screen_config.cursor_lock {
-			self.window.set_cursor_visible(false);
-			let _ = self.window.set_cursor_position(middle_point);
-		} else {
-			self.window.set_cursor_visible(true);
-		}
-
+	fn update_camera(&mut self, dt: f32) {
 		self.world.camera.set_pov(self.state.pov_camera);
 		self.world.camera.set_target(glm::vec3(0.0, 0.0, -10.0));
 
-		{
-			let dt = if self.state.move_fast { dt * 3.0 } else { dt };
+		let dt = if self.state.move_fast { dt * 3.0 } else { dt };
 
-			if self.state.move_forward {
-				self.world.camera.key_interact(Directions::Forward, dt);
-			}
-
-			if self.state.move_backward {
-				self.world.camera.key_interact(Directions::Backward, dt);
-			}
-
-			if self.state.move_left {
-				self.world.camera.key_interact(Directions::Left, dt);
-			}
-
-			if self.state.move_right {
-				self.world.camera.key_interact(Directions::Right, dt);
-			}
-
-			if self.state.move_up {
-				self.world.camera.key_interact(Directions::Up, dt);
-			}
-
-			if self.state.move_down {
-				self.world.camera.key_interact(Directions::Down, dt);
-			}
+		if self.state.move_forward {
+			self.world.camera.key_interact(Directions::Forward, dt);
 		}
 
-		let [r, g, b, a] = self.state.background_color;
+		if self.state.move_backward {
+			self.world.camera.key_interact(Directions::Backward, dt);
+		}
 
-		self.gl.enable(glow::CULL_FACE);
-		self.gl.cull_face(glow::FRONT);
-		self.gl.front_face(glow::CW);
+		if self.state.move_left {
+			self.world.camera.key_interact(Directions::Left, dt);
+		}
 
-		self.gl.enable(glow::DEPTH_TEST);
+		if self.state.move_right {
+			self.world.camera.key_interact(Directions::Right, dt);
+		}
 
-		self.gl.clear_color(r, g, b, a);
-		self.gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+		if self.state.move_up {
+			self.world.camera.key_interact(Directions::Up, dt);
+		}
 
-		self.gl.bind_vertex_array(Some(self.assets.vao));
-		self.gl.bind_texture(TEXTURE_2D, Some(self.assets.tex));
-		self.gl.bind_texture_unit(0, Some(self.assets.tex));
+		if self.state.move_down {
+			self.world.camera.key_interact(Directions::Down, dt);
+		}
+	}
 
-		self.state.model_rotate += dt * 50.0;
-
-		let aspect =
-			self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
-		let projection_mtx = glm::perspective(
-			aspect,
-			self.world.camera.get_zoom().to_radians(),
-			0.1f32,
-			100.0f32,
-		);
-		let model_mtx = glm::translate(&glm::Mat4::identity(), &glm::vec3(0.0, 0.0, -10.0));
-		let model_mtx = glm::rotate_y(&model_mtx, self.state.model_rotate.to_radians());
-
-		let program = match self.state.rizz_mode {
-			false => &self.assets.normal_program,
-			true => &self.assets.rizz_program
-		};
-
-		program.activate();
-		// program.set_uniform_f32_4("selected_color", &triangle_color);
-		program.set_uniform_matrix_f32_4(
-			"view",
-			self.world.camera.get_view_matrix().as_slice().try_into().unwrap(),
-		);
-		program.set_uniform_matrix_f32_4(
-			"projection",
-			projection_mtx.as_slice().try_into().unwrap(),
-		);
-		program.set_uniform_matrix_f32_4(
-			"model",
-			model_mtx.as_slice().try_into().unwrap(),
-		);
-		program.set_uniform_f32("screen_w", self.window.inner_size().width as f32);
-		program.set_uniform_f32("screen_h", self.window.inner_size().height as f32);
-		program.set_uniform_f32(
-			"time",
-			SystemTime::now()
-				.duration_since(self.perf.start_time)
-				.unwrap()
-				.as_secs_f32(),
-		);
-		program.set_uniform_i32("tex_unit", 0);
-		program.set_uniform_f32("scale", self.state.scale);
-		program.set_uniform_f32("specular_shininess", self.state.specular_shininess);
-		program.set_uniform_f32_3("ambient_material", &self.state.ambient_color);
-		program.set_uniform_f32_3("diffuse_material", &self.state.diffuse_color);
-		program.set_uniform_f32_3("specular_material", &self.state.specular_color);
-
-		self.gl.draw_elements(
-			glow::TRIANGLES,
-			self.assets.mesh.indices.len() as i32,
-			glow::UNSIGNED_INT,
-			0,
-		);
-
+	fn redraw_ui(&mut self, event_loop: &ActiveEventLoop) {
 		self.egui.run(&self.window, |ctx| {
 			egui::Window::new("Wokýnko")
 				.resizable(false)
@@ -762,9 +617,9 @@ impl App {
 		});
 
 		self.egui.paint(&self.window);
+	}
 
-		self.gl_surface.swap_buffers(&self.gl_context).unwrap();
-
+	fn update_perf(&mut self, dt: f32) {
 		let fps = 1.0 / dt;
 
 		if self.perf.last_update.elapsed().unwrap() >= self.perf.fps_update_interval
@@ -781,6 +636,155 @@ impl App {
 			info!("{}, {}, {}", self.perf.fps_string, vsync_string, cursor_lock_string);
 			self.perf.last_update = SystemTime::now();
 		}
+	}
+
+	fn take_screenshot(&self) {
+		let width = self.window.inner_size().width as usize;
+		let height = self.window.inner_size().height as usize;
+
+		let mut buf = vec![0; width * height * 4];
+
+		unsafe {
+			self.gl.read_pixels(
+				0,
+				0,
+				width as i32,
+				height as i32,
+				RGBA,
+				UNSIGNED_BYTE,
+				PixelPackData::Slice(Some(buf.as_mut_slice())),
+			);
+		}
+
+		let mut out_file = std::fs::File::create("skibidi.png").unwrap();
+
+		let buf = buf
+			.chunks(width * 4)
+			.rev()
+			.flatten()
+			.copied()
+			.collect::<Vec<_>>();
+
+		let encoder = PngEncoder::new(&mut out_file);
+		encoder
+			.write_image(
+				buf.as_slice(),
+				width as u32,
+				height as u32,
+				ExtendedColorType::Rgba8,
+			)
+			.unwrap();
+	}
+
+	fn update_cursor_lock(&mut self) {
+		if self.screen_config.cursor_lock {
+			if let Err(err) = self.window
+				.set_cursor_grab(CursorGrabMode::Confined)
+				.or_else(|_| self.window.set_cursor_grab(CursorGrabMode::Locked))
+			{
+				error!("Could not enable cursor grab: {}", err);
+			}
+		} else {
+			if let Err(err) = self.window.set_cursor_grab(CursorGrabMode::None) {
+				error!("Could not disable cursor grab: {}", err);
+			}
+		}
+	}
+
+	unsafe fn redraw(&mut self, event_loop: &ActiveEventLoop) {
+		let middle_point = winit::dpi::LogicalPosition::new(
+			self.window.inner_size().width / 2,
+			self.window.inner_size().height / 2,
+		);
+
+		let new_time = SystemTime::now();
+		let dt = new_time.duration_since(self.perf.last_time).unwrap().as_secs_f32();
+		self.perf.last_time = new_time;
+
+		if self.screen_config.cursor_lock {
+			self.window.set_cursor_visible(false);
+			let _ = self.window.set_cursor_position(middle_point);
+		} else {
+			self.window.set_cursor_visible(true);
+		}
+
+		self.update_camera(dt);
+
+		let [r, g, b, a] = self.state.background_color;
+
+		self.gl.enable(glow::CULL_FACE);
+		self.gl.cull_face(glow::FRONT);
+		self.gl.front_face(glow::CW);
+
+		self.gl.enable(glow::DEPTH_TEST);
+
+		self.gl.clear_color(r, g, b, a);
+		self.gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+
+		self.gl.bind_vertex_array(Some(self.assets.vao));
+		self.gl.bind_texture(TEXTURE_2D, Some(self.assets.tex));
+		self.gl.bind_texture_unit(0, Some(self.assets.tex));
+
+		self.state.model_rotate += dt * 50.0;
+
+		let aspect =
+			self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
+		let projection_mtx = glm::perspective(
+			aspect,
+			self.world.camera.get_zoom().to_radians(),
+			0.1f32,
+			100.0f32,
+		);
+		let model_mtx = glm::translate(&glm::Mat4::identity(), &glm::vec3(0.0, 0.0, -10.0));
+		let model_mtx = glm::rotate_y(&model_mtx, self.state.model_rotate.to_radians());
+
+		let program = match self.state.rizz_mode {
+			false => &self.assets.normal_program,
+			true => &self.assets.rizz_program
+		};
+
+		program.activate();
+		// program.set_uniform_f32_4("selected_color", &triangle_color);
+		program.set_uniform_matrix_f32_4(
+			"view",
+			self.world.camera.get_view_matrix().as_slice().try_into().unwrap(),
+		);
+		program.set_uniform_matrix_f32_4(
+			"projection",
+			projection_mtx.as_slice().try_into().unwrap(),
+		);
+		program.set_uniform_matrix_f32_4(
+			"model",
+			model_mtx.as_slice().try_into().unwrap(),
+		);
+		program.set_uniform_f32("screen_w", self.window.inner_size().width as f32);
+		program.set_uniform_f32("screen_h", self.window.inner_size().height as f32);
+		program.set_uniform_f32(
+			"time",
+			SystemTime::now()
+				.duration_since(self.perf.start_time)
+				.unwrap()
+				.as_secs_f32(),
+		);
+		program.set_uniform_i32("tex_unit", 0);
+		program.set_uniform_f32("scale", self.state.scale);
+		program.set_uniform_f32("specular_shininess", self.state.specular_shininess);
+		program.set_uniform_f32_3("ambient_material", &self.state.ambient_color);
+		program.set_uniform_f32_3("diffuse_material", &self.state.diffuse_color);
+		program.set_uniform_f32_3("specular_material", &self.state.specular_color);
+
+		self.gl.draw_elements(
+			glow::TRIANGLES,
+			self.assets.mesh.indices.len() as i32,
+			glow::UNSIGNED_INT,
+			0,
+		);
+
+		self.redraw_ui(event_loop);
+
+		self.gl_surface.swap_buffers(&self.gl_context).unwrap();
+
+		self.update_perf(dt);
 
 		self.window.request_redraw();
 
