@@ -147,9 +147,9 @@ fn main() {
 	let (window, gl_config) = display_builder
 		.build(&event_loop, template, |configs| {
 			configs
-				.reduce(|accum, config| {
-					if config.num_samples() == 4 {
-						config
+				.reduce(|accum, new| {
+					if new.num_samples() == config.graphics.antialiasing {
+						new
 					} else {
 						accum
 					}
@@ -157,6 +157,8 @@ fn main() {
 				.unwrap()
 		})
 		.unwrap();
+
+	log::info!("Antialiasing level: {}", gl_config.num_samples().min(1));
 
 	let raw_window_handle = window
 		.as_ref()
