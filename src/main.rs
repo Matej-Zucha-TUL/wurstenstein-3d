@@ -134,8 +134,8 @@ fn main() {
 		let gl_display = gl_config.display();
 		let context_attributes = ContextAttributesBuilder::new()
 			.with_context_api(ContextApi::OpenGl(Some(glutin::context::Version {
-				major: 3,
-				minor: 3,
+				major: 4,
+				minor: 6,
 			})))
 			.build(raw_window_handle);
 
