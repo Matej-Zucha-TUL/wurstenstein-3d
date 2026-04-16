@@ -145,7 +145,7 @@ macro_rules! gen_uniform_setter {
 
 pub struct Program {
 	gl: Arc<Context>,
-	program: NativeProgram,
+	pub program: NativeProgram,
 }
 
 impl Program {

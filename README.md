@@ -309,6 +309,8 @@ Each working Extra nets +10 points
 
 ## Instafail
 
-Any of these criteria met will result in instant rejection of the work
+Any of these criteria met will result in instant rejection
 
-- [ ] TBD
+- [X] use GLUT
+- [X] use GL compatible profile
+- [X] no DSA (direct state access)

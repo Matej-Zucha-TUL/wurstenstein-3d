@@ -288,49 +288,40 @@ impl App {
 		let model = model.into_iter().next().unwrap();
 		let mesh = model.mesh;
 
-		let vao = gl.create_vertex_array().unwrap();
-		let vbo_position = Some(gl.create_buffer().unwrap());
-		let vbo_normal = Some(gl.create_buffer().unwrap());
-		let vbo_tex = Some(gl.create_buffer().unwrap());
-		let ebo = Some(gl.create_buffer().unwrap());
+		assert_eq!(mesh.positions.len() / 3, mesh.normals.len() / 3);
+		assert_eq!(mesh.positions.len() / 3, mesh.texcoords.len() / 2);
 
-		gl.bind_vertex_array(Some(vao));
+		let merged_vertices = mesh.positions.chunks(3)
+			.zip(mesh.normals.chunks(3))
+			.zip(mesh.texcoords.chunks(2))
+			.flat_map(|((p, n), t)| [p[0], p[1], p[2], n[0], n[1], n[2], t[0], t[1]])
+			.collect::<Vec<_>>();
 
-		gl.bind_buffer(glow::ARRAY_BUFFER, vbo_position);
-		gl.buffer_data_u8_slice(
-			glow::ARRAY_BUFFER,
-			bytemuck::cast_slice(&mesh.positions),
-			glow::STATIC_DRAW,
-		);
-		gl.vertex_attrib_pointer_f32(0, 3, glow::FLOAT, false, 0, 0);
-		gl.enable_vertex_attrib_array(0);
+		let vao = gl.create_named_vertex_array().unwrap();
+		let vbo = gl.create_named_buffer().unwrap();
+		let ebo = gl.create_named_buffer().unwrap();
 
-		gl.bind_buffer(glow::ARRAY_BUFFER, vbo_normal);
-		gl.buffer_data_u8_slice(
-			glow::ARRAY_BUFFER,
-			bytemuck::cast_slice(&mesh.normals),
-			glow::STATIC_DRAW,
-		);
-		gl.vertex_attrib_pointer_f32(1, 3, glow::FLOAT, false, 0, 0);
-		gl.enable_vertex_attrib_array(1);
+		let position = gl.get_attrib_location(normal_program.program, "aPos").unwrap();
+		let normal = gl.get_attrib_location(normal_program.program, "aNormal").unwrap();
+		let texcoords = gl.get_attrib_location(normal_program.program, "aTexCoord").unwrap();
 
-		gl.bind_buffer(glow::ARRAY_BUFFER, vbo_tex);
-		gl.buffer_data_u8_slice(
-			glow::ARRAY_BUFFER,
-			bytemuck::cast_slice(&mesh.texcoords),
-			glow::STATIC_DRAW,
-		);
-		gl.vertex_attrib_pointer_f32(2, 2, glow::FLOAT, false, 0, 0);
-		gl.enable_vertex_attrib_array(2);
+		gl.vertex_array_attrib_format_f32(vao, position, 3, FLOAT, false, 0);
+		gl.vertex_array_attrib_binding_f32(vao, position, 0);
+		gl.enable_vertex_array_attrib(vao, position);
 
-		gl.bind_buffer(glow::ELEMENT_ARRAY_BUFFER, ebo);
-		gl.buffer_data_u8_slice(
-			glow::ELEMENT_ARRAY_BUFFER,
-			bytemuck::cast_slice(&mesh.indices),
-			glow::STATIC_DRAW,
-		);
+		gl.vertex_array_attrib_format_f32(vao, normal, 3, FLOAT, false, 12);
+		gl.vertex_array_attrib_binding_f32(vao, normal, 0);
+		gl.enable_vertex_array_attrib(vao, normal);
 
-		gl.bind_vertex_array(None);
+		gl.vertex_array_attrib_format_f32(vao, texcoords, 2, FLOAT, false, 24);
+		gl.vertex_array_attrib_binding_f32(vao, texcoords, 0);
+		gl.enable_vertex_array_attrib(vao, texcoords);
+
+		gl.named_buffer_data_u8_slice(vbo, bytemuck::cast_slice(&merged_vertices), STATIC_DRAW);
+		gl.named_buffer_data_u8_slice(ebo, bytemuck::cast_slice(&mesh.indices), STATIC_DRAW);
+
+		gl.vertex_array_vertex_buffer(vao, 0, Some(vbo), 0, 32);
+		gl.vertex_array_element_buffer(vao, Some(ebo));
 
 		let image = ImageReader::open("assets/objects/pastry/pastry_tex.png").unwrap().decode().unwrap();
 		let width = image.width() as i32;
