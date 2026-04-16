@@ -164,7 +164,7 @@ fn main() {
 
 		// Load shaders
 
-		let program = ProgramBuilder::new(gl.clone())
+		let normal_program = ProgramBuilder::new(gl.clone())
 			.add_shader(
 				ShaderType::Vertex,
 				include_str!("./../assets/shaders/vert/main.vert"),
@@ -172,6 +172,17 @@ fn main() {
 			.add_shader(
 				ShaderType::Fragment,
 				include_str!("./../assets/shaders/frag/main.frag"),
+			)
+			.link();
+
+		let rizz_program = ProgramBuilder::new(gl.clone())
+			.add_shader(
+				ShaderType::Vertex,
+				include_str!("./../assets/shaders/vert/main.vert"),
+			)
+			.add_shader(
+				ShaderType::Fragment,
+				include_str!("./../assets/shaders/frag/rizz.frag"),
 			)
 			.link();
 
@@ -509,6 +520,11 @@ fn main() {
 							glm::translate(&glm::Mat4::identity(), &glm::vec3(0.0, 0.0, -10.0));
 						let model_mtx = glm::rotate_y(&model_mtx, model_rotate.to_radians());
 
+						let program = match rizz_mode {
+							false => &normal_program,
+							true => &rizz_program
+						};
+
 						program.activate();
 						// program.set_uniform_f32_4("selected_color", &triangle_color);
 						program.set_uniform_matrix_f32_4(
@@ -532,7 +548,6 @@ fn main() {
 								.unwrap()
 								.as_secs_f32(),
 						);
-						program.set_uniform_u32("rizz_mode", rizz_mode as u32);
 						program.set_uniform_i32("tex_unit", 0);
 						program.set_uniform_f32("scale", scale);
 						program.set_uniform_f32("specular_shininess", specular_shininess);
