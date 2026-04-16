@@ -36,13 +36,13 @@ fn lock_cursor(window: &Window) {
 		.set_cursor_grab(CursorGrabMode::Confined)
 		.or_else(|_| window.set_cursor_grab(CursorGrabMode::Locked))
 	{
-		log::error!("Could not enable cursor grab: {}", err);
+		error!("Could not enable cursor grab: {}", err);
 	}
 }
 
 fn unlock_cursor(window: &Window) {
 	if let Err(err) = window.set_cursor_grab(CursorGrabMode::None) {
-		log::error!("Could not disable cursor grab: {}", err);
+		error!("Could not disable cursor grab: {}", err);
 	}
 }
 
@@ -114,13 +114,13 @@ fn opengl_callback(src: u32, kind: u32, id: u32, severity: u32, msg: &str) {
 		_ => "Unknown",
 	};
 
-	log::warn!(target: "GL", "{:?}", msg);
-	log::warn!(target: "GL", " -> from {src}, kind {kind}, severity {severity}, id {id}");
+	warn!(target: "GL", "{:?}", msg);
+	warn!(target: "GL", " -> from {src}, kind {kind}, severity {severity}, id {id}");
 }
 
 fn main() {
 	env_logger::builder()
-		.filter_level(log::LevelFilter::Info)
+		.filter_level(LevelFilter::Info)
 		.init();
 
 	// Load config
@@ -128,7 +128,7 @@ fn main() {
 	let config = std::fs::read_to_string("config.toml").unwrap();
 	let config = Config::from_toml(&config);
 
-	log::info!("Loaded config:\n{:#?}", config);
+	info!("Loaded config:\n{:#?}", config);
 
 	// Create window
 
@@ -158,7 +158,7 @@ fn main() {
 		})
 		.unwrap();
 
-	log::info!("Antialiasing level: {}", gl_config.num_samples().min(1));
+	info!("Antialiasing level: {}", gl_config.num_samples().min(1));
 
 	let raw_window_handle = window
 		.as_ref()
@@ -378,7 +378,7 @@ fn main() {
 
 				match event {
 					WindowEvent::KeyboardInput { event, .. } if !event.repeat => {
-						log::info!("{:?} key: {:?}", event.state, event.physical_key);
+						info!("{:?} key: {:?}", event.state, event.physical_key);
 
 						if event.state == ElementState::Pressed {
 							if event.logical_key == Key::Named(NamedKey::Escape) {
