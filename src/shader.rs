@@ -82,7 +82,7 @@ macro_rules! gen_uniform_setter {
 				let loc = self.gl.get_uniform_location(self.program, name);
 
 				if loc.is_none() {
-					log::warn!(concat!(
+					log::debug!(concat!(
 						"Attempted to access uniform {:?} (type matrix [",
 						stringify!($ty),
 						"; ",
@@ -103,7 +103,7 @@ macro_rules! gen_uniform_setter {
 				let loc = self.gl.get_uniform_location(self.program, name);
 
 				if loc.is_none() {
-					log::warn!(concat!(
+					log::debug!(concat!(
 						"Attempted to access uniform {:?} (type [",
 						stringify!($ty),
 						"; ",
@@ -124,7 +124,7 @@ macro_rules! gen_uniform_setter {
 				let loc = self.gl.get_uniform_location(self.program, name);
 
 				if loc.is_none() {
-					log::warn!(concat!(
+					log::debug!(concat!(
 						"Attempted to access uniform {:?} (type ",
 						stringify!($ty),
 						"), which does not exist"
