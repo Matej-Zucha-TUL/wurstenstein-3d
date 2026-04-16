@@ -339,17 +339,11 @@ impl App {
 
 		assert_eq!(width * height * 3, raw_img.len() as i32);
 
-		// does not work fsr
-		// let tex = gl.create_named_texture(TEXTURE_2D).unwrap();
-		// gl.texture_sub_image_2d(tex, 0, 0, 0, width, height, RGB8, UNSIGNED_BYTE, PixelUnpackData::Slice(Some(&raw_img)));
-		// gl.texture_parameter_i32(tex, TEXTURE_MIN_FILTER, NEAREST as i32);
-		// gl.texture_parameter_i32(tex, TEXTURE_MAG_FILTER, LINEAR as i32);
-
-		let tex = gl.create_texture().unwrap();
-		gl.bind_texture(TEXTURE_2D, Some(tex));
-		gl.tex_image_2d(TEXTURE_2D, 0, RGB as i32, width, height, 0, RGB, UNSIGNED_BYTE, PixelUnpackData::Slice(Some(&raw_img)));
-		gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST as i32);
-		gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR as i32);
+		let tex = gl.create_named_texture(TEXTURE_2D).unwrap();
+		gl.texture_storage_2d(tex, 1, RGB8, width, height);
+		gl.texture_sub_image_2d(tex, 0, 0, 0, width, height, RGB, UNSIGNED_BYTE, PixelUnpackData::Slice(Some(&raw_img)));
+		gl.texture_parameter_i32(tex, TEXTURE_MIN_FILTER, NEAREST as i32);
+		gl.texture_parameter_i32(tex, TEXTURE_MAG_FILTER, LINEAR as i32);
 
 		let file_dialog = egui_file_dialog::FileDialog::new()
 			.movable(false)
@@ -722,7 +716,6 @@ impl App {
 		self.gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
 
 		self.gl.bind_vertex_array(Some(self.assets.vao));
-		self.gl.bind_texture(TEXTURE_2D, Some(self.assets.tex));
 		self.gl.bind_texture_unit(0, Some(self.assets.tex));
 
 		self.state.model_rotate += dt * 50.0;
