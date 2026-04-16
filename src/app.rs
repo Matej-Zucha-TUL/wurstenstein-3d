@@ -17,7 +17,7 @@ use raw_window_handle::HasWindowHandle;
 use tobj::Mesh;
 use winit::{
 	dpi::PhysicalSize,
-	event::{DeviceEvent, ElementState, KeyEvent, WindowEvent},
+	event::{DeviceEvent, ElementState, KeyEvent, MouseScrollDelta, WindowEvent},
 	event_loop::ActiveEventLoop,
 	keyboard::{Key, KeyCode, NamedKey, PhysicalKey},
 	window::{CursorGrabMode, Fullscreen, Window}
@@ -487,6 +487,10 @@ impl App {
 		self.debug.cursor_y += delta.1;
 	}
 
+	fn handle_mouse_wheel(&mut self, dy: f32) {
+		self.world.camera.scroll_wheel_interact(dy / 5.0);
+	}
+
 	fn update_camera(&mut self, dt: f32) {
 		self.world.camera.set_pov(self.state.pov_camera);
 		self.world.camera.set_target(glm::vec3(0.0, 0.0, -10.0));
@@ -546,6 +550,7 @@ impl App {
 						ui.vertical(|ui| {
 							ui.label(format!("Camera yaw: {:.3}", yaw));
 							ui.label(format!("Camera pitch: {:.3}", pitch));
+							ui.label(format!("Camera FOV: {:.3}", self.world.camera.get_zoom()));
 						})
 					});
 
@@ -799,8 +804,20 @@ impl App {
 	}
 
 	pub fn handle_device_event(&mut self, _event_loop: &ActiveEventLoop, event: DeviceEvent) {
-		if let DeviceEvent::MouseMotion { delta } = event && self.screen_config.cursor_lock {
-			self.handle_mouse_motion_event(delta);
+		match event {
+			DeviceEvent::MouseMotion { delta } => {
+				if self.screen_config.cursor_lock {
+					self.handle_mouse_motion_event(delta);
+				}
+			}
+			DeviceEvent::MouseWheel { delta } => {
+				if !self.screen_config.cursor_lock { return };
+
+				if let MouseScrollDelta::LineDelta(_, y) = delta {
+					self.handle_mouse_wheel(y);
+				}
+			},
+			_ => {}
 		}
 	}
 

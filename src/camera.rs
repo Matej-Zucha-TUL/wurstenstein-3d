@@ -140,7 +140,7 @@ impl Camera {
 	}
 
 	pub fn scroll_wheel_interact(&mut self, delta: f32) {
-		self.zoom = (self.zoom + delta).clamp(1.0, 55.0);
+		self.zoom = (self.zoom + delta).clamp(30.0, 150.0);
 	}
 
 	fn update_vectors(&mut self) {
