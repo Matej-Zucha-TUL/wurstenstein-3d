@@ -7,10 +7,7 @@ use glutin::{
 	surface::{GlSurface, Surface, SwapInterval, WindowSurface},
 };
 use glutin_winit::{DisplayBuilder, GlWindow};
-use image::{
-	ExtendedColorType, ImageEncoder, ImageReader,
-	codecs::png::PngEncoder
-};
+use image::{ExtendedColorType, ImageEncoder, ImageReader, codecs::png::PngEncoder};
 use log::*;
 use nalgebra_glm as glm;
 use raw_window_handle::HasWindowHandle;
@@ -20,17 +17,17 @@ use winit::{
 	event::{DeviceEvent, ElementState, KeyEvent, MouseScrollDelta, WindowEvent},
 	event_loop::ActiveEventLoop,
 	keyboard::{Key, KeyCode, NamedKey, PhysicalKey},
-	window::{CursorGrabMode, Fullscreen, Window}
+	window::{CursorGrabMode, Fullscreen, Window},
 };
 
-use std::sync::Arc;
-use std::time::{SystemTime, Duration};
 use std::io::Cursor;
 use std::num::NonZeroU32;
+use std::sync::Arc;
+use std::time::{Duration, SystemTime};
 
-use crate::config::Config;
 use crate::camera::{Camera, Directions};
-use crate::shader::{ProgramBuilder, ShaderType, Program};
+use crate::config::Config;
+use crate::shader::{Program, ProgramBuilder, ShaderType};
 
 fn opengl_callback(src: u32, kind: u32, id: u32, severity: u32, msg: &str) {
 	let src = match src {
@@ -79,7 +76,7 @@ pub struct App {
 	perf: Perf,
 	world: World,
 	state: State,
-	debug: DebugStuff
+	debug: DebugStuff,
 }
 
 struct Assets {
@@ -87,7 +84,7 @@ struct Assets {
 	rizz_program: Program,
 	vao: NativeVertexArray,
 	tex: NativeTexture,
-	mesh: Mesh
+	mesh: Mesh,
 }
 
 struct State {
@@ -106,7 +103,7 @@ struct State {
 	move_up: bool,
 	move_down: bool,
 	move_fast: bool,
-	model_rotate: f32
+	model_rotate: f32,
 }
 
 impl Default for State {
@@ -133,13 +130,13 @@ impl Default for State {
 }
 
 struct World {
-	camera: Camera
+	camera: Camera,
 }
 
 impl Default for World {
 	fn default() -> Self {
 		Self {
-			camera: Camera::new(glm::vec3(0.0, 0.0, 10.0))
+			camera: Camera::new(glm::vec3(0.0, 0.0, 10.0)),
 		}
 	}
 }
@@ -161,7 +158,7 @@ impl Default for Perf {
 			last_time: start_time,
 			last_update: start_time,
 			fps_update_interval: Duration::from_millis(500),
-			fps_string: "FPS = ???".into()
+			fps_string: "FPS = ???".into(),
 		}
 	}
 }
@@ -169,7 +166,7 @@ impl Default for Perf {
 struct ScreenConfig {
 	cursor_lock: bool,
 	fullscreen: bool,
-	vsync: bool
+	vsync: bool,
 }
 
 impl Default for ScreenConfig {
@@ -177,28 +174,33 @@ impl Default for ScreenConfig {
 		Self {
 			cursor_lock: true,
 			fullscreen: false,
-			vsync: true
+			vsync: true,
 		}
 	}
 }
 
 struct DebugStuff {
 	cursor_x: f64,
-	cursor_y: f64
+	cursor_y: f64,
 }
 
 impl Default for DebugStuff {
 	fn default() -> Self {
 		Self {
 			cursor_x: 0.0,
-			cursor_y: 0.0
+			cursor_y: 0.0,
 		}
 	}
 }
 
 #[allow(unsafe_op_in_unsafe_fn)]
 impl App {
-	pub unsafe fn init(event_loop: &ActiveEventLoop, config: Config, display_builder: DisplayBuilder, template: ConfigTemplateBuilder) -> Self {
+	pub unsafe fn init(
+		event_loop: &ActiveEventLoop,
+		config: Config,
+		display_builder: DisplayBuilder,
+		template: ConfigTemplateBuilder,
+	) -> Self {
 		let (window, gl_config) = display_builder
 			.build(event_loop, template, |configs| {
 				configs
@@ -291,7 +293,9 @@ impl App {
 		assert_eq!(mesh.positions.len() / 3, mesh.normals.len() / 3);
 		assert_eq!(mesh.positions.len() / 3, mesh.texcoords.len() / 2);
 
-		let merged_vertices = mesh.positions.chunks(3)
+		let merged_vertices = mesh
+			.positions
+			.chunks(3)
 			.zip(mesh.normals.chunks(3))
 			.zip(mesh.texcoords.chunks(2))
 			.flat_map(|((p, n), t)| [p[0], p[1], p[2], n[0], n[1], n[2], t[0], t[1]])
@@ -301,9 +305,15 @@ impl App {
 		let vbo = gl.create_named_buffer().unwrap();
 		let ebo = gl.create_named_buffer().unwrap();
 
-		let position = gl.get_attrib_location(normal_program.program, "aPos").unwrap();
-		let normal = gl.get_attrib_location(normal_program.program, "aNormal").unwrap();
-		let texcoords = gl.get_attrib_location(normal_program.program, "aTexCoord").unwrap();
+		let position = gl
+			.get_attrib_location(normal_program.program, "aPos")
+			.unwrap();
+		let normal = gl
+			.get_attrib_location(normal_program.program, "aNormal")
+			.unwrap();
+		let texcoords = gl
+			.get_attrib_location(normal_program.program, "aTexCoord")
+			.unwrap();
 
 		gl.vertex_array_attrib_format_f32(vao, position, 3, FLOAT, false, 0);
 		gl.vertex_array_attrib_binding_f32(vao, position, 0);
@@ -323,7 +333,10 @@ impl App {
 		gl.vertex_array_vertex_buffer(vao, 0, Some(vbo), 0, 32);
 		gl.vertex_array_element_buffer(vao, Some(ebo));
 
-		let image = ImageReader::open("assets/objects/pastry/pastry_tex.png").unwrap().decode().unwrap();
+		let image = ImageReader::open("assets/objects/pastry/pastry_tex.png")
+			.unwrap()
+			.decode()
+			.unwrap();
 		let width = image.width() as i32;
 		let height = image.height() as i32;
 		let raw_img = image.flipv().into_rgb8().into_raw();
@@ -332,7 +345,17 @@ impl App {
 
 		let tex = gl.create_named_texture(TEXTURE_2D).unwrap();
 		gl.texture_storage_2d(tex, 1, RGB8, width, height);
-		gl.texture_sub_image_2d(tex, 0, 0, 0, width, height, RGB, UNSIGNED_BYTE, PixelUnpackData::Slice(Some(&raw_img)));
+		gl.texture_sub_image_2d(
+			tex,
+			0,
+			0,
+			0,
+			width,
+			height,
+			RGB,
+			UNSIGNED_BYTE,
+			PixelUnpackData::Slice(Some(&raw_img)),
+		);
 		gl.texture_parameter_i32(tex, TEXTURE_MIN_FILTER, NEAREST as i32);
 		gl.texture_parameter_i32(tex, TEXTURE_MAG_FILTER, LINEAR as i32);
 
@@ -345,20 +368,14 @@ impl App {
 
 		window.set_visible(true);
 
-		let egui = egui_glow::EguiGlow::new(
-			event_loop,
-			gl.clone(),
-			None,
-			None,
-			true,
-		);
+		let egui = egui_glow::EguiGlow::new(event_loop, gl.clone(), None, None, true);
 
 		let assets = Assets {
 			normal_program,
 			rizz_program,
 			vao,
 			tex,
-			mesh
+			mesh,
 		};
 
 		let world = World::default();
@@ -379,7 +396,7 @@ impl App {
 			perf,
 			world,
 			state,
-			debug
+			debug,
 		};
 
 		app.update_cursor_lock();
@@ -482,7 +499,9 @@ impl App {
 	}
 
 	fn handle_mouse_motion_event(&mut self, delta: (f64, f64)) {
-		self.world.camera.mouse_interact(delta.0 as f32, delta.1 as f32);
+		self.world
+			.camera
+			.mouse_interact(delta.0 as f32, delta.1 as f32);
 		self.debug.cursor_x += delta.0;
 		self.debug.cursor_y += delta.1;
 	}
@@ -536,8 +555,13 @@ impl App {
 
 					ui.add_space(4.0);
 
-					let [x, y, z] =
-						self.world.camera.get_position().as_slice().try_into().unwrap();
+					let [x, y, z] = self
+						.world
+						.camera
+						.get_position()
+						.as_slice()
+						.try_into()
+						.unwrap();
 					let (yaw, pitch) = self.world.camera.get_yaw_pitch();
 
 					ui.horizontal(|ui| {
@@ -589,7 +613,10 @@ impl App {
 					});
 
 					ui.label("Specular shininess");
-					ui.add(egui::Slider::new(&mut self.state.specular_shininess, 1.0..=100.0));
+					ui.add(egui::Slider::new(
+						&mut self.state.specular_shininess,
+						1.0..=100.0,
+					));
 
 					ui.horizontal(|ui| {
 						ui.color_edit_button_rgb(
@@ -612,18 +639,32 @@ impl App {
 	fn update_perf(&mut self, dt: f32) {
 		let fps = 1.0 / dt;
 
-		if self.perf.last_update.elapsed().unwrap() >= self.perf.fps_update_interval
-		{
+		if self.perf.last_update.elapsed().unwrap() >= self.perf.fps_update_interval {
 			self.perf.fps_string = format!("FPS = {:.1}", fps);
-			let vsync_string =
-				format!("VSync = {}", if self.screen_config.vsync { "on" } else { "off" });
-			let cursor_lock_string =
-				format!("Cursor lock = {}", if self.screen_config.cursor_lock { "on" } else { "off" });
+			let vsync_string = format!(
+				"VSync = {}",
+				if self.screen_config.vsync {
+					"on"
+				} else {
+					"off"
+				}
+			);
+			let cursor_lock_string = format!(
+				"Cursor lock = {}",
+				if self.screen_config.cursor_lock {
+					"on"
+				} else {
+					"off"
+				}
+			);
 			self.window.set_title(&format!(
 				"Triangle - {}, {}, {}",
 				self.perf.fps_string, vsync_string, cursor_lock_string
 			));
-			info!("{}, {}, {}", self.perf.fps_string, vsync_string, cursor_lock_string);
+			info!(
+				"{}, {}, {}",
+				self.perf.fps_string, vsync_string, cursor_lock_string
+			);
 			self.perf.last_update = SystemTime::now();
 		}
 	}
@@ -668,7 +709,8 @@ impl App {
 
 	fn update_cursor_lock(&mut self) {
 		if self.screen_config.cursor_lock {
-			if let Err(err) = self.window
+			if let Err(err) = self
+				.window
 				.set_cursor_grab(CursorGrabMode::Confined)
 				.or_else(|_| self.window.set_cursor_grab(CursorGrabMode::Locked))
 			{
@@ -688,7 +730,10 @@ impl App {
 		);
 
 		let new_time = SystemTime::now();
-		let dt = new_time.duration_since(self.perf.last_time).unwrap().as_secs_f32();
+		let dt = new_time
+			.duration_since(self.perf.last_time)
+			.unwrap()
+			.as_secs_f32();
 		self.perf.last_time = new_time;
 
 		if self.screen_config.cursor_lock {
@@ -709,15 +754,15 @@ impl App {
 		self.gl.enable(glow::DEPTH_TEST);
 
 		self.gl.clear_color(r, g, b, a);
-		self.gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+		self.gl
+			.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
 
 		self.gl.bind_vertex_array(Some(self.assets.vao));
 		self.gl.bind_texture_unit(0, Some(self.assets.tex));
 
 		self.state.model_rotate += dt * 50.0;
 
-		let aspect =
-			self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
+		let aspect = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
 		let projection_mtx = glm::perspective(
 			aspect,
 			self.world.camera.get_zoom().to_radians(),
@@ -729,23 +774,23 @@ impl App {
 
 		let program = match self.state.rizz_mode {
 			false => &self.assets.normal_program,
-			true => &self.assets.rizz_program
+			true => &self.assets.rizz_program,
 		};
 
 		program.activate();
 		// program.set_uniform_f32_4("selected_color", &triangle_color);
 		program.set_uniform_matrix_f32_4(
 			"view",
-			self.world.camera.get_view_matrix().as_slice().try_into().unwrap(),
+			self.world
+				.camera
+				.get_view_matrix()
+				.as_slice()
+				.try_into()
+				.unwrap(),
 		);
-		program.set_uniform_matrix_f32_4(
-			"projection",
-			projection_mtx.as_slice().try_into().unwrap(),
-		);
-		program.set_uniform_matrix_f32_4(
-			"model",
-			model_mtx.as_slice().try_into().unwrap(),
-		);
+		program
+			.set_uniform_matrix_f32_4("projection", projection_mtx.as_slice().try_into().unwrap());
+		program.set_uniform_matrix_f32_4("model", model_mtx.as_slice().try_into().unwrap());
 		program.set_uniform_f32("screen_w", self.window.inner_size().width as f32);
 		program.set_uniform_f32("screen_h", self.window.inner_size().height as f32);
 		program.set_uniform_f32(
@@ -778,7 +823,9 @@ impl App {
 		self.window.request_redraw();
 
 		self.window.set_fullscreen(
-			self.screen_config.fullscreen.then_some(Fullscreen::Borderless(self.window.current_monitor())),
+			self.screen_config
+				.fullscreen
+				.then_some(Fullscreen::Borderless(self.window.current_monitor())),
 		);
 
 		if self.screen_config.vsync {
@@ -811,12 +858,14 @@ impl App {
 				}
 			}
 			DeviceEvent::MouseWheel { delta } => {
-				if !self.screen_config.cursor_lock { return };
+				if !self.screen_config.cursor_lock {
+					return;
+				};
 
 				if let MouseScrollDelta::LineDelta(_, y) = delta {
 					self.handle_mouse_wheel(y);
 				}
-			},
+			}
 			_ => {}
 		}
 	}
@@ -831,14 +880,13 @@ impl App {
 			WindowEvent::CloseRequested => {
 				event_loop.exit();
 			}
-			WindowEvent::Resized(new_size) => {
-				unsafe { self.handle_resize_event(new_size); }
-			}
-			WindowEvent::RedrawRequested => {
-				unsafe { self.redraw(event_loop); }
-			}
+			WindowEvent::Resized(new_size) => unsafe {
+				self.handle_resize_event(new_size);
+			},
+			WindowEvent::RedrawRequested => unsafe {
+				self.redraw(event_loop);
+			},
 			_ => {}
 		}
 	}
 }
-

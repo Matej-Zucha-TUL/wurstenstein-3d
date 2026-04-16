@@ -4,7 +4,7 @@ use log::*;
 use winit::{
 	application::ApplicationHandler,
 	event::{DeviceEvent, WindowEvent},
-	event_loop::ActiveEventLoop
+	event_loop::ActiveEventLoop,
 };
 
 use std::sync::OnceLock;
@@ -19,10 +19,9 @@ use config::Config;
 
 mod shader;
 
-
 struct WinitApp {
 	preinit: Option<PreInitData>,
-	app: OnceLock<App>
+	app: OnceLock<App>,
 }
 
 struct PreInitData {
@@ -33,8 +32,17 @@ struct PreInitData {
 
 impl ApplicationHandler for WinitApp {
 	fn resumed(&mut self, event_loop: &ActiveEventLoop) {
-		let Some(PreInitData { config, display_builder, template }) = self.preinit.take() else { return };
-		let _ = self.app.set(unsafe { App::init(event_loop, config, display_builder, template) });
+		let Some(PreInitData {
+			config,
+			display_builder,
+			template,
+		}) = self.preinit.take()
+		else {
+			return;
+		};
+		let _ = self
+			.app
+			.set(unsafe { App::init(event_loop, config, display_builder, template) });
 	}
 
 	fn device_event(
@@ -43,7 +51,10 @@ impl ApplicationHandler for WinitApp {
 		_device_id: winit::event::DeviceId,
 		event: DeviceEvent,
 	) {
-		self.app.get_mut().unwrap().handle_device_event(event_loop, event);
+		self.app
+			.get_mut()
+			.unwrap()
+			.handle_device_event(event_loop, event);
 	}
 
 	fn window_event(
@@ -52,14 +63,15 @@ impl ApplicationHandler for WinitApp {
 		_window_id: winit::window::WindowId,
 		event: WindowEvent,
 	) {
-		self.app.get_mut().unwrap().handle_window_event(event_loop, event);
+		self.app
+			.get_mut()
+			.unwrap()
+			.handle_window_event(event_loop, event);
 	}
 }
 
 fn main() {
-	env_logger::builder()
-		.filter_level(LevelFilter::Info)
-		.init();
+	env_logger::builder().filter_level(LevelFilter::Info).init();
 
 	// Load config
 
@@ -88,7 +100,7 @@ fn main() {
 		preinit: Some(PreInitData {
 			config,
 			display_builder,
-			template
+			template,
 		}),
 		app: OnceLock::new(),
 	};

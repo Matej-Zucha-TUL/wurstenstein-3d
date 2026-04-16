@@ -8,13 +8,13 @@ pub struct WindowConfig {
 
 #[derive(Debug, Deserialize)]
 pub struct GraphicsConfig {
-	pub antialiasing: u8
+	pub antialiasing: u8,
 }
 
 #[derive(Debug, Deserialize)]
 pub struct Config {
 	pub window: WindowConfig,
-	pub graphics: GraphicsConfig
+	pub graphics: GraphicsConfig,
 }
 
 impl Config {
