@@ -516,8 +516,7 @@ fn main() {
 							0.1f32,
 							100.0f32,
 						);
-						let model_mtx =
-							glm::translate(&glm::Mat4::identity(), &glm::vec3(0.0, 0.0, -10.0));
+						let model_mtx = glm::translate(&glm::Mat4::identity(), &glm::vec3(0.0, 0.0, -10.0));
 						let model_mtx = glm::rotate_y(&model_mtx, model_rotate.to_radians());
 
 						let program = match rizz_mode {
