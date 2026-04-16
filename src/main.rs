@@ -84,6 +84,40 @@ fn screenshot(gl: &Context, window: &Window) {
 		.unwrap();
 }
 
+fn opengl_callback(src: u32, kind: u32, id: u32, severity: u32, msg: &str) {
+	let src = match src {
+		DEBUG_SOURCE_API => "API",
+		DEBUG_SOURCE_WINDOW_SYSTEM => "WINDOW SYSTEM",
+		DEBUG_SOURCE_SHADER_COMPILER => "SHADER COMPILER",
+		DEBUG_SOURCE_THIRD_PARTY => "THIRD PARTY",
+		DEBUG_SOURCE_APPLICATION => "APPLICATION",
+		DEBUG_SOURCE_OTHER => "OTHER",
+		_ => "Unknown",
+	};
+
+	let kind = match kind {
+		DEBUG_TYPE_ERROR => "ERROR",
+		DEBUG_TYPE_DEPRECATED_BEHAVIOR => "DEPRECATED_BEHAVIOR",
+		DEBUG_TYPE_UNDEFINED_BEHAVIOR => "UNDEFINED_BEHAVIOR",
+		DEBUG_TYPE_PORTABILITY => "PORTABILITY",
+		DEBUG_TYPE_PERFORMANCE => "PERFORMANCE",
+		DEBUG_TYPE_MARKER => "MARKER",
+		DEBUG_TYPE_OTHER => "OTHER",
+		_ => "Unknown",
+	};
+
+	let severity = match severity {
+		DEBUG_SEVERITY_NOTIFICATION => "NOTIFICATION",
+		DEBUG_SEVERITY_LOW => "LOW",
+		DEBUG_SEVERITY_MEDIUM => "MEDIUM",
+		DEBUG_SEVERITY_HIGH => "HIGH",
+		_ => "Unknown",
+	};
+
+	log::warn!(target: "GL", "{:?}", msg);
+	log::warn!(target: "GL", " -> from {src}, kind {kind}, severity {severity}, id {id}");
+}
+
 fn main() {
 	env_logger::builder()
 		.filter_level(log::LevelFilter::Info)
@@ -155,7 +189,11 @@ fn main() {
 
 		let gl_context = not_current_gl_context.make_current(&gl_surface).unwrap();
 
-		let gl = glow::Context::from_loader_function_cstr(|s| gl_display.get_proc_address(s));
+		let mut gl = glow::Context::from_loader_function_cstr(|s| gl_display.get_proc_address(s));
+
+		gl.debug_message_callback(opengl_callback);
+		gl.enable(DEBUG_OUTPUT);
+
 		let gl = Arc::new(gl);
 
 		gl_surface
@@ -245,18 +283,17 @@ fn main() {
 
 		assert_eq!(width * height * 3, raw_img.len() as i32);
 
+		// does not work fsr
+		// let tex = gl.create_named_texture(TEXTURE_2D).unwrap();
+		// gl.texture_sub_image_2d(tex, 0, 0, 0, width, height, RGB8, UNSIGNED_BYTE, PixelUnpackData::Slice(Some(&raw_img)));
+		// gl.texture_parameter_i32(tex, TEXTURE_MIN_FILTER, NEAREST as i32);
+		// gl.texture_parameter_i32(tex, TEXTURE_MAG_FILTER, LINEAR as i32);
+
 		let tex = gl.create_texture().unwrap();
 		gl.bind_texture(TEXTURE_2D, Some(tex));
 		gl.tex_image_2d(TEXTURE_2D, 0, RGB as i32, width, height, 0, RGB, UNSIGNED_BYTE, PixelUnpackData::Slice(Some(&raw_img)));
 		gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST as i32);
 		gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_MAG_FILTER, LINEAR as i32);
-
-		// does not work fsr
-		// let tex = gl.create_named_texture(TEXTURE_2D).unwrap();
-		// gl.texture_sub_image_2d(tex, 0, 0, 0, width, height, RGB8, UNSIGNED_BYTE, PixelUnpackData::Slice(Some(&raw_img)));
-		// println!("{}", gl.get_error());
-		// gl.texture_parameter_i32(tex, TEXTURE_MIN_FILTER, NEAREST as i32);
-		// gl.texture_parameter_i32(tex, TEXTURE_MAG_FILTER, LINEAR as i32);
 
 		let mut camera = Camera::new(glm::vec3(0.0, 0.0, 10.0));
 
