@@ -19,10 +19,11 @@ void main() {
 	vec4 coord = vec4(aPos * scale, 1.0);
 	vec4 model_coord = model * coord;
 	vec4 view_space_coord = view * model_coord;
+	vec3 camera_pos = vec3(view[3]);
 
 	normal = mat3(model) * aNormal;
 	obj_to_light = light_position - model_coord.xyz;
-	obj_to_camera = -view_space_coord.xyz;
+	obj_to_camera = camera_pos - model_coord.xyz;
 
 	gl_Position = projection * view_space_coord;
 	tex_coord = aTexCoord;
