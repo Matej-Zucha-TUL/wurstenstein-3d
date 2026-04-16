@@ -284,10 +284,10 @@ Each missing (non-functional) Essential nets -25 points (partial functionality =
 
 - [X] 3D GL Core profile + shaders version 4.6
 - [X] GL debug enabled
-- [ ] JSON config file
+- [X] ~JSON~ TOML config file
 - [X] high performance => at least 60 FPS (display FPS)
 - [X] allow VSync control
-- [ ] allow antialiasing
+- [X] allow antialiasing
 - [X] fullscreen vs. windowed switching
 - [ ] restore window position & size
 - [X] event processing (camera, object, app behaviour, ...): mouse (both axes, wheel), keyboard
