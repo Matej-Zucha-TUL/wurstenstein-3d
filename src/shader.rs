@@ -92,7 +92,7 @@ macro_rules! gen_uniform_setter {
 					return
 				}
 
-				self.gl.[<uniform_matrix_ $len _ $ty _slice>](loc.as_ref(), false, val);
+				self.gl.[<program_uniform_matrix_ $len _ $ty _slice>](self.program, loc.as_ref(), false, val);
 			}
 		}
 	} };
@@ -113,7 +113,7 @@ macro_rules! gen_uniform_setter {
 					return
 				}
 
-				self.gl.[<uniform_ $len _ $ty _slice>](loc.as_ref(), val);
+				self.gl.[<program_uniform_ $len _ $ty _slice>](self.program, loc.as_ref(), val);
 			}
 		}
 	} };
@@ -132,7 +132,7 @@ macro_rules! gen_uniform_setter {
 					return
 				}
 
-				self.gl.[<uniform_1_ $ty>](loc.as_ref(), val);
+				self.gl.[<program_uniform_1_ $ty>](self.program, loc.as_ref(), val);
 			}
 		}
 	} };
