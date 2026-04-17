@@ -725,7 +725,6 @@ impl App {
 				.unwrap()
 				.as_secs_f32(),
 		);
-		program.set_uniform_i32("tex_unit", 0);
 		program.set_uniform_f32("scale", self.state.scale);
 		program.set_uniform_f32("specular_shininess", self.state.specular_shininess);
 		program.set_uniform_f32_3("ambient_material", &self.state.ambient_color);
@@ -734,9 +733,7 @@ impl App {
 
 		self.init_drawing();
 
-		program.activate();
-
-		self.assets.model.draw();
+		self.assets.model.draw(program);
 
 		self.redraw_ui(event_loop);
 

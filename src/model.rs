@@ -15,7 +15,7 @@ struct ModelVertices {
 
 struct ModelTexture {
 	tex: NativeTexture,
-	texture_unit: Option<NativeUniformLocation>,
+	sampler: NativeUniformLocation
 }
 
 pub struct VertexAttributes {
@@ -27,7 +27,7 @@ pub struct VertexAttributes {
 pub struct Model {
 	gl: Arc<Context>,
 	vtx: OnceLock<ModelVertices>,
-	tex: OnceLock<ModelTexture>,
+	tex: Vec<ModelTexture>,
 }
 
 impl Model {
@@ -35,7 +35,7 @@ impl Model {
 		Self {
 			gl,
 			vtx: OnceLock::new(),
-			tex: OnceLock::new(),
+			tex: Vec::new(),
 		}
 	}
 
@@ -124,7 +124,7 @@ impl Model {
 		assert_eq!(width * height * 3, raw_img.len() as i32);
 
 		let tex;
-		let texture_unit;
+		let sampler;
 
 		unsafe {
 			tex = self.gl.create_named_texture(TEXTURE_2D).unwrap();
@@ -145,22 +145,26 @@ impl Model {
 			self.gl
 				.texture_parameter_i32(tex, TEXTURE_MAG_FILTER, LINEAR as i32);
 
-			texture_unit = self
+			sampler = self
 				.gl
 				.get_uniform_location(program.program, sampler_attrib);
 		}
 
-		if texture_unit.is_none() {
+		let Some(sampler) = sampler else {
 			warn!("Sampler {} not found in shader program", sampler_attrib);
-		}
+			return
+		};
 
-		let _ = self.tex.set(ModelTexture { tex, texture_unit });
+		self.tex.push(ModelTexture { tex, sampler });
 	}
 
-	pub fn draw(&self) {
+	pub fn draw(&self, program: &Program) {
+		program.activate();
+
 		unsafe {
-			if let Some(tex) = self.tex.get() {
-				self.gl.bind_texture_unit(0, Some(tex.tex));
+			for (tex_unit, tex) in self.tex.iter().enumerate() {
+				self.gl.program_uniform_1_i32(program.program, Some(&tex.sampler), tex_unit as i32);
+				self.gl.bind_texture_unit(tex_unit as u32, Some(tex.tex));
 			}
 
 			if let Some(vtx) = self.vtx.get() {
