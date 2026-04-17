@@ -179,8 +179,8 @@ impl Default for DebugStuff {
 	}
 }
 
-#[allow(unsafe_op_in_unsafe_fn)]
 impl App {
+	#[allow(unsafe_op_in_unsafe_fn)]
 	pub unsafe fn init(
 		event_loop: &ActiveEventLoop,
 		config: Config,
@@ -582,7 +582,7 @@ impl App {
 		self.egui.paint(&self.window);
 	}
 
-	fn update_perf(&mut self, dt: f32) {
+	fn update_perf_data(&mut self, dt: f32) {
 		let fps = 1.0 / dt;
 
 		if self.perf.last_update.elapsed().unwrap() >= self.perf.fps_update_interval {
@@ -633,7 +633,9 @@ impl App {
 			);
 		}
 
-		let mut out_file = std::fs::File::create("skibidi.png").unwrap();
+		let mut out_file = std::fs::File::create("screenshot.png").unwrap();
+
+		// Reverse the rows so that the image is not upside down
 
 		let buf = buf
 			.chunks(width * 4)
@@ -642,8 +644,7 @@ impl App {
 			.copied()
 			.collect::<Vec<_>>();
 
-		let encoder = PngEncoder::new(&mut out_file);
-		encoder
+		PngEncoder::new(&mut out_file)
 			.write_image(
 				buf.as_slice(),
 				width as u32,
@@ -669,18 +670,11 @@ impl App {
 		}
 	}
 
-	unsafe fn redraw(&mut self, event_loop: &ActiveEventLoop) {
+	fn enforce_cursor_lock(&self) {
 		let middle_point = winit::dpi::LogicalPosition::new(
 			self.window.inner_size().width / 2,
 			self.window.inner_size().height / 2,
 		);
-
-		let new_time = SystemTime::now();
-		let dt = new_time
-			.duration_since(self.perf.last_time)
-			.unwrap()
-			.as_secs_f32();
-		self.perf.last_time = new_time;
 
 		if self.screen_config.cursor_lock {
 			self.window.set_cursor_visible(false);
@@ -688,10 +682,41 @@ impl App {
 		} else {
 			self.window.set_cursor_visible(true);
 		}
+	}
+
+	fn enforce_vsync(&self) {
+		if self.screen_config.vsync {
+			self.gl_surface
+				.set_swap_interval(
+					&self.gl_context,
+					SwapInterval::Wait(NonZeroU32::new(1).unwrap()),
+				)
+				.unwrap();
+		} else {
+			self.gl_surface
+				.set_swap_interval(&self.gl_context, SwapInterval::DontWait)
+				.unwrap();
+		}
+	}
+
+	fn enforce_fullscreen(&self) {
+		self.window.set_fullscreen(
+			self.screen_config
+				.fullscreen
+				.then_some(Fullscreen::Borderless(self.window.current_monitor())),
+		);
+	}
+
+	#[allow(unsafe_op_in_unsafe_fn)]
+	unsafe fn redraw(&mut self, event_loop: &ActiveEventLoop) {
+		let new_time = SystemTime::now();
+		let dt = new_time
+			.duration_since(self.perf.last_time)
+			.unwrap()
+			.as_secs_f32();
+		self.perf.last_time = new_time;
 
 		self.update_camera(dt);
-
-		let [r, g, b, a] = self.state.background_color;
 
 		self.gl.enable(CULL_FACE);
 		self.gl.cull_face(FRONT);
@@ -699,6 +724,7 @@ impl App {
 
 		self.gl.enable(DEPTH_TEST);
 
+		let [r, g, b, a] = self.state.background_color;
 		self.gl.clear_color(r, g, b, a);
 		self.gl.clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
 
@@ -714,6 +740,7 @@ impl App {
 			0.1f32,
 			100.0f32,
 		);
+
 		let model_mtx = glm::translate(&glm::Mat4::identity(), &glm::vec3(0.0, 0.0, -10.0));
 		let model_mtx = glm::rotate_y(&model_mtx, self.state.model_rotate.to_radians());
 
@@ -723,7 +750,6 @@ impl App {
 		};
 
 		program.activate();
-		// program.set_uniform_f32_4("selected_color", &triangle_color);
 		program.set_uniform_matrix_f32_4(
 			"view",
 			self.world
@@ -740,7 +766,8 @@ impl App {
 		program.set_uniform_f32("screen_h", self.window.inner_size().height as f32);
 		program.set_uniform_f32(
 			"time",
-			SystemTime::now()
+			self.perf
+				.last_time
 				.duration_since(self.perf.start_time)
 				.unwrap()
 				.as_secs_f32(),
@@ -762,32 +789,15 @@ impl App {
 		self.redraw_ui(event_loop);
 
 		self.gl_surface.swap_buffers(&self.gl_context).unwrap();
-
-		self.update_perf(dt);
-
 		self.window.request_redraw();
 
-		self.window.set_fullscreen(
-			self.screen_config
-				.fullscreen
-				.then_some(Fullscreen::Borderless(self.window.current_monitor())),
-		);
-
-		if self.screen_config.vsync {
-			self.gl_surface
-				.set_swap_interval(
-					&self.gl_context,
-					SwapInterval::Wait(NonZeroU32::new(1).unwrap()),
-				)
-				.unwrap();
-		} else {
-			self.gl_surface
-				.set_swap_interval(&self.gl_context, SwapInterval::DontWait)
-				.unwrap();
-		}
+		self.update_perf_data(dt);
+		self.enforce_fullscreen();
+		self.enforce_vsync();
+		self.enforce_cursor_lock();
 	}
 
-	unsafe fn handle_resize_event(&mut self, new_size: PhysicalSize<u32>) {
+	fn handle_resize_event(&mut self, new_size: PhysicalSize<u32>) {
 		self.gl_surface.resize(
 			&self.gl_context,
 			new_size.width.try_into().unwrap(),
@@ -825,9 +835,9 @@ impl App {
 			WindowEvent::CloseRequested => {
 				event_loop.exit();
 			}
-			WindowEvent::Resized(new_size) => unsafe {
+			WindowEvent::Resized(new_size) => {
 				self.handle_resize_event(new_size);
-			},
+			}
 			WindowEvent::RedrawRequested => unsafe {
 				self.redraw(event_loop);
 			},
