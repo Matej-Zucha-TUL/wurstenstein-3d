@@ -96,13 +96,6 @@ struct State {
 	rizz_mode: bool,
 	pov_camera: bool,
 	scale: f32,
-	move_forward: bool,
-	move_backward: bool,
-	move_left: bool,
-	move_right: bool,
-	move_up: bool,
-	move_down: bool,
-	move_fast: bool,
 	model_rotate: f32,
 }
 
@@ -117,13 +110,6 @@ impl Default for State {
 			rizz_mode: false,
 			pov_camera: false,
 			scale: 50.0,
-			move_forward: false,
-			move_backward: false,
-			move_left: false,
-			move_right: false,
-			move_up: false,
-			move_down: false,
-			move_fast: false,
 			model_rotate: 0.0,
 		}
 	}
@@ -408,92 +394,77 @@ impl App {
 		info!("{:?} key: {:?}", event.state, event.physical_key);
 
 		if event.state == ElementState::Pressed {
-			if event.logical_key == Key::Named(NamedKey::Escape) {
-				event_loop.exit();
+			match event.logical_key {
+				Key::Named(NamedKey::Escape) => event_loop.exit(),
+				Key::Character(x) if x == "v" => {
+					self.screen_config.vsync = !self.screen_config.vsync;
+					info!("VSync = {}", self.screen_config.vsync);
+				}
+				Key::Character(x) if x == "p" => {
+					self.state.pov_camera = !self.state.pov_camera;
+					info!("POV camera = {}", self.state.pov_camera);
+				}
+				Key::Character(x) if x == "f" => {
+					self.screen_config.fullscreen = !self.screen_config.fullscreen;
+					info!("Fullscreen = {}", self.screen_config.fullscreen);
+				}
+				Key::Character(x) if x == "o" => {
+					self.take_screenshot();
+				}
+				Key::Character(x) if x == "l" => {
+					self.screen_config.cursor_lock = !self.screen_config.cursor_lock;
+					self.update_cursor_lock();
+					info!("Cursor lock = {}", self.screen_config.cursor_lock);
+				}
+				_ => {}
 			}
 
-			if event.logical_key == Key::Character("v".into()) {
-				self.screen_config.vsync = !self.screen_config.vsync;
-				info!("VSync = {}", self.screen_config.vsync);
-			}
-
-			if event.logical_key == Key::Character("p".into()) {
-				self.state.pov_camera = !self.state.pov_camera;
-				info!("POV camera = {}", self.state.pov_camera);
-			}
-
-			if event.logical_key == Key::Character("f".into()) {
-				self.screen_config.fullscreen = !self.screen_config.fullscreen;
-				info!("Fullscreen = {}", self.screen_config.fullscreen);
-			}
-
-			if event.logical_key == Key::Character("o".into()) {
-				self.take_screenshot();
-			}
-
-			if event.logical_key == Key::Character("l".into()) {
-				self.screen_config.cursor_lock = !self.screen_config.cursor_lock;
-				info!("Cursor lock = {}", self.screen_config.cursor_lock);
-
-				self.update_cursor_lock();
-			}
-
-			if event.physical_key == PhysicalKey::Code(KeyCode::ShiftLeft) {
-				self.state.move_fast = true;
-			}
-
-			if event.physical_key == PhysicalKey::Code(KeyCode::KeyW) {
-				self.state.move_forward = true;
-			}
-
-			if event.physical_key == PhysicalKey::Code(KeyCode::KeyS) {
-				self.state.move_backward = true;
-			}
-
-			if event.physical_key == PhysicalKey::Code(KeyCode::KeyA) {
-				self.state.move_left = true;
-			}
-
-			if event.physical_key == PhysicalKey::Code(KeyCode::KeyD) {
-				self.state.move_right = true;
-			}
-
-			if event.physical_key == PhysicalKey::Code(KeyCode::ControlLeft) {
-				self.state.move_down = true;
-			}
-
-			if event.physical_key == PhysicalKey::Code(KeyCode::Space) {
-				self.state.move_up = true;
+			match event.physical_key {
+				PhysicalKey::Code(KeyCode::ShiftLeft) => self.world.camera.move_fast(true),
+				PhysicalKey::Code(KeyCode::KeyW) => {
+					self.world.camera.key_interact(Directions::Forward, true)
+				}
+				PhysicalKey::Code(KeyCode::KeyS) => {
+					self.world.camera.key_interact(Directions::Backward, true)
+				}
+				PhysicalKey::Code(KeyCode::KeyA) => {
+					self.world.camera.key_interact(Directions::Left, true)
+				}
+				PhysicalKey::Code(KeyCode::KeyD) => {
+					self.world.camera.key_interact(Directions::Right, true)
+				}
+				PhysicalKey::Code(KeyCode::ControlLeft) => {
+					self.world.camera.key_interact(Directions::Down, true)
+				}
+				PhysicalKey::Code(KeyCode::Space) => {
+					self.world.camera.key_interact(Directions::Up, true)
+				}
+				_ => {}
 			}
 		}
 
 		if event.state == ElementState::Released {
-			if event.physical_key == PhysicalKey::Code(KeyCode::ShiftLeft) {
-				self.state.move_fast = false;
-			}
-
-			if event.physical_key == PhysicalKey::Code(KeyCode::KeyW) {
-				self.state.move_forward = false;
-			}
-
-			if event.physical_key == PhysicalKey::Code(KeyCode::KeyS) {
-				self.state.move_backward = false;
-			}
-
-			if event.physical_key == PhysicalKey::Code(KeyCode::KeyA) {
-				self.state.move_left = false;
-			}
-
-			if event.physical_key == PhysicalKey::Code(KeyCode::KeyD) {
-				self.state.move_right = false;
-			}
-
-			if event.physical_key == PhysicalKey::Code(KeyCode::ControlLeft) {
-				self.state.move_down = false;
-			}
-
-			if event.physical_key == PhysicalKey::Code(KeyCode::Space) {
-				self.state.move_up = false;
+			match event.physical_key {
+				PhysicalKey::Code(KeyCode::ShiftLeft) => self.world.camera.move_fast(false),
+				PhysicalKey::Code(KeyCode::KeyW) => {
+					self.world.camera.key_interact(Directions::Forward, false)
+				}
+				PhysicalKey::Code(KeyCode::KeyS) => {
+					self.world.camera.key_interact(Directions::Backward, false)
+				}
+				PhysicalKey::Code(KeyCode::KeyA) => {
+					self.world.camera.key_interact(Directions::Left, false)
+				}
+				PhysicalKey::Code(KeyCode::KeyD) => {
+					self.world.camera.key_interact(Directions::Right, false)
+				}
+				PhysicalKey::Code(KeyCode::ControlLeft) => {
+					self.world.camera.key_interact(Directions::Down, false)
+				}
+				PhysicalKey::Code(KeyCode::Space) => {
+					self.world.camera.key_interact(Directions::Up, false)
+				}
+				_ => {}
 			}
 		}
 	}
@@ -513,32 +484,7 @@ impl App {
 	fn update_camera(&mut self, dt: f32) {
 		self.world.camera.set_pov(self.state.pov_camera);
 		self.world.camera.set_target(glm::vec3(0.0, 0.0, -10.0));
-
-		let dt = if self.state.move_fast { dt * 3.0 } else { dt };
-
-		if self.state.move_forward {
-			self.world.camera.key_interact(Directions::Forward, dt);
-		}
-
-		if self.state.move_backward {
-			self.world.camera.key_interact(Directions::Backward, dt);
-		}
-
-		if self.state.move_left {
-			self.world.camera.key_interact(Directions::Left, dt);
-		}
-
-		if self.state.move_right {
-			self.world.camera.key_interact(Directions::Right, dt);
-		}
-
-		if self.state.move_up {
-			self.world.camera.key_interact(Directions::Up, dt);
-		}
-
-		if self.state.move_down {
-			self.world.camera.key_interact(Directions::Down, dt);
-		}
+		self.world.camera.update_position(dt);
 	}
 
 	fn redraw_ui(&mut self, event_loop: &ActiveEventLoop) {

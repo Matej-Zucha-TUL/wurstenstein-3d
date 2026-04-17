@@ -21,6 +21,14 @@ pub struct Camera {
 	target: glm::Vec3,
 	distance: f32,
 
+	move_forward: bool,
+	move_backward: bool,
+	move_left: bool,
+	move_right: bool,
+	move_up: bool,
+	move_down: bool,
+	move_fast: bool,
+
 	yaw: f32,
 	pitch: f32,
 	speed: f32,
@@ -46,6 +54,13 @@ impl Camera {
 			use_pov: false,
 			target: glm::vec3(0.0, 0.0, 0.0),
 			distance: 20.0f32,
+			move_forward: false,
+			move_backward: false,
+			move_left: false,
+			move_right: false,
+			move_up: false,
+			move_down: false,
+			move_fast: false,
 			yaw,
 			pitch,
 			speed: 2.5f32,
@@ -82,53 +97,77 @@ impl Camera {
 		}
 	}
 
-	pub fn key_interact(&mut self, direction: Directions, dt: f32) {
+	pub fn move_fast(&mut self, fast: bool) {
+		self.move_fast = fast;
+	}
+
+	pub fn key_interact(&mut self, direction: Directions, pressed: bool) {
+		match direction {
+			Directions::Left => self.move_left = pressed,
+			Directions::Right => self.move_right = pressed,
+			Directions::Up => self.move_up = pressed,
+			Directions::Down => self.move_down = pressed,
+			Directions::Forward => self.move_forward = pressed,
+			Directions::Backward => self.move_backward = pressed,
+		}
+	}
+
+	pub fn update_position(&mut self, dt: f32) {
+		let dt = if self.move_fast { dt * 3.0 } else { dt };
+
 		if self.use_pov {
 			let orbit_speed = 67.0f32;
-			match direction {
-				Directions::Left => {
-					self.yaw -= orbit_speed * dt;
-					self.update_vectors();
-				}
-				Directions::Right => {
-					self.yaw += orbit_speed * dt;
-					self.update_vectors();
-				}
-				Directions::Forward => {
-					self.distance = (self.distance - self.speed * dt).max(0.5);
-				}
-				Directions::Backward => {
-					self.distance += self.speed * dt;
-				}
-				Directions::Up => {
-					self.pitch = (self.pitch + orbit_speed * dt).clamp(-89.0, 89.0);
-					self.update_vectors();
-				}
-				Directions::Down => {
-					self.pitch = (self.pitch - orbit_speed * dt).clamp(-89.0, 89.0);
-					self.update_vectors();
-				}
+
+			if self.move_left {
+				self.yaw -= orbit_speed * dt;
+				self.update_vectors();
+			}
+
+			if self.move_right {
+				self.yaw += orbit_speed * dt;
+				self.update_vectors();
+			}
+
+			if self.move_forward {
+				self.distance = (self.distance - self.speed * dt).max(0.5);
+			}
+
+			if self.move_backward {
+				self.distance += self.speed * dt;
+			}
+
+			if self.move_up {
+				self.pitch = (self.pitch + orbit_speed * dt).clamp(-89.0, 89.0);
+				self.update_vectors();
+			}
+
+			if self.move_down {
+				self.pitch = (self.pitch - orbit_speed * dt).clamp(-89.0, 89.0);
+				self.update_vectors();
 			}
 		} else {
-			match direction {
-				Directions::Forward => {
-					self.position += self.front * self.speed * dt;
-				}
-				Directions::Left => {
-					self.position -= self.right * self.speed * dt;
-				}
-				Directions::Right => {
-					self.position += self.right * self.speed * dt;
-				}
-				Directions::Up => {
-					self.position += self.up * self.speed * dt;
-				}
-				Directions::Down => {
-					self.position -= self.up * self.speed * dt;
-				}
-				Directions::Backward => {
-					self.position -= self.front * self.speed * dt;
-				}
+			if self.move_forward {
+				self.position += self.front * self.speed * dt;
+			}
+
+			if self.move_left {
+				self.position -= self.right * self.speed * dt;
+			}
+
+			if self.move_right {
+				self.position += self.right * self.speed * dt;
+			}
+
+			if self.move_up {
+				self.position += self.up * self.speed * dt;
+			}
+
+			if self.move_down {
+				self.position -= self.up * self.speed * dt;
+			}
+
+			if self.move_backward {
+				self.position -= self.front * self.speed * dt;
 			}
 		}
 	}
