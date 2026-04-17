@@ -1,21 +1,21 @@
-use std::sync::{Arc, OnceLock};
 use std::borrow::Cow;
+use std::sync::{Arc, OnceLock};
 
 use glow::*;
 use image::DynamicImage;
-use tobj::Mesh;
 use log::*;
+use tobj::Mesh;
 
 use crate::shader::Program;
 
 struct ModelVertices {
 	vao: NativeVertexArray,
-	vertex_count: usize
+	vertex_count: usize,
 }
 
 struct ModelTexture {
 	tex: NativeTexture,
-	texture_unit: Option<NativeUniformLocation>
+	texture_unit: Option<NativeUniformLocation>,
 }
 
 pub struct VertexAttributes {
@@ -35,7 +35,7 @@ impl Model {
 		Self {
 			gl,
 			vtx: OnceLock::new(),
-			tex: OnceLock::new()
+			tex: OnceLock::new(),
 		}
 	}
 
@@ -60,37 +60,51 @@ impl Model {
 			let ebo = self.gl.create_named_buffer().unwrap();
 
 			if let Some(position_attr) = &attribs.position {
-				let position = self.gl
+				let position = self
+					.gl
 					.get_attrib_location(program.program, position_attr.as_ref())
 					.unwrap();
 
-				self.gl.vertex_array_attrib_format_f32(vao, position, 3, FLOAT, false, 0);
+				self.gl
+					.vertex_array_attrib_format_f32(vao, position, 3, FLOAT, false, 0);
 				self.gl.vertex_array_attrib_binding_f32(vao, position, 0);
 				self.gl.enable_vertex_array_attrib(vao, position);
 			}
 
 			if let Some(normal_attr) = &attribs.normal {
-				let normal = self.gl
+				let normal = self
+					.gl
 					.get_attrib_location(program.program, normal_attr.as_ref())
 					.unwrap();
 
-				self.gl.vertex_array_attrib_format_f32(vao, normal, 3, FLOAT, false, 12);
+				self.gl
+					.vertex_array_attrib_format_f32(vao, normal, 3, FLOAT, false, 12);
 				self.gl.vertex_array_attrib_binding_f32(vao, normal, 0);
 				self.gl.enable_vertex_array_attrib(vao, normal);
 			}
 
 			if let Some(texcoord_attr) = &attribs.texcoord {
-				let texcoords = self.gl
+				let texcoords = self
+					.gl
 					.get_attrib_location(program.program, texcoord_attr.as_ref())
 					.unwrap();
 
-				self.gl.vertex_array_attrib_format_f32(vao, texcoords, 2, FLOAT, false, 24);
+				self.gl
+					.vertex_array_attrib_format_f32(vao, texcoords, 2, FLOAT, false, 24);
 				self.gl.vertex_array_attrib_binding_f32(vao, texcoords, 0);
 				self.gl.enable_vertex_array_attrib(vao, texcoords);
 			}
 
-			self.gl.named_buffer_data_u8_slice(vbo, bytemuck::cast_slice(&merged_vertices), STATIC_DRAW);
-			self.gl.named_buffer_data_u8_slice(ebo, bytemuck::cast_slice(&mesh.indices), STATIC_DRAW);
+			self.gl.named_buffer_data_u8_slice(
+				vbo,
+				bytemuck::cast_slice(&merged_vertices),
+				STATIC_DRAW,
+			);
+			self.gl.named_buffer_data_u8_slice(
+				ebo,
+				bytemuck::cast_slice(&mesh.indices),
+				STATIC_DRAW,
+			);
 
 			self.gl.vertex_array_vertex_buffer(vao, 0, Some(vbo), 0, 32);
 			self.gl.vertex_array_element_buffer(vao, Some(ebo));
@@ -98,7 +112,7 @@ impl Model {
 
 		let _ = self.vtx.set(ModelVertices {
 			vao,
-			vertex_count: mesh.indices.len()
+			vertex_count: mesh.indices.len(),
 		});
 	}
 
@@ -126,20 +140,21 @@ impl Model {
 				UNSIGNED_BYTE,
 				PixelUnpackData::Slice(Some(&raw_img)),
 			);
-			self.gl.texture_parameter_i32(tex, TEXTURE_MIN_FILTER, NEAREST as i32);
-			self.gl.texture_parameter_i32(tex, TEXTURE_MAG_FILTER, LINEAR as i32);
+			self.gl
+				.texture_parameter_i32(tex, TEXTURE_MIN_FILTER, NEAREST as i32);
+			self.gl
+				.texture_parameter_i32(tex, TEXTURE_MAG_FILTER, LINEAR as i32);
 
-			texture_unit = self.gl.get_uniform_location(program.program, sampler_attrib);
+			texture_unit = self
+				.gl
+				.get_uniform_location(program.program, sampler_attrib);
 		}
 
 		if texture_unit.is_none() {
 			warn!("Sampler {} not found in shader program", sampler_attrib);
 		}
 
-		let _ = self.tex.set(ModelTexture {
-			tex,
-			texture_unit
-		});
+		let _ = self.tex.set(ModelTexture { tex, texture_unit });
 	}
 
 	pub fn draw(&self) {
@@ -150,14 +165,9 @@ impl Model {
 
 			if let Some(vtx) = self.vtx.get() {
 				self.gl.bind_vertex_array(Some(vtx.vao));
-				self.gl.draw_elements(
-					TRIANGLES,
-					vtx.vertex_count as i32,
-					UNSIGNED_INT,
-					0,
-				);
+				self.gl
+					.draw_elements(TRIANGLES, vtx.vertex_count as i32, UNSIGNED_INT, 0);
 			}
 		}
 	}
 }
-

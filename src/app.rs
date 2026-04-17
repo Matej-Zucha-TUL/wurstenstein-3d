@@ -11,7 +11,6 @@ use image::{ExtendedColorType, ImageEncoder, ImageReader, codecs::png::PngEncode
 use log::*;
 use nalgebra_glm as glm;
 use raw_window_handle::HasWindowHandle;
-use tobj::Mesh;
 use winit::{
 	dpi::PhysicalSize,
 	event::{DeviceEvent, ElementState, KeyEvent, MouseScrollDelta, WindowEvent},
@@ -25,9 +24,12 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use crate::{camera::{Camera, Directions}, model::{Model, VertexAttributes}};
 use crate::config::Config;
 use crate::shader::{Program, ProgramBuilder, ShaderType};
+use crate::{
+	camera::{Camera, Directions},
+	model::{Model, VertexAttributes},
+};
 
 fn opengl_callback(src: u32, kind: u32, id: u32, severity: u32, msg: &str) {
 	let src = match src {
@@ -82,7 +84,7 @@ pub struct App {
 struct Assets {
 	normal_program: Program,
 	rizz_program: Program,
-	model: Model
+	model: Model,
 }
 
 struct State {
@@ -267,10 +269,11 @@ impl App {
 			.link();
 
 		let mut model_data = Cursor::new(include_bytes!("./../assets/objects/pastry/pastry.obj"));
-		let (model, _material) = tobj::load_obj_buf(&mut model_data, &tobj::GPU_LOAD_OPTIONS, |_| {
-			Err(tobj::LoadError::ReadError)
-		})
-		.unwrap();
+		let (model, _material) =
+			tobj::load_obj_buf(&mut model_data, &tobj::GPU_LOAD_OPTIONS, |_| {
+				Err(tobj::LoadError::ReadError)
+			})
+			.unwrap();
 		let model = model.into_iter().next().unwrap();
 		let mesh = model.mesh;
 
@@ -303,7 +306,7 @@ impl App {
 		let assets = Assets {
 			normal_program,
 			rizz_program,
-			model
+			model,
 		};
 
 		let world = World::default();
@@ -653,8 +656,26 @@ impl App {
 		);
 	}
 
-	#[allow(unsafe_op_in_unsafe_fn)]
-	unsafe fn redraw(&mut self, event_loop: &ActiveEventLoop) {
+	fn init_drawing(&self) {
+		unsafe {
+			self.gl.enable(CULL_FACE);
+			self.gl.cull_face(FRONT);
+			self.gl.front_face(CW);
+
+			self.gl.enable(DEPTH_TEST);
+
+			let [r, g, b, a] = self.state.background_color;
+			self.gl.clear_color(r, g, b, a);
+			self.gl.clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
+		}
+	}
+
+	fn end_drawing(&self) {
+		self.gl_surface.swap_buffers(&self.gl_context).unwrap();
+		self.window.request_redraw();
+	}
+
+	fn redraw(&mut self, event_loop: &ActiveEventLoop) {
 		let new_time = SystemTime::now();
 		let dt = new_time
 			.duration_since(self.perf.last_time)
@@ -682,7 +703,6 @@ impl App {
 			true => &self.assets.rizz_program,
 		};
 
-		program.activate();
 		program.set_uniform_matrix_f32_4(
 			"view",
 			self.world
@@ -712,22 +732,15 @@ impl App {
 		program.set_uniform_f32_3("diffuse_material", &self.state.diffuse_color);
 		program.set_uniform_f32_3("specular_material", &self.state.specular_color);
 
-		self.gl.enable(CULL_FACE);
-		self.gl.cull_face(FRONT);
-		self.gl.front_face(CW);
+		self.init_drawing();
 
-		self.gl.enable(DEPTH_TEST);
-
-		let [r, g, b, a] = self.state.background_color;
-		self.gl.clear_color(r, g, b, a);
-		self.gl.clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
+		program.activate();
 
 		self.assets.model.draw();
 
 		self.redraw_ui(event_loop);
 
-		self.gl_surface.swap_buffers(&self.gl_context).unwrap();
-		self.window.request_redraw();
+		self.end_drawing();
 
 		self.update_perf_data(dt);
 		self.enforce_fullscreen();
@@ -776,9 +789,9 @@ impl App {
 			WindowEvent::Resized(new_size) => {
 				self.handle_resize_event(new_size);
 			}
-			WindowEvent::RedrawRequested => unsafe {
+			WindowEvent::RedrawRequested => {
 				self.redraw(event_loop);
-			},
+			}
 			_ => {}
 		}
 	}
