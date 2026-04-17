@@ -5,6 +5,7 @@ use glow::*;
 use image::DynamicImage;
 use log::*;
 use tobj::Mesh;
+use nalgebra_glm as glm;
 
 use crate::shader::Program;
 
@@ -28,6 +29,11 @@ pub struct Model {
 	gl: Arc<Context>,
 	vtx: OnceLock<ModelVertices>,
 	tex: Vec<ModelTexture>,
+	
+	pub position: glm::Vec3,
+	pub scale: glm::Vec3,
+	/// Yaw, Pitch, Roll
+	pub rotation: glm::Vec3
 }
 
 impl Model {
@@ -36,6 +42,9 @@ impl Model {
 			gl,
 			vtx: OnceLock::new(),
 			tex: Vec::new(),
+			position: glm::vec3(0.0, 0.0, 0.0),
+			scale: glm::vec3(1.0, 1.0, 1.0),
+			rotation: glm::vec3(0.0, 0.0, 0.0)
 		}
 	}
 
@@ -158,8 +167,16 @@ impl Model {
 		self.tex.push(ModelTexture { tex, sampler });
 	}
 
-	pub fn draw(&self, program: &Program) {
+	pub fn draw(&self, program: &Program, model_attrib: &str) {
 		program.activate();
+
+		let model_mtx = glm::translate(&glm::Mat4::identity(), &self.position);
+		let model_mtx = glm::scale(&model_mtx, &self.scale);
+		let model_mtx = glm::rotate_z(&model_mtx, self.rotation[2]);
+		let model_mtx = glm::rotate_x(&model_mtx, self.rotation[0]);
+		let model_mtx = glm::rotate_y(&model_mtx, self.rotation[1]);
+
+		program.set_uniform_matrix_f32_4(model_attrib, model_mtx.as_slice().try_into().unwrap());
 
 		unsafe {
 			for (tex_unit, tex) in self.tex.iter().enumerate() {

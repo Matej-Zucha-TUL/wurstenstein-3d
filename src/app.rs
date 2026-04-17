@@ -95,8 +95,6 @@ struct State {
 	specular_shininess: f32,
 	rizz_mode: bool,
 	pov_camera: bool,
-	scale: f32,
-	model_rotate: f32,
 }
 
 impl Default for State {
@@ -109,8 +107,6 @@ impl Default for State {
 			specular_shininess: 5.0,
 			rizz_mode: false,
 			pov_camera: false,
-			scale: 50.0,
-			model_rotate: 0.0,
 		}
 	}
 }
@@ -291,6 +287,7 @@ impl App {
 		let mut model = Model::new(gl.clone());
 		model.add_mesh(&normal_program, mesh, &vertex_attribs);
 		model.add_texture(&normal_program, image, "tex_unit");
+		model.scale = glm::vec3(50.0, 50.0, 50.0);
 
 		let file_dialog = egui_file_dialog::FileDialog::new()
 			.movable(false)
@@ -476,7 +473,9 @@ impl App {
 						return;
 					}
 
-					ui.add(egui::Slider::new(&mut self.state.scale, 0.0..=100.0));
+					let mut scale = self.assets.model.scale[0];
+					ui.add(egui::Slider::new(&mut scale, 0.0..=100.0));
+					self.assets.model.scale = glm::vec3(scale, scale, scale);
 
 					ui.checkbox(&mut self.screen_config.vsync, "Enable Vsync");
 
@@ -685,7 +684,8 @@ impl App {
 
 		self.update_camera(dt);
 
-		self.state.model_rotate += dt * 50.0;
+		self.assets.model.position[2] = -10.0;
+		self.assets.model.rotation[1] += (dt * 50.0).to_radians();
 
 		let aspect = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
 		let projection_mtx = glm::perspective(
@@ -694,9 +694,6 @@ impl App {
 			0.1f32,
 			100.0f32,
 		);
-
-		let model_mtx = glm::translate(&glm::Mat4::identity(), &glm::vec3(0.0, 0.0, -10.0));
-		let model_mtx = glm::rotate_y(&model_mtx, self.state.model_rotate.to_radians());
 
 		let program = match self.state.rizz_mode {
 			false => &self.assets.normal_program,
@@ -714,7 +711,6 @@ impl App {
 		);
 		program
 			.set_uniform_matrix_f32_4("projection", projection_mtx.as_slice().try_into().unwrap());
-		program.set_uniform_matrix_f32_4("model", model_mtx.as_slice().try_into().unwrap());
 		program.set_uniform_f32("screen_w", self.window.inner_size().width as f32);
 		program.set_uniform_f32("screen_h", self.window.inner_size().height as f32);
 		program.set_uniform_f32(
@@ -725,7 +721,6 @@ impl App {
 				.unwrap()
 				.as_secs_f32(),
 		);
-		program.set_uniform_f32("scale", self.state.scale);
 		program.set_uniform_f32("specular_shininess", self.state.specular_shininess);
 		program.set_uniform_f32_3("ambient_material", &self.state.ambient_color);
 		program.set_uniform_f32_3("diffuse_material", &self.state.diffuse_color);
@@ -733,7 +728,7 @@ impl App {
 
 		self.init_drawing();
 
-		self.assets.model.draw(program);
+		self.assets.model.draw(program, "model");
 
 		self.redraw_ui(event_loop);
 
