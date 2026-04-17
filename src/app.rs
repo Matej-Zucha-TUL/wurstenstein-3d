@@ -633,25 +633,29 @@ impl App {
 			);
 		}
 
-		let mut out_file = std::fs::File::create("screenshot.png").unwrap();
+		std::thread::spawn(move || {
+			let mut out_file = std::fs::File::create("screenshot.png").unwrap();
 
-		// Reverse the rows so that the image is not upside down
+			// Reverse the rows so that the image is not upside down
 
-		let buf = buf
-			.chunks(width * 4)
-			.rev()
-			.flatten()
-			.copied()
-			.collect::<Vec<_>>();
+			let buf = buf
+				.chunks(width * 4)
+				.rev()
+				.flatten()
+				.copied()
+				.collect::<Vec<_>>();
 
-		PngEncoder::new(&mut out_file)
-			.write_image(
-				buf.as_slice(),
-				width as u32,
-				height as u32,
-				ExtendedColorType::Rgba8,
-			)
-			.unwrap();
+			PngEncoder::new(&mut out_file)
+				.write_image(
+					buf.as_slice(),
+					width as u32,
+					height as u32,
+					ExtendedColorType::Rgba8,
+				)
+				.unwrap();
+
+			info!("Screenshot saved!");
+		});
 	}
 
 	fn update_cursor_lock(&mut self) {
