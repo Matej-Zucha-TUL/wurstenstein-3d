@@ -247,7 +247,7 @@ impl App {
 
 		let gl_context = not_current_gl_context.make_current(&gl_surface).unwrap();
 
-		let mut gl = glow::Context::from_loader_function_cstr(|s| gl_display.get_proc_address(s));
+		let mut gl = Context::from_loader_function_cstr(|s| gl_display.get_proc_address(s));
 
 		gl.debug_message_callback(opengl_callback);
 		gl.enable(DEBUG_OUTPUT);
@@ -747,15 +747,14 @@ impl App {
 
 		let [r, g, b, a] = self.state.background_color;
 
-		self.gl.enable(glow::CULL_FACE);
-		self.gl.cull_face(glow::FRONT);
-		self.gl.front_face(glow::CW);
+		self.gl.enable(CULL_FACE);
+		self.gl.cull_face(FRONT);
+		self.gl.front_face(CW);
 
-		self.gl.enable(glow::DEPTH_TEST);
+		self.gl.enable(DEPTH_TEST);
 
 		self.gl.clear_color(r, g, b, a);
-		self.gl
-			.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+		self.gl.clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
 
 		self.gl.bind_vertex_array(Some(self.assets.vao));
 		self.gl.bind_texture_unit(0, Some(self.assets.tex));
@@ -808,9 +807,9 @@ impl App {
 		program.set_uniform_f32_3("specular_material", &self.state.specular_color);
 
 		self.gl.draw_elements(
-			glow::TRIANGLES,
+			TRIANGLES,
 			self.assets.mesh.indices.len() as i32,
-			glow::UNSIGNED_INT,
+			UNSIGNED_INT,
 			0,
 		);
 
