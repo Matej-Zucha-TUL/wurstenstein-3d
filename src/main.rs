@@ -17,6 +17,8 @@ mod camera;
 mod config;
 use config::Config;
 
+mod model;
+
 mod shader;
 
 struct WinitApp {

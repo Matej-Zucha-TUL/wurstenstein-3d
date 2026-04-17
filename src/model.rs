@@ -1,0 +1,163 @@
+use std::sync::{Arc, OnceLock};
+use std::borrow::Cow;
+
+use glow::*;
+use image::DynamicImage;
+use tobj::Mesh;
+use log::*;
+
+use crate::shader::Program;
+
+struct ModelVertices {
+	vao: NativeVertexArray,
+	vertex_count: usize
+}
+
+struct ModelTexture {
+	tex: NativeTexture,
+	texture_unit: Option<NativeUniformLocation>
+}
+
+pub struct VertexAttributes {
+	pub position: Option<Cow<'static, str>>,
+	pub normal: Option<Cow<'static, str>>,
+	pub texcoord: Option<Cow<'static, str>>,
+}
+
+pub struct Model {
+	gl: Arc<Context>,
+	vtx: OnceLock<ModelVertices>,
+	tex: OnceLock<ModelTexture>,
+}
+
+impl Model {
+	pub fn new(gl: Arc<Context>) -> Self {
+		Self {
+			gl,
+			vtx: OnceLock::new(),
+			tex: OnceLock::new()
+		}
+	}
+
+	pub fn add_mesh(&mut self, program: &Program, mesh: Mesh, attribs: &VertexAttributes) {
+		assert_eq!(mesh.positions.len() / 3, mesh.normals.len() / 3);
+		assert_eq!(mesh.positions.len() / 3, mesh.texcoords.len() / 2);
+
+		let merged_vertices = mesh
+			.positions
+			.chunks(3)
+			.zip(mesh.normals.chunks(3))
+			.zip(mesh.texcoords.chunks(2))
+			.flat_map(|((p, n), t)| [p[0], p[1], p[2], n[0], n[1], n[2], t[0], t[1]])
+			.collect::<Vec<_>>();
+
+		let vao;
+
+		unsafe {
+			vao = self.gl.create_named_vertex_array().unwrap();
+
+			let vbo = self.gl.create_named_buffer().unwrap();
+			let ebo = self.gl.create_named_buffer().unwrap();
+
+			if let Some(position_attr) = &attribs.position {
+				let position = self.gl
+					.get_attrib_location(program.program, position_attr.as_ref())
+					.unwrap();
+
+				self.gl.vertex_array_attrib_format_f32(vao, position, 3, FLOAT, false, 0);
+				self.gl.vertex_array_attrib_binding_f32(vao, position, 0);
+				self.gl.enable_vertex_array_attrib(vao, position);
+			}
+
+			if let Some(normal_attr) = &attribs.normal {
+				let normal = self.gl
+					.get_attrib_location(program.program, normal_attr.as_ref())
+					.unwrap();
+
+				self.gl.vertex_array_attrib_format_f32(vao, normal, 3, FLOAT, false, 12);
+				self.gl.vertex_array_attrib_binding_f32(vao, normal, 0);
+				self.gl.enable_vertex_array_attrib(vao, normal);
+			}
+
+			if let Some(texcoord_attr) = &attribs.texcoord {
+				let texcoords = self.gl
+					.get_attrib_location(program.program, texcoord_attr.as_ref())
+					.unwrap();
+
+				self.gl.vertex_array_attrib_format_f32(vao, texcoords, 2, FLOAT, false, 24);
+				self.gl.vertex_array_attrib_binding_f32(vao, texcoords, 0);
+				self.gl.enable_vertex_array_attrib(vao, texcoords);
+			}
+
+			self.gl.named_buffer_data_u8_slice(vbo, bytemuck::cast_slice(&merged_vertices), STATIC_DRAW);
+			self.gl.named_buffer_data_u8_slice(ebo, bytemuck::cast_slice(&mesh.indices), STATIC_DRAW);
+
+			self.gl.vertex_array_vertex_buffer(vao, 0, Some(vbo), 0, 32);
+			self.gl.vertex_array_element_buffer(vao, Some(ebo));
+		}
+
+		let _ = self.vtx.set(ModelVertices {
+			vao,
+			vertex_count: mesh.indices.len()
+		});
+	}
+
+	pub fn add_texture(&mut self, program: &Program, image: DynamicImage, sampler_attrib: &str) {
+		let width = image.width() as i32;
+		let height = image.height() as i32;
+		let raw_img = image.flipv().into_rgb8().into_raw();
+
+		assert_eq!(width * height * 3, raw_img.len() as i32);
+
+		let tex;
+		let texture_unit;
+
+		unsafe {
+			tex = self.gl.create_named_texture(TEXTURE_2D).unwrap();
+			self.gl.texture_storage_2d(tex, 1, RGB8, width, height);
+			self.gl.texture_sub_image_2d(
+				tex,
+				0,
+				0,
+				0,
+				width,
+				height,
+				RGB,
+				UNSIGNED_BYTE,
+				PixelUnpackData::Slice(Some(&raw_img)),
+			);
+			self.gl.texture_parameter_i32(tex, TEXTURE_MIN_FILTER, NEAREST as i32);
+			self.gl.texture_parameter_i32(tex, TEXTURE_MAG_FILTER, LINEAR as i32);
+
+			texture_unit = self.gl.get_uniform_location(program.program, sampler_attrib);
+		}
+
+		if texture_unit.is_none() {
+			warn!("Sampler {} not found in shader program", sampler_attrib);
+		}
+
+		let _ = self.tex.set(ModelTexture {
+			tex,
+			texture_unit
+		});
+	}
+
+	pub fn draw(&self) {
+		unsafe {
+			if let Some(tex) = self.tex.get() {
+				self.gl.bind_texture_unit(0, Some(tex.tex));
+			}
+
+			if let Some(vtx) = self.vtx.get() {
+				self.gl.bind_vertex_array(Some(vtx.vao));
+				self.gl.draw_elements(
+					TRIANGLES,
+					vtx.vertex_count as i32,
+					UNSIGNED_INT,
+					0,
+				);
+			}
+		}
+	}
+}
+

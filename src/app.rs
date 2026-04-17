@@ -25,7 +25,7 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use crate::camera::{Camera, Directions};
+use crate::{camera::{Camera, Directions}, model::{Model, VertexAttributes}};
 use crate::config::Config;
 use crate::shader::{Program, ProgramBuilder, ShaderType};
 
@@ -82,9 +82,7 @@ pub struct App {
 struct Assets {
 	normal_program: Program,
 	rizz_program: Program,
-	vao: NativeVertexArray,
-	tex: NativeTexture,
-	mesh: Mesh,
+	model: Model
 }
 
 struct State {
@@ -269,81 +267,27 @@ impl App {
 			.link();
 
 		let mut model_data = Cursor::new(include_bytes!("./../assets/objects/pastry/pastry.obj"));
-		let (model, _) = tobj::load_obj_buf(&mut model_data, &tobj::GPU_LOAD_OPTIONS, |_| {
+		let (model, _material) = tobj::load_obj_buf(&mut model_data, &tobj::GPU_LOAD_OPTIONS, |_| {
 			Err(tobj::LoadError::ReadError)
 		})
 		.unwrap();
 		let model = model.into_iter().next().unwrap();
 		let mesh = model.mesh;
 
-		assert_eq!(mesh.positions.len() / 3, mesh.normals.len() / 3);
-		assert_eq!(mesh.positions.len() / 3, mesh.texcoords.len() / 2);
-
-		let merged_vertices = mesh
-			.positions
-			.chunks(3)
-			.zip(mesh.normals.chunks(3))
-			.zip(mesh.texcoords.chunks(2))
-			.flat_map(|((p, n), t)| [p[0], p[1], p[2], n[0], n[1], n[2], t[0], t[1]])
-			.collect::<Vec<_>>();
-
-		let vao = gl.create_named_vertex_array().unwrap();
-		let vbo = gl.create_named_buffer().unwrap();
-		let ebo = gl.create_named_buffer().unwrap();
-
-		let position = gl
-			.get_attrib_location(normal_program.program, "aPos")
-			.unwrap();
-		let normal = gl
-			.get_attrib_location(normal_program.program, "aNormal")
-			.unwrap();
-		let texcoords = gl
-			.get_attrib_location(normal_program.program, "aTexCoord")
-			.unwrap();
-
-		gl.vertex_array_attrib_format_f32(vao, position, 3, FLOAT, false, 0);
-		gl.vertex_array_attrib_binding_f32(vao, position, 0);
-		gl.enable_vertex_array_attrib(vao, position);
-
-		gl.vertex_array_attrib_format_f32(vao, normal, 3, FLOAT, false, 12);
-		gl.vertex_array_attrib_binding_f32(vao, normal, 0);
-		gl.enable_vertex_array_attrib(vao, normal);
-
-		gl.vertex_array_attrib_format_f32(vao, texcoords, 2, FLOAT, false, 24);
-		gl.vertex_array_attrib_binding_f32(vao, texcoords, 0);
-		gl.enable_vertex_array_attrib(vao, texcoords);
-
-		gl.named_buffer_data_u8_slice(vbo, bytemuck::cast_slice(&merged_vertices), STATIC_DRAW);
-		gl.named_buffer_data_u8_slice(ebo, bytemuck::cast_slice(&mesh.indices), STATIC_DRAW);
-
-		gl.vertex_array_vertex_buffer(vao, 0, Some(vbo), 0, 32);
-		gl.vertex_array_element_buffer(vao, Some(ebo));
-
 		let image = ImageReader::open("assets/objects/pastry/pastry_tex.png")
 			.unwrap()
 			.decode()
 			.unwrap();
-		let width = image.width() as i32;
-		let height = image.height() as i32;
-		let raw_img = image.flipv().into_rgb8().into_raw();
 
-		assert_eq!(width * height * 3, raw_img.len() as i32);
+		let vertex_attribs = VertexAttributes {
+			position: Some("aPos".into()),
+			normal: Some("aNormal".into()),
+			texcoord: Some("aTexCoord".into()),
+		};
 
-		let tex = gl.create_named_texture(TEXTURE_2D).unwrap();
-		gl.texture_storage_2d(tex, 1, RGB8, width, height);
-		gl.texture_sub_image_2d(
-			tex,
-			0,
-			0,
-			0,
-			width,
-			height,
-			RGB,
-			UNSIGNED_BYTE,
-			PixelUnpackData::Slice(Some(&raw_img)),
-		);
-		gl.texture_parameter_i32(tex, TEXTURE_MIN_FILTER, NEAREST as i32);
-		gl.texture_parameter_i32(tex, TEXTURE_MAG_FILTER, LINEAR as i32);
+		let mut model = Model::new(gl.clone());
+		model.add_mesh(&normal_program, mesh, &vertex_attribs);
+		model.add_texture(&normal_program, image, "tex_unit");
 
 		let file_dialog = egui_file_dialog::FileDialog::new()
 			.movable(false)
@@ -359,9 +303,7 @@ impl App {
 		let assets = Assets {
 			normal_program,
 			rizz_program,
-			vao,
-			tex,
-			mesh,
+			model
 		};
 
 		let world = World::default();
@@ -722,19 +664,6 @@ impl App {
 
 		self.update_camera(dt);
 
-		self.gl.enable(CULL_FACE);
-		self.gl.cull_face(FRONT);
-		self.gl.front_face(CW);
-
-		self.gl.enable(DEPTH_TEST);
-
-		let [r, g, b, a] = self.state.background_color;
-		self.gl.clear_color(r, g, b, a);
-		self.gl.clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
-
-		self.gl.bind_vertex_array(Some(self.assets.vao));
-		self.gl.bind_texture_unit(0, Some(self.assets.tex));
-
 		self.state.model_rotate += dt * 50.0;
 
 		let aspect = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
@@ -783,12 +712,17 @@ impl App {
 		program.set_uniform_f32_3("diffuse_material", &self.state.diffuse_color);
 		program.set_uniform_f32_3("specular_material", &self.state.specular_color);
 
-		self.gl.draw_elements(
-			TRIANGLES,
-			self.assets.mesh.indices.len() as i32,
-			UNSIGNED_INT,
-			0,
-		);
+		self.gl.enable(CULL_FACE);
+		self.gl.cull_face(FRONT);
+		self.gl.front_face(CW);
+
+		self.gl.enable(DEPTH_TEST);
+
+		let [r, g, b, a] = self.state.background_color;
+		self.gl.clear_color(r, g, b, a);
+		self.gl.clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
+
+		self.assets.model.draw();
 
 		self.redraw_ui(event_loop);
 
