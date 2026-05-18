@@ -17,7 +17,7 @@ void main() {
 	vec4 model_coord = model * vec4(aPos, 1.0);
 
 	world_pos = model_coord.xyz;
-	world_normal = normal_matrix * aNormal;
+	world_normal = mat3(model) * aNormal;
 
 	gl_Position = projection * view * model_coord;
 	tex_coord = aTexCoord;

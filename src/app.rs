@@ -700,6 +700,7 @@ impl App {
 			true => &self.assets.rizz_program,
 		};
 
+		program.set_uniform_f32_3("camera_position", self.world.camera.get_position().as_slice().try_into().unwrap());
 		program.set_uniform_matrix_f32_4(
 			"view",
 			self.world
@@ -723,8 +724,8 @@ impl App {
 		);
 		program.set_uniform_f32("specular_shininess", self.state.specular_shininess);
 		program.set_uniform_f32_3("ambient_material", &self.state.ambient_color);
-		program.set_uniform_f32_3("diffuse_material", &self.state.diffuse_color);
-		program.set_uniform_f32_3("specular_material", &self.state.specular_color);
+		program.set_uniform_f32_3("directional_diffuse", &self.state.diffuse_color);
+		program.set_uniform_f32_3("directional_specular", &self.state.specular_color);
 
 		self.init_drawing();
 
