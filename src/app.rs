@@ -727,6 +727,18 @@ impl App {
 		program.set_uniform_f32_3("directional_diffuse", &self.state.diffuse_color);
 		program.set_uniform_f32_3("directional_specular", &self.state.specular_color);
 
+		// program.set_uniform_u32("point_enabled[0]", 1);
+		// program.set_uniform_f32_3("point_position[0]", self.world.camera.get_position().as_slice().try_into().unwrap());
+		// program.set_uniform_f32_3("point_diffuse[0]", &[0.0, 0.5, 0.0]);
+		// program.set_uniform_f32_3("point_specular[0]", &[0.5, 0.0, 0.0]);
+
+		// program.set_uniform_u32("spot_enabled", 1);
+		// program.set_uniform_f32_3("spot_position", &[0.0, 0.5, 10.0]);
+		// program.set_uniform_f32_3("spot_direction", &[0.0, 0.0, -1.0]);
+		// program.set_uniform_f32("spot_cos_cutoff", 1.0f32.to_radians().cos());
+		// program.set_uniform_f32_3("spot_diffuse", &[0.0, 0.5, 0.0]);
+		// program.set_uniform_f32_3("spot_specular", &[0.5, 0.0, 0.0]);
+
 		self.init_drawing();
 
 		self.assets.model.draw(program, "model");
