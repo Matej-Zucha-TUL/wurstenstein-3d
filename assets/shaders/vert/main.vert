@@ -17,9 +17,9 @@ uniform vec3 light_position = vec3(0, 0, 10.0);
 void main() {
 	vec4 model_coord = model * vec4(aPos, 1.0);
 	vec4 view_space_coord = view * model_coord;
-	vec3 camera_pos = vec3(view[3]);
+  vec3 camera_pos = vec3(inverse(view)[3]);
 
-	normal = mat3(model) * aNormal;
+  normal = mat3(transpose(inverse(model))) * aNormal;
 	obj_to_light = light_position - model_coord.xyz;
 	obj_to_camera = camera_pos - model_coord.xyz;
 

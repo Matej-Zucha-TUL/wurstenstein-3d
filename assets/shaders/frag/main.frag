@@ -24,13 +24,13 @@ void main() {
 	vec3 normal = normalize(normal);
 	vec3 obj_to_light = normalize(obj_to_light);
 	vec3 obj_to_camera = normalize(obj_to_camera);
-	vec3 reflection = normalize(reflect(obj_to_light, normal));
+  vec3 reflection = reflect(-obj_to_light, normal);
 
 	vec3 ambient = ambient_material;
 	vec3 diffuse = max(dot(normal, obj_to_light), 0.0) * diffuse_material;
 	vec3 specular = pow(max(dot(reflection, obj_to_camera), 0.0), specular_shininess) * specular_material;
 
-	color = vec4(ambient + diffuse, 1.0) * texture(tex_unit, tex_coord) + vec4(specular, 1.0);
+  color = vec4(ambient + diffuse, 1.0) * texture(tex_unit, tex_coord) + vec4(specular, 0.0);
 	// color = vec4(ambient + diffuse, 1.0) * texture(tex_unit, tex_coord);
 }
 
