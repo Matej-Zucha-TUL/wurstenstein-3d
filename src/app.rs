@@ -54,7 +54,7 @@ fn opengl_callback(src: u32, kind: u32, id: u32, severity: u32, msg: &str) {
 	};
 
 	let severity = match severity {
-		DEBUG_SEVERITY_NOTIFICATION => "NOTIFICATION",
+		DEBUG_SEVERITY_NOTIFICATION => return,
 		DEBUG_SEVERITY_LOW => "LOW",
 		DEBUG_SEVERITY_MEDIUM => "MEDIUM",
 		DEBUG_SEVERITY_HIGH => "HIGH",
