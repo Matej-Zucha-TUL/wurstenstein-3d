@@ -223,11 +223,11 @@ There are even more realistic (complicated) models (object mass, applied force, 
 
 # ❌ 8th lab: Lighting
 
-## ⏱️ Task 1: Implement most simple light source - directional light (sun)
+## ✔️ Task 1: Implement most simple light source - directional light (sun)
 
-- [ ] implement Phong lighting model for directional light
-  - [ ] start with shaders: create static light source with hardcoded settings - create light model parameters as __uniforms with default value__. This will later allow you to override them from CPU side (C++).
-  - [ ] if it works for default values, go to C++ and create data structures for light parameters. Modify params in time (moving sun, sun changing color, etc.) and update uniforms dynamically.
+- [x] implement Phong lighting model for directional light
+  - [x] start with shaders: create static light source with hardcoded settings - create light model parameters as __uniforms with default value__. This will later allow you to override them from CPU side (C++).
+  - [x] if it works for default values, go to C++ and create data structures for light parameters. Modify params in time (moving sun, sun changing color, etc.) and update uniforms dynamically.
 
 ## ⏱️ Task 2: Implement at least 3 different point lights
 
