@@ -47,21 +47,15 @@ pub struct Playfield<'a, T: PlayfieldPiece> {
 }
 
 impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
-	pub const fn dimensions(&self) -> (usize, usize) {
-		let mut idx = 0;
-		let mut min_width = usize::MAX;
+	pub fn dimensions(&self) -> (usize, usize) {
+		let width = self.field.iter()
+			.map(|x| x.len())
+			.min()
+			.unwrap();
 
-		while idx < self.field.len() {
-			let width = self.field[idx].len();
+		let height = self.field.len();
 
-			if width < min_width {
-				min_width = width;
-			}
-
-			idx += 1;
-		}
-
-		(min_width, self.field.len())
+		(width, height)
 	}
 
 	pub fn generate_mesh(&self) -> Mesh {
