@@ -37,7 +37,7 @@ pub struct App {
 	screen_config: ScreenConfig,
 	player: PlayerController,
 	perf: Perf,
-	world: World,
+	camera: Camera,
 	state: State,
 }
 
@@ -77,21 +77,6 @@ impl Default for State {
 			enable_background: true,
 			rizz_mode: false,
 			pov_camera: true,
-		}
-	}
-}
-
-struct World {
-	camera: Camera,
-}
-
-impl Default for World {
-	fn default() -> Self {
-		let mut camera = Camera::new(glm::vec3(0.0, 0.0, 0.0));
-		camera.set_pov(true);
-
-		Self {
-			camera
 		}
 	}
 }
@@ -315,9 +300,11 @@ impl App {
 		};
 
 		let player = PlayerController::new();
-		let world = World::default();
 		let perf = Perf::default();
 		let state = State::default();
+
+		let mut camera = Camera::new(glm::vec3(0.0, 0.0, 0.0));
+		camera.set_pov(true);
 
 		let mut app = App {
 			window,
@@ -330,7 +317,7 @@ impl App {
 			player,
 			screen_config,
 			perf,
-			world,
+			camera,
 			state,
 		};
 
@@ -389,24 +376,24 @@ impl App {
 				}
 			} else {
 				match event.physical_key {
-					PhysicalKey::Code(KeyCode::ShiftLeft) => self.world.camera.move_fast(true),
+					PhysicalKey::Code(KeyCode::ShiftLeft) => self.camera.move_fast(true),
 					PhysicalKey::Code(KeyCode::KeyW) => {
-						self.world.camera.key_interact(Directions::Forward, true)
+						self.camera.key_interact(Directions::Forward, true)
 					}
 					PhysicalKey::Code(KeyCode::KeyS) => {
-						self.world.camera.key_interact(Directions::Backward, true)
+						self.camera.key_interact(Directions::Backward, true)
 					}
 					PhysicalKey::Code(KeyCode::KeyA) => {
-						self.world.camera.key_interact(Directions::Left, true)
+						self.camera.key_interact(Directions::Left, true)
 					}
 					PhysicalKey::Code(KeyCode::KeyD) => {
-						self.world.camera.key_interact(Directions::Right, true)
+						self.camera.key_interact(Directions::Right, true)
 					}
 					PhysicalKey::Code(KeyCode::ControlLeft) => {
-						self.world.camera.key_interact(Directions::Down, true)
+						self.camera.key_interact(Directions::Down, true)
 					}
 					PhysicalKey::Code(KeyCode::Space) => {
-						self.world.camera.key_interact(Directions::Up, true)
+						self.camera.key_interact(Directions::Up, true)
 					}
 					_ => {}
 				}
@@ -432,24 +419,24 @@ impl App {
 				}
 			} else {
 				match event.physical_key {
-					PhysicalKey::Code(KeyCode::ShiftLeft) => self.world.camera.move_fast(false),
+					PhysicalKey::Code(KeyCode::ShiftLeft) => self.camera.move_fast(false),
 					PhysicalKey::Code(KeyCode::KeyW) => {
-						self.world.camera.key_interact(Directions::Forward, false)
+						self.camera.key_interact(Directions::Forward, false)
 					}
 					PhysicalKey::Code(KeyCode::KeyS) => {
-						self.world.camera.key_interact(Directions::Backward, false)
+						self.camera.key_interact(Directions::Backward, false)
 					}
 					PhysicalKey::Code(KeyCode::KeyA) => {
-						self.world.camera.key_interact(Directions::Left, false)
+						self.camera.key_interact(Directions::Left, false)
 					}
 					PhysicalKey::Code(KeyCode::KeyD) => {
-						self.world.camera.key_interact(Directions::Right, false)
+						self.camera.key_interact(Directions::Right, false)
 					}
 					PhysicalKey::Code(KeyCode::ControlLeft) => {
-						self.world.camera.key_interact(Directions::Down, false)
+						self.camera.key_interact(Directions::Down, false)
 					}
 					PhysicalKey::Code(KeyCode::Space) => {
-						self.world.camera.key_interact(Directions::Up, false)
+						self.camera.key_interact(Directions::Up, false)
 					}
 					_ => {}
 				}
@@ -458,13 +445,12 @@ impl App {
 	}
 
 	fn handle_mouse_motion_event(&mut self, delta: (f64, f64)) {
-		self.world
-			.camera
+		self.camera
 			.mouse_interact(delta.0 as f32, delta.1 as f32);
 	}
 
 	fn handle_mouse_wheel(&mut self, dy: f32) {
-		self.world.camera.scroll_wheel_interact(dy / 5.0);
+		self.camera.scroll_wheel_interact(dy / 5.0);
 	}
 
 	fn update_camera(&mut self, dt: f32) {
@@ -474,10 +460,10 @@ impl App {
 			-89.9..=89.9
 		};
 
-		self.world.camera.set_pov(self.state.pov_camera);
-		self.world.camera.set_pitch_range(pitch_range);
-		self.world.camera.set_target(self.assets.player.position);
-		self.world.camera.update_position(dt);
+		self.camera.set_pov(self.state.pov_camera);
+		self.camera.set_pitch_range(pitch_range);
+		self.camera.set_target(self.assets.player.position);
+		self.camera.update_position(dt);
 	}
 
 	fn redraw_ui(&mut self, event_loop: &ActiveEventLoop) {
@@ -498,7 +484,7 @@ impl App {
 						.as_slice()
 						.try_into()
 						.unwrap();
-					let (yaw, pitch) = self.world.camera.get_yaw_pitch();
+					let (yaw, pitch) = self.camera.get_yaw_pitch();
 
 					ui.horizontal(|ui| {
 						ui.vertical(|ui| {
@@ -510,7 +496,7 @@ impl App {
 						ui.vertical(|ui| {
 							ui.label(format!("Camera yaw: {:.3}", yaw));
 							ui.label(format!("Camera pitch: {:.3}", pitch));
-							ui.label(format!("Camera FOV: {:.3}", self.world.camera.get_zoom()));
+							ui.label(format!("Camera FOV: {:.3}", self.camera.get_zoom()));
 						})
 					});
 
@@ -683,10 +669,10 @@ impl App {
 			.as_secs_f32();
 		self.perf.last_time = new_time;
 
-		self.assets.player.position = self.player.update_position(self.assets.player.position, self.world.camera.get_yaw_pitch().0, dt);
+		self.assets.player.position = self.player.update_position(self.assets.player.position, self.camera.get_yaw_pitch().0, dt);
 		self.update_camera(dt);
 
-		self.assets.player.rotation[1] = -(self.world.camera.get_yaw_pitch().0 - 90.0).to_radians();
+		self.assets.player.rotation[1] = -(self.camera.get_yaw_pitch().0 - 90.0).to_radians();
 
 		// self.assets.model.position[2] = -10.0;
 		// self.assets.model.rotation[1] += (dt * 50.0).to_radians();
@@ -694,7 +680,7 @@ impl App {
 		let aspect = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
 		let projection_mtx = glm::perspective(
 			aspect,
-			self.world.camera.get_zoom().to_radians(),
+			self.camera.get_zoom().to_radians(),
 			0.1f32,
 			100.0f32,
 		);
@@ -704,8 +690,8 @@ impl App {
 			true => &self.assets.rizz_program,
 		};
 
-		let camera_pos = self.world.camera.get_position();
-		let view_mtx = self.world.camera.get_view_matrix();
+		let camera_pos = self.camera.get_position();
+		let view_mtx = self.camera.get_view_matrix();
 
 		program.set_uniform_f32_3("camera_position", camera_pos.as_slice().try_into().unwrap());
 		program.set_uniform_matrix_f32_4("view", view_mtx.as_slice().try_into().unwrap());
@@ -733,7 +719,7 @@ impl App {
 		self.assets.background_program.set_uniform_f32("screen_w", self.window.inner_size().width as f32);
 
 		// program.set_uniform_u32("point_enabled[0]", 1);
-		// program.set_uniform_f32_3("point_position[0]", self.world.camera.get_position().as_slice().try_into().unwrap());
+		// program.set_uniform_f32_3("point_position[0]", self.camera.get_position().as_slice().try_into().unwrap());
 		// program.set_uniform_f32_3("point_diffuse[0]", &[0.0, 0.5, 0.0]);
 		// program.set_uniform_f32_3("point_specular[0]", &[0.5, 0.0, 0.0]);
 
