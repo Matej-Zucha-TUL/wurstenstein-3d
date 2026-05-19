@@ -79,7 +79,6 @@ pub struct App {
 	perf: Perf,
 	world: World,
 	state: State,
-	debug: DebugStuff,
 }
 
 struct Assets {
@@ -171,20 +170,6 @@ impl Default for ScreenConfig {
 			cursor_lock: true,
 			fullscreen: false,
 			vsync: true,
-		}
-	}
-}
-
-struct DebugStuff {
-	cursor_x: f64,
-	cursor_y: f64,
-}
-
-impl Default for DebugStuff {
-	fn default() -> Self {
-		Self {
-			cursor_x: 0.0,
-			cursor_y: 0.0,
 		}
 	}
 }
@@ -430,7 +415,6 @@ impl App {
 		let player = PlayerController::new();
 		let world = World::default();
 		let perf = Perf::default();
-		let debug = DebugStuff::default();
 		let state = State::default();
 
 		let mut app = App {
@@ -447,7 +431,6 @@ impl App {
 			perf,
 			world,
 			state,
-			debug,
 		};
 
 		app.update_cursor_lock();
@@ -577,8 +560,6 @@ impl App {
 		self.world
 			.camera
 			.mouse_interact(delta.0 as f32, delta.1 as f32);
-		self.debug.cursor_x += delta.0;
-		self.debug.cursor_y += delta.1;
 	}
 
 	fn handle_mouse_wheel(&mut self, dy: f32) {
@@ -606,9 +587,6 @@ impl App {
 					ui.label(&self.perf.fps_string);
 
 					ui.add_space(4.0);
-
-					ui.label(format!("Cursor X: {:.3}", self.debug.cursor_x));
-					ui.label(format!("Cursor Y: {:.3}", self.debug.cursor_y));
 
 					ui.add_space(4.0);
 
