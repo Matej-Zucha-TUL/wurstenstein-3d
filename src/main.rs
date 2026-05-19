@@ -23,6 +23,8 @@ mod model;
 
 mod playfield;
 
+mod player;
+
 mod shader;
 
 struct WinitApp {

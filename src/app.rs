@@ -24,7 +24,7 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use crate::{background::Background, config::Config};
+use crate::{background::Background, config::Config, player::PlayerController};
 use crate::shader::{Program, ProgramBuilder, ShaderType};
 use crate::{
 	camera::{Camera, Directions},
@@ -94,16 +94,6 @@ struct Assets {
 	powerup_hp: Model,
 	powerup_energy: Model,
 	powerup_speed: Model,
-}
-
-struct PlayerController {
-	move_forward: bool,
-	move_backward: bool,
-	move_left: bool,
-	move_right: bool,
-	jump: bool,
-	gravity: f32,
-	xz_force: [f32; 2]
 }
 
 struct State {
@@ -437,16 +427,7 @@ impl App {
 			enemy
 		};
 
-		let player = PlayerController {
-			move_forward: false,
-			move_backward: false,
-			move_left: false,
-			move_right: false,
-			jump: false,
-			gravity: 0.0,
-			xz_force: [0.0, 0.0],
-		};
-
+		let player = PlayerController::new();
 		let world = World::default();
 		let perf = Perf::default();
 		let debug = DebugStuff::default();
@@ -615,57 +596,6 @@ impl App {
 		self.world.camera.set_pitch_range(pitch_range);
 		self.world.camera.set_target(self.assets.player.position);
 		self.world.camera.update_position(dt);
-	}
-
-	fn update_player(&mut self, dt: f32) {
-		const MAX_SPEED: f32 = 5.0;
-		const ACCEL: f32 = 20.0;
-		const BASE_GRAVITY: f32 = 10.0;
-		const BASE_GRAVITY_ACCEL: f32 = 40.0;
-
-		let accel = ACCEL * dt;
-
-		let mut xz_force = self.player.xz_force;
-
-		if self.player.move_left {
-			xz_force[0] = f32::max(xz_force[0] - accel, -MAX_SPEED);
-		} else if xz_force[0] < 0.0 {
-			xz_force[0] = f32::min(xz_force[0] + accel, 0.0);
-		}
-
-		if self.player.move_right {
-			xz_force[0] = f32::min(xz_force[0] + accel, MAX_SPEED);
-		} else if xz_force[0] > 0.0 {
-			xz_force[0] = f32::max(xz_force[0] - accel, 0.0);
-		}
-
-		if self.player.move_forward {
-			xz_force[1] = f32::max(xz_force[1] - accel, -MAX_SPEED);
-		} else if xz_force[1] < 0.0 {
-			xz_force[1] = f32::min(xz_force[1] + accel, 0.0);
-		}
-
-		if self.player.move_backward {
-			xz_force[1] = f32::min(xz_force[1] + accel, MAX_SPEED);
-		} else if xz_force[1] > 0.0 {
-			xz_force[1] = f32::max(xz_force[1] - accel, 0.0);
-		}
-
-		if self.player.jump && self.player.gravity >= (BASE_GRAVITY - 0.1) {
-			self.player.gravity = -BASE_GRAVITY;
-		}
-
-		self.player.jump = false;
-
-		self.player.xz_force = xz_force;
-
-		let rotated = glm::rotate_vec2(&xz_force.into(), (self.world.camera.get_yaw_pitch().0 + 90.0).to_radians());
-
-		self.assets.player.position[1] = f32::max(0.0, self.assets.player.position[1] - self.player.gravity * dt * 2.0);
-		self.assets.player.position[0] += rotated[0] * dt;
-		self.assets.player.position[2] += rotated[1] * dt;
-
-		self.player.gravity = f32::min(self.player.gravity + BASE_GRAVITY_ACCEL * dt, BASE_GRAVITY);
 	}
 
 	fn redraw_ui(&mut self, event_loop: &ActiveEventLoop) {
@@ -940,7 +870,7 @@ impl App {
 			.as_secs_f32();
 		self.perf.last_time = new_time;
 
-		self.update_player(dt);
+		self.assets.player.position = self.player.update_position(self.assets.player.position, self.world.camera.get_yaw_pitch().0, dt);
 		self.update_camera(dt);
 
 		self.assets.player.rotation[1] = -(self.world.camera.get_yaw_pitch().0 - 90.0).to_radians();
