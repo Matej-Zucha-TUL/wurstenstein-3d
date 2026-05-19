@@ -96,6 +96,7 @@ struct State {
 	diffuse_color: [f32; 3],
 	specular_color: [f32; 3],
 	specular_shininess: f32,
+	enable_background: bool,
 	rizz_mode: bool,
 	pov_camera: bool,
 }
@@ -108,6 +109,7 @@ impl Default for State {
 			diffuse_color: [0.5, 0.5, 0.5],
 			specular_color: [0.5, 0.5, 0.5],
 			specular_shininess: 5.0,
+			enable_background: true,
 			rizz_mode: false,
 			pov_camera: false,
 		}
@@ -513,6 +515,8 @@ impl App {
 
 					ui.checkbox(&mut self.state.rizz_mode, "Rizz mode");
 
+					ui.checkbox(&mut self.state.enable_background, "Enable background");
+
 					ui.checkbox(&mut self.state.pov_camera, "POV camera");
 
 					if ui.button("Pick model").clicked() {
@@ -776,7 +780,9 @@ impl App {
 
 		self.init_drawing();
 
-		self.assets.background.draw(&self.assets.background_program);
+		if self.state.enable_background {
+			self.assets.background.draw(&self.assets.background_program);
+		}
 
 		self.assets.terrain.draw(program, "model");
 		self.assets.model.draw(program, "model");
