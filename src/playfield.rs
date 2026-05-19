@@ -93,7 +93,7 @@ impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
 							normals.push(1.0);
 							normals.push(0.0);
 
-							texcoords.push(if inc_x == 0 { tx1 } else { tx2 });
+							texcoords.push(if inc_x != 0 { tx1 } else { tx2 });
 							texcoords.push(if inc_z == 0 { ty1 } else { ty2 });
 						}
 					}
