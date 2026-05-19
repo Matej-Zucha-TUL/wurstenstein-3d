@@ -301,8 +301,8 @@ impl App {
 		let mut model = Model::new(gl.clone());
 		model.add_mesh(&normal_program, mesh, &vertex_attribs);
 		model.add_texture(&normal_program, image, "tex_unit");
-		model.scale = glm::vec3(50.0, 50.0, 50.0);
-		model.position = glm::vec3(0.0, 0.0, 0.0);
+		model.scale = glm::vec3(20.0, 20.0, 20.0);
+		model.position = glm::vec3(7.5, 0.0, 7.5);
 
 		let file_dialog = egui_file_dialog::FileDialog::new()
 			.movable(false)
