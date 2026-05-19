@@ -730,6 +730,8 @@ impl App {
 
 		self.update_camera(dt);
 
+		self.assets.model.rotation[1] = -(self.world.camera.get_yaw_pitch().0 - 90.0).to_radians();
+
 		// self.assets.model.position[2] = -10.0;
 		// self.assets.model.rotation[1] += (dt * 50.0).to_radians();
 
