@@ -75,6 +75,7 @@ pub struct App {
 
 	assets: Assets,
 	screen_config: ScreenConfig,
+	player: PlayerController,
 	perf: Perf,
 	world: World,
 	state: State,
@@ -88,6 +89,15 @@ struct Assets {
 	background: Background,
 	terrain: Model,
 	model: Model,
+}
+
+struct PlayerController {
+	move_forward: bool,
+	move_backward: bool,
+	move_left: bool,
+	move_right: bool,
+	gravity: f32,
+	xz_force: [f32; 2]
 }
 
 struct State {
@@ -343,6 +353,15 @@ impl App {
 			model,
 		};
 
+		let player = PlayerController {
+			move_forward: false,
+			move_backward: false,
+			move_left: false,
+			move_right: false,
+			gravity: 0.0,
+			xz_force: [0.0, 0.0],
+		};
+
 		let world = World::default();
 		let perf = Perf::default();
 		let debug = DebugStuff::default();
@@ -357,6 +376,7 @@ impl App {
 			file_dialog,
 
 			assets,
+			player,
 			screen_config,
 			perf,
 			world,
@@ -401,16 +421,16 @@ impl App {
 			match event.physical_key {
 				PhysicalKey::Code(KeyCode::ShiftLeft) => self.world.camera.move_fast(true),
 				PhysicalKey::Code(KeyCode::KeyW) => {
-					self.world.camera.key_interact(Directions::Forward, true)
+					self.player.move_forward = true;
 				}
 				PhysicalKey::Code(KeyCode::KeyS) => {
-					self.world.camera.key_interact(Directions::Backward, true)
+					self.player.move_backward = true;
 				}
 				PhysicalKey::Code(KeyCode::KeyA) => {
-					self.world.camera.key_interact(Directions::Left, true)
+					self.player.move_left = true;
 				}
 				PhysicalKey::Code(KeyCode::KeyD) => {
-					self.world.camera.key_interact(Directions::Right, true)
+					self.player.move_right = true;
 				}
 				PhysicalKey::Code(KeyCode::ControlLeft) => {
 					self.world.camera.key_interact(Directions::Down, true)
@@ -426,16 +446,16 @@ impl App {
 			match event.physical_key {
 				PhysicalKey::Code(KeyCode::ShiftLeft) => self.world.camera.move_fast(false),
 				PhysicalKey::Code(KeyCode::KeyW) => {
-					self.world.camera.key_interact(Directions::Forward, false)
+					self.player.move_forward = false;
 				}
 				PhysicalKey::Code(KeyCode::KeyS) => {
-					self.world.camera.key_interact(Directions::Backward, false)
+					self.player.move_backward = false;
 				}
 				PhysicalKey::Code(KeyCode::KeyA) => {
-					self.world.camera.key_interact(Directions::Left, false)
+					self.player.move_left = false;
 				}
 				PhysicalKey::Code(KeyCode::KeyD) => {
-					self.world.camera.key_interact(Directions::Right, false)
+					self.player.move_right = false;
 				}
 				PhysicalKey::Code(KeyCode::ControlLeft) => {
 					self.world.camera.key_interact(Directions::Down, false)
@@ -471,6 +491,46 @@ impl App {
 		self.world.camera.set_pitch_range(pitch_range);
 		self.world.camera.set_target(self.assets.model.position);
 		self.world.camera.update_position(dt);
+	}
+
+	fn update_player(&mut self, dt: f32) {
+		const MAX_SPEED: f32 = 5.0;
+		const ACCEL: f32 = 20.0;
+
+		let accel = ACCEL * dt;
+
+		let mut xz_force = self.player.xz_force;
+
+		if self.player.move_left {
+			xz_force[0] = f32::max(xz_force[0] - accel, -MAX_SPEED);
+		} else if xz_force[0] < 0.0 {
+			xz_force[0] = f32::min(xz_force[0] + accel, 0.0);
+		}
+
+		if self.player.move_right {
+			xz_force[0] = f32::min(xz_force[0] + accel, MAX_SPEED);
+		} else if xz_force[0] > 0.0 {
+			xz_force[0] = f32::max(xz_force[0] - accel, 0.0);
+		}
+
+		if self.player.move_forward {
+			xz_force[1] = f32::max(xz_force[1] - accel, -MAX_SPEED);
+		} else if xz_force[1] < 0.0 {
+			xz_force[1] = f32::min(xz_force[1] + accel, 0.0);
+		}
+
+		if self.player.move_backward {
+			xz_force[1] = f32::min(xz_force[1] + accel, MAX_SPEED);
+		} else if xz_force[1] > 0.0 {
+			xz_force[1] = f32::max(xz_force[1] - accel, 0.0);
+		}
+
+		self.player.xz_force = xz_force;
+
+		let rotated = glm::rotate_vec2(&xz_force.into(), (self.world.camera.get_yaw_pitch().0 + 90.0).to_radians());
+
+		self.assets.model.position[0] += rotated[0] * dt;
+		self.assets.model.position[2] += rotated[1] * dt;
 	}
 
 	fn redraw_ui(&mut self, event_loop: &ActiveEventLoop) {
@@ -728,6 +788,7 @@ impl App {
 			.as_secs_f32();
 		self.perf.last_time = new_time;
 
+		self.update_player(dt);
 		self.update_camera(dt);
 
 		self.assets.model.rotation[1] = -(self.world.camera.get_yaw_pitch().0 - 90.0).to_radians();
