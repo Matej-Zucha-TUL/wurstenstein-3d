@@ -96,6 +96,7 @@ struct PlayerController {
 	move_backward: bool,
 	move_left: bool,
 	move_right: bool,
+	jump: bool,
 	gravity: f32,
 	xz_force: [f32; 2]
 }
@@ -358,6 +359,7 @@ impl App {
 			move_backward: false,
 			move_left: false,
 			move_right: false,
+			jump: false,
 			gravity: 0.0,
 			xz_force: [0.0, 0.0],
 		};
@@ -433,10 +435,9 @@ impl App {
 					self.player.move_right = true;
 				}
 				PhysicalKey::Code(KeyCode::ControlLeft) => {
-					self.world.camera.key_interact(Directions::Down, true)
 				}
 				PhysicalKey::Code(KeyCode::Space) => {
-					self.world.camera.key_interact(Directions::Up, true)
+					self.player.jump = true;
 				}
 				_ => {}
 			}
@@ -458,10 +459,8 @@ impl App {
 					self.player.move_right = false;
 				}
 				PhysicalKey::Code(KeyCode::ControlLeft) => {
-					self.world.camera.key_interact(Directions::Down, false)
 				}
 				PhysicalKey::Code(KeyCode::Space) => {
-					self.world.camera.key_interact(Directions::Up, false)
 				}
 				_ => {}
 			}
@@ -496,6 +495,8 @@ impl App {
 	fn update_player(&mut self, dt: f32) {
 		const MAX_SPEED: f32 = 5.0;
 		const ACCEL: f32 = 20.0;
+		const BASE_GRAVITY: f32 = 10.0;
+		const BASE_GRAVITY_ACCEL: f32 = 40.0;
 
 		let accel = ACCEL * dt;
 
@@ -525,12 +526,21 @@ impl App {
 			xz_force[1] = f32::max(xz_force[1] - accel, 0.0);
 		}
 
+		if self.player.jump && self.player.gravity >= (BASE_GRAVITY - 0.1) {
+			self.player.gravity = -BASE_GRAVITY;
+		}
+
+		self.player.jump = false;
+
 		self.player.xz_force = xz_force;
 
 		let rotated = glm::rotate_vec2(&xz_force.into(), (self.world.camera.get_yaw_pitch().0 + 90.0).to_radians());
 
+		self.assets.model.position[1] = f32::max(0.0, self.assets.model.position[1] - self.player.gravity * dt * 2.0);
 		self.assets.model.position[0] += rotated[0] * dt;
 		self.assets.model.position[2] += rotated[1] * dt;
+
+		self.player.gravity = f32::min(self.player.gravity + BASE_GRAVITY_ACCEL * dt, BASE_GRAVITY);
 	}
 
 	fn redraw_ui(&mut self, event_loop: &ActiveEventLoop) {
@@ -548,9 +558,9 @@ impl App {
 					ui.add_space(4.0);
 
 					let [x, y, z] = self
-						.world
-						.camera
-						.get_position()
+						.assets
+						.model
+						.position
 						.as_slice()
 						.try_into()
 						.unwrap();
@@ -558,9 +568,9 @@ impl App {
 
 					ui.horizontal(|ui| {
 						ui.vertical(|ui| {
-							ui.label(format!("Camera X: {:.3}", x));
-							ui.label(format!("Camera Y: {:.3}", y));
-							ui.label(format!("Camera Z: {:.3}", z));
+							ui.label(format!("Player X: {:.3}", x));
+							ui.label(format!("Player Y: {:.3}", y));
+							ui.label(format!("Player Z: {:.3}", z));
 						});
 
 						ui.vertical(|ui| {

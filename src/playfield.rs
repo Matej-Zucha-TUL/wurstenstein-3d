@@ -212,7 +212,7 @@ use TestPiece::*;
 
 pub const EXAMPLE_MAZE: Playfield<TestPiece> = Playfield {
 	scale: 5.0,
-	height: 2.7,
+	height: 3.0,
 	field: &[
 		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
 		&[Stone, __,    __,    __,    __,    __,    __,    __,    __,    Stone],
