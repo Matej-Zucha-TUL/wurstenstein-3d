@@ -20,7 +20,7 @@ void main() {
 	float x = gl_FragCoord.x / screen_w;
 	float dist = abs(x - x_pos) * screen_w;
 	
-	float star = step(dist, 1.0) * speed;
+	float star = step(dist, 1.0) * seed_val;
 	
 	color = vec4(vec3(star), 1.0);
 }

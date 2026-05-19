@@ -231,12 +231,12 @@ There are even more realistic (complicated) models (object mass, applied force, 
 
 ## ⏱️ Task 2: Implement at least 3 different point lights
 
-- [ ] Create at least 3 point lights with different parameters.
+- [X] Create at least 3 point lights with different parameters.
 - [ ] Move lights independently: light position is just point in space. Create model matrix for some model transformations (translate, rotate, scale), and transform original position of the light (point) to new position by matrix multiplication.
 
 ## ⏱️ Task 3: Implement at least one spot light
 
-- [ ] Implement spot light = reflector light source, for example as a light attached to the camera (headlight).
+- [X] Implement spot light = reflector light source, for example as a light attached to the camera (headlight).
 
 
 
@@ -256,7 +256,7 @@ Allow the App to correctly draw transparent objects.
 The very basic collision detection is to disallow the player to leave the map. Better version should be implemented.
 
 - [ ] implement at least two of
-  - [ ] correct beahviour of hit-wall (sliding)
+  - [ ] correct behaviour of hit-wall (sliding)
   - [ ] detect hit of some object with projectile (touch player-object)
   - [ ] detect hit (touch) of the enemy with player
   - [ ] some other idea...
