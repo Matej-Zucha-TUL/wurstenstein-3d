@@ -19,6 +19,8 @@ use config::Config;
 
 mod model;
 
+mod playfield;
+
 mod shader;
 
 struct WinitApp {

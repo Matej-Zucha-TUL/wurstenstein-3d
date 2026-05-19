@@ -38,8 +38,8 @@ pub struct Camera {
 
 impl Camera {
 	pub fn new(position: glm::Vec3) -> Self {
-		let yaw = -90.0f32;
-		let pitch = 0.0f32;
+		let yaw = 45.0f32;
+		let pitch = -23.0f32;
 		let world_up = glm::vec3(0.0, 1.0, 0.0);
 		let front = Camera::calc_front(yaw, pitch);
 		let right = Camera::calc_right(&front, &world_up);

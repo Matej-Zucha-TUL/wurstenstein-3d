@@ -118,7 +118,7 @@ struct World {
 impl Default for World {
 	fn default() -> Self {
 		Self {
-			camera: Camera::new(glm::vec3(0.0, 0.0, 10.0)),
+			camera: Camera::new(glm::vec3(0.0, 0.0, 0.0)),
 		}
 	}
 }
@@ -285,9 +285,10 @@ impl App {
 		};
 
 		let mut model = Model::new(gl.clone());
-		model.add_mesh(&normal_program, mesh, &vertex_attribs);
+		model.add_mesh(&normal_program, crate::playfield::EXAMPLE_MAZE.generate_mesh(), &vertex_attribs);
 		model.add_texture(&normal_program, image, "tex_unit");
-		model.scale = glm::vec3(50.0, 50.0, 50.0);
+		model.scale = glm::vec3(1.0, 1.0, 1.0);
+		model.position = glm::vec3(0.0, -10.0, 0.0);
 
 		let file_dialog = egui_file_dialog::FileDialog::new()
 			.movable(false)
@@ -684,8 +685,8 @@ impl App {
 
 		self.update_camera(dt);
 
-		self.assets.model.position[2] = -10.0;
-		self.assets.model.rotation[1] += (dt * 50.0).to_radians();
+		// self.assets.model.position[2] = -10.0;
+		// self.assets.model.rotation[1] += (dt * 50.0).to_radians();
 
 		let aspect = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
 		let projection_mtx = glm::perspective(
