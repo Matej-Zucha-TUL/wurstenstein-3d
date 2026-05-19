@@ -503,51 +503,91 @@ impl App {
 				_ => {}
 			}
 
-			// TODO - if not pov_camera, allow camera movement
-
-			match event.physical_key {
-				PhysicalKey::Code(KeyCode::ShiftLeft) => self.world.camera.move_fast(true),
-				PhysicalKey::Code(KeyCode::KeyW) => {
-					self.player.move_forward = true;
+			if self.state.pov_camera {
+				match event.physical_key {
+					PhysicalKey::Code(KeyCode::KeyW) => {
+						self.player.move_forward = true;
+					}
+					PhysicalKey::Code(KeyCode::KeyS) => {
+						self.player.move_backward = true;
+					}
+					PhysicalKey::Code(KeyCode::KeyA) => {
+						self.player.move_left = true;
+					}
+					PhysicalKey::Code(KeyCode::KeyD) => {
+						self.player.move_right = true;
+					}
+					PhysicalKey::Code(KeyCode::Space) => {
+						self.player.jump = true;
+					}
+					_ => {}
 				}
-				PhysicalKey::Code(KeyCode::KeyS) => {
-					self.player.move_backward = true;
+			} else {
+				match event.physical_key {
+					PhysicalKey::Code(KeyCode::ShiftLeft) => self.world.camera.move_fast(true),
+					PhysicalKey::Code(KeyCode::KeyW) => {
+						self.world.camera.key_interact(Directions::Forward, true)
+					}
+					PhysicalKey::Code(KeyCode::KeyS) => {
+						self.world.camera.key_interact(Directions::Backward, true)
+					}
+					PhysicalKey::Code(KeyCode::KeyA) => {
+						self.world.camera.key_interact(Directions::Left, true)
+					}
+					PhysicalKey::Code(KeyCode::KeyD) => {
+						self.world.camera.key_interact(Directions::Right, true)
+					}
+					PhysicalKey::Code(KeyCode::ControlLeft) => {
+						self.world.camera.key_interact(Directions::Down, true)
+					}
+					PhysicalKey::Code(KeyCode::Space) => {
+						self.world.camera.key_interact(Directions::Up, true)
+					}
+					_ => {}
 				}
-				PhysicalKey::Code(KeyCode::KeyA) => {
-					self.player.move_left = true;
-				}
-				PhysicalKey::Code(KeyCode::KeyD) => {
-					self.player.move_right = true;
-				}
-				PhysicalKey::Code(KeyCode::ControlLeft) => {
-				}
-				PhysicalKey::Code(KeyCode::Space) => {
-					self.player.jump = true;
-				}
-				_ => {}
 			}
 		}
 
 		if event.state == ElementState::Released {
-			match event.physical_key {
-				PhysicalKey::Code(KeyCode::ShiftLeft) => self.world.camera.move_fast(false),
-				PhysicalKey::Code(KeyCode::KeyW) => {
-					self.player.move_forward = false;
+			if self.state.pov_camera {
+				match event.physical_key {
+					PhysicalKey::Code(KeyCode::KeyW) => {
+						self.player.move_forward = false;
+					}
+					PhysicalKey::Code(KeyCode::KeyS) => {
+						self.player.move_backward = false;
+					}
+					PhysicalKey::Code(KeyCode::KeyA) => {
+						self.player.move_left = false;
+					}
+					PhysicalKey::Code(KeyCode::KeyD) => {
+						self.player.move_right = false;
+					}
+					_ => {}
 				}
-				PhysicalKey::Code(KeyCode::KeyS) => {
-					self.player.move_backward = false;
+			} else {
+				match event.physical_key {
+					PhysicalKey::Code(KeyCode::ShiftLeft) => self.world.camera.move_fast(false),
+					PhysicalKey::Code(KeyCode::KeyW) => {
+						self.world.camera.key_interact(Directions::Forward, false)
+					}
+					PhysicalKey::Code(KeyCode::KeyS) => {
+						self.world.camera.key_interact(Directions::Backward, false)
+					}
+					PhysicalKey::Code(KeyCode::KeyA) => {
+						self.world.camera.key_interact(Directions::Left, false)
+					}
+					PhysicalKey::Code(KeyCode::KeyD) => {
+						self.world.camera.key_interact(Directions::Right, false)
+					}
+					PhysicalKey::Code(KeyCode::ControlLeft) => {
+						self.world.camera.key_interact(Directions::Down, false)
+					}
+					PhysicalKey::Code(KeyCode::Space) => {
+						self.world.camera.key_interact(Directions::Up, false)
+					}
+					_ => {}
 				}
-				PhysicalKey::Code(KeyCode::KeyA) => {
-					self.player.move_left = false;
-				}
-				PhysicalKey::Code(KeyCode::KeyD) => {
-					self.player.move_right = false;
-				}
-				PhysicalKey::Code(KeyCode::ControlLeft) => {
-				}
-				PhysicalKey::Code(KeyCode::Space) => {
-				}
-				_ => {}
 			}
 		}
 	}
