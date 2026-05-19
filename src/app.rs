@@ -1,16 +1,12 @@
 use egui_file_dialog::FileDialog;
 use glow::*;
 use glutin::{
-	config::{ConfigTemplateBuilder, GlConfig},
-	context::{ContextApi, ContextAttributesBuilder, NotCurrentGlContext, PossiblyCurrentContext},
-	display::{GetGlDisplay, GlDisplay},
+	context::{PossiblyCurrentContext},
 	surface::{GlSurface, Surface, SwapInterval, WindowSurface},
 };
-use glutin_winit::{DisplayBuilder, GlWindow};
 use image::ImageReader;
 use log::*;
 use nalgebra_glm as glm;
-use raw_window_handle::HasWindowHandle;
 use winit::{
 	dpi::PhysicalSize,
 	event::{DeviceEvent, ElementState, KeyEvent, MouseScrollDelta, WindowEvent},
@@ -24,46 +20,12 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use crate::{background::Background, config::Config, player::PlayerController, screenshot::take_screenshot, transparent::TransparentRenderer};
+use crate::{background::Background, player::PlayerController, screenshot::take_screenshot, transparent::TransparentRenderer};
 use crate::shader::{Program, ProgramBuilder, ShaderType};
 use crate::{
 	camera::{Camera, Directions},
 	model::{Model, VertexAttributes},
 };
-
-fn opengl_callback(src: u32, kind: u32, id: u32, severity: u32, msg: &str) {
-	let src = match src {
-		DEBUG_SOURCE_API => "API",
-		DEBUG_SOURCE_WINDOW_SYSTEM => "WINDOW SYSTEM",
-		DEBUG_SOURCE_SHADER_COMPILER => "SHADER COMPILER",
-		DEBUG_SOURCE_THIRD_PARTY => "THIRD PARTY",
-		DEBUG_SOURCE_APPLICATION => "APPLICATION",
-		DEBUG_SOURCE_OTHER => "OTHER",
-		_ => "Unknown",
-	};
-
-	let kind = match kind {
-		DEBUG_TYPE_ERROR => "ERROR",
-		DEBUG_TYPE_DEPRECATED_BEHAVIOR => "DEPRECATED_BEHAVIOR",
-		DEBUG_TYPE_UNDEFINED_BEHAVIOR => "UNDEFINED_BEHAVIOR",
-		DEBUG_TYPE_PORTABILITY => "PORTABILITY",
-		DEBUG_TYPE_PERFORMANCE => "PERFORMANCE",
-		DEBUG_TYPE_MARKER => "MARKER",
-		DEBUG_TYPE_OTHER => "OTHER",
-		_ => "Unknown",
-	};
-
-	let severity = match severity {
-		DEBUG_SEVERITY_NOTIFICATION => return,
-		DEBUG_SEVERITY_LOW => "LOW",
-		DEBUG_SEVERITY_MEDIUM => "MEDIUM",
-		DEBUG_SEVERITY_HIGH => "HIGH",
-		_ => "Unknown",
-	};
-
-	warn!(target: "GL", "{:?}", msg);
-	warn!(target: "GL", " -> from {src}, kind {kind}, severity {severity}, id {id}");
-}
 
 pub struct App {
 	window: Window,
@@ -175,66 +137,13 @@ impl Default for ScreenConfig {
 }
 
 impl App {
-	#[allow(unsafe_op_in_unsafe_fn)]
-	pub unsafe fn init(
+	pub fn init(
 		event_loop: &ActiveEventLoop,
-		config: Config,
-		display_builder: DisplayBuilder,
-		template: ConfigTemplateBuilder,
+		window: Window,
+		gl: Arc<Context>,
+		gl_context: PossiblyCurrentContext,
+		gl_surface: Surface<WindowSurface>
 	) -> Self {
-		let (window, gl_config) = display_builder
-			.build(event_loop, template, |configs| {
-				configs
-					.reduce(|accum, new| {
-						if new.num_samples() == config.graphics.antialiasing {
-							new
-						} else {
-							accum
-						}
-					})
-					.unwrap()
-			})
-			.unwrap();
-
-		info!("Antialiasing level: {}", gl_config.num_samples().max(1));
-
-		let raw_window_handle = window
-			.as_ref()
-			.and_then(|window| window.window_handle().map(Into::into).ok());
-
-		// Inititalize OpenGL context
-
-		let gl_display = gl_config.display();
-		let context_attributes = ContextAttributesBuilder::new()
-			.with_context_api(ContextApi::OpenGl(Some(glutin::context::Version {
-				major: 4,
-				minor: 6,
-			})))
-			.build(raw_window_handle);
-
-		let not_current_gl_context = gl_display
-			.create_context(&gl_config, &context_attributes)
-			.unwrap();
-
-		let window = window.unwrap();
-
-		window.set_title("Triangle");
-		window.set_visible(false);
-
-		let attrs = window.build_surface_attributes(Default::default()).unwrap();
-		let gl_surface = gl_display
-			.create_window_surface(&gl_config, &attrs)
-			.unwrap();
-
-		let gl_context = not_current_gl_context.make_current(&gl_surface).unwrap();
-
-		let mut gl = Context::from_loader_function_cstr(|s| gl_display.get_proc_address(s));
-
-		gl.debug_message_callback(opengl_callback);
-		gl.enable(DEBUG_OUTPUT);
-
-		let gl = Arc::new(gl);
-
 		gl_surface
 			.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap()))
 			.unwrap();

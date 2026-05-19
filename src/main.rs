@@ -1,13 +1,15 @@
-use glutin::config::ConfigTemplateBuilder;
-use glutin_winit::DisplayBuilder;
+use glutin::{config::{ConfigTemplateBuilder, GlConfig}, context::{ContextApi, ContextAttributesBuilder, PossiblyCurrentContext}, display::GetGlDisplay, prelude::{GlDisplay, NotCurrentGlContext}, surface::{Surface, WindowSurface}};
+use glutin_winit::{DisplayBuilder, GlWindow};
+use glow::*;
 use log::*;
+use raw_window_handle::HasWindowHandle;
 use winit::{
 	application::ApplicationHandler,
 	event::{DeviceEvent, WindowEvent},
-	event_loop::ActiveEventLoop,
+	event_loop::ActiveEventLoop, window::Window,
 };
 
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
 mod app;
 use app::App;
@@ -37,24 +39,26 @@ struct WinitApp {
 }
 
 struct PreInitData {
-	config: Config,
-	display_builder: DisplayBuilder,
-	template: ConfigTemplateBuilder,
+	window: Window,
+	gl: Arc<Context>,
+	gl_context: PossiblyCurrentContext,
+	gl_surface: Surface<WindowSurface>
 }
 
 impl ApplicationHandler for WinitApp {
 	fn resumed(&mut self, event_loop: &ActiveEventLoop) {
 		let Some(PreInitData {
-			config,
-			display_builder,
-			template,
+			window,
+			gl,
+			gl_context,
+			gl_surface
 		}) = self.preinit.take()
 		else {
 			return;
 		};
 		let _ = self
 			.app
-			.set(unsafe { App::init(event_loop, config, display_builder, template) });
+			.set(App::init(event_loop, window, gl, gl_context, gl_surface));
 	}
 
 	fn device_event(
@@ -82,6 +86,40 @@ impl ApplicationHandler for WinitApp {
 	}
 }
 
+fn opengl_callback(src: u32, kind: u32, id: u32, severity: u32, msg: &str) {
+	let src = match src {
+		DEBUG_SOURCE_API => "API",
+		DEBUG_SOURCE_WINDOW_SYSTEM => "WINDOW SYSTEM",
+		DEBUG_SOURCE_SHADER_COMPILER => "SHADER COMPILER",
+		DEBUG_SOURCE_THIRD_PARTY => "THIRD PARTY",
+		DEBUG_SOURCE_APPLICATION => "APPLICATION",
+		DEBUG_SOURCE_OTHER => "OTHER",
+		_ => "Unknown",
+	};
+
+	let kind = match kind {
+		DEBUG_TYPE_ERROR => "ERROR",
+		DEBUG_TYPE_DEPRECATED_BEHAVIOR => "DEPRECATED_BEHAVIOR",
+		DEBUG_TYPE_UNDEFINED_BEHAVIOR => "UNDEFINED_BEHAVIOR",
+		DEBUG_TYPE_PORTABILITY => "PORTABILITY",
+		DEBUG_TYPE_PERFORMANCE => "PERFORMANCE",
+		DEBUG_TYPE_MARKER => "MARKER",
+		DEBUG_TYPE_OTHER => "OTHER",
+		_ => "Unknown",
+	};
+
+	let severity = match severity {
+		DEBUG_SEVERITY_NOTIFICATION => return,
+		DEBUG_SEVERITY_LOW => "LOW",
+		DEBUG_SEVERITY_MEDIUM => "MEDIUM",
+		DEBUG_SEVERITY_HIGH => "HIGH",
+		_ => "Unknown",
+	};
+
+	warn!(target: "GL", "{:?}", msg);
+	warn!(target: "GL", " -> from {src}, kind {kind}, severity {severity}, id {id}");
+}
+
 fn main() {
 	env_logger::builder().filter_level(LevelFilter::Info).init();
 
@@ -106,13 +144,71 @@ fn main() {
 
 	let display_builder = DisplayBuilder::new().with_window_attributes(Some(window_builder));
 
+	let (window, gl_config) = display_builder
+		.build(&event_loop, template, |configs| {
+			configs
+				.reduce(|accum, new| {
+					if new.num_samples() == config.graphics.antialiasing {
+						new
+					} else {
+						accum
+					}
+				})
+				.unwrap()
+		})
+		.unwrap();
+
+	info!("Antialiasing level: {}", gl_config.num_samples().max(1));
+
+	let raw_window_handle = window
+		.as_ref()
+		.and_then(|window| window.window_handle().map(Into::into).ok());
+
+	// Inititalize OpenGL context
+
+	let gl_display = gl_config.display();
+	let context_attributes = ContextAttributesBuilder::new()
+		.with_context_api(ContextApi::OpenGl(Some(glutin::context::Version {
+			major: 4,
+			minor: 6,
+		})))
+		.build(raw_window_handle);
+
+	let window = window.unwrap();
+
+	window.set_title("Triangle");
+	window.set_visible(false);
+
+	let (gl, gl_context, gl_surface) = unsafe {
+		let not_current_gl_context = gl_display
+			.create_context(&gl_config, &context_attributes)
+			.unwrap();
+
+		let attrs = window.build_surface_attributes(Default::default()).unwrap();
+		let gl_surface = gl_display
+			.create_window_surface(&gl_config, &attrs)
+			.unwrap();
+
+		let gl_context = not_current_gl_context.make_current(&gl_surface).unwrap();
+
+		let mut gl = Context::from_loader_function_cstr(|s| gl_display.get_proc_address(s));
+
+		gl.debug_message_callback(opengl_callback);
+		gl.enable(DEBUG_OUTPUT);
+
+		let gl = Arc::new(gl);
+
+		(gl, gl_context, gl_surface)
+	};
+
 	// Run the app
 
 	let mut app = WinitApp {
 		preinit: Some(PreInitData {
-			config,
-			display_builder,
-			template,
+			window,
+			gl,
+			gl_context,
+			gl_surface
 		}),
 		app: OnceLock::new(),
 	};
