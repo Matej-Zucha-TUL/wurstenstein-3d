@@ -167,6 +167,31 @@ impl Model {
 		self.tex.push(ModelTexture { tex, sampler });
 	}
 
+	pub fn with_mesh(mut self, program: &Program, mesh: Mesh, attribs: &VertexAttributes) -> Self {
+		self.add_mesh(program, mesh, attribs);
+		self
+	}
+
+	pub fn with_texture(mut self, program: &Program, image: DynamicImage, sampler_attrib: &str) -> Self {
+		self.add_texture(program, image, sampler_attrib);
+		self
+	}
+
+	pub fn with_position(mut self, position: glm::Vec3) -> Self {
+		self.position = position;
+		self
+	}
+
+	pub fn with_scale(mut self, scale: glm::Vec3) -> Self {
+		self.scale = scale;
+		self
+	}
+
+	pub fn with_rotation(mut self, rotation: glm::Vec3) -> Self {
+		self.rotation = rotation;
+		self
+	}
+
 	pub fn draw(&self, program: &Program, model_attrib: &str) {
 		program.activate();
 
