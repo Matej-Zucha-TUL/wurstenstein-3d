@@ -265,6 +265,52 @@ impl App {
 	fn handle_key_event(&mut self, event_loop: &ActiveEventLoop, event: KeyEvent) {
 		info!("{:?} key: {:?}", event.state, event.physical_key);
 
+		let enable = event.state == ElementState::Pressed;
+
+		if self.params.pov_camera {
+			match event.physical_key {
+				PhysicalKey::Code(KeyCode::KeyW) => {
+					self.player.move_forward = enable;
+				}
+				PhysicalKey::Code(KeyCode::KeyS) => {
+					self.player.move_backward = enable;
+				}
+				PhysicalKey::Code(KeyCode::KeyA) => {
+					self.player.move_left = enable;
+				}
+				PhysicalKey::Code(KeyCode::KeyD) => {
+					self.player.move_right = enable;
+				}
+				PhysicalKey::Code(KeyCode::Space) => {
+					self.player.jump = enable;
+				}
+				_ => {}
+			}
+		} else {
+			match event.physical_key {
+				PhysicalKey::Code(KeyCode::ShiftLeft) => self.camera.move_fast(enable),
+				PhysicalKey::Code(KeyCode::KeyW) => {
+					self.camera.key_interact(Directions::Forward, enable)
+				}
+				PhysicalKey::Code(KeyCode::KeyS) => {
+					self.camera.key_interact(Directions::Backward, enable)
+				}
+				PhysicalKey::Code(KeyCode::KeyA) => {
+					self.camera.key_interact(Directions::Left, enable)
+				}
+				PhysicalKey::Code(KeyCode::KeyD) => {
+					self.camera.key_interact(Directions::Right, enable)
+				}
+				PhysicalKey::Code(KeyCode::ControlLeft) => {
+					self.camera.key_interact(Directions::Down, enable)
+				}
+				PhysicalKey::Code(KeyCode::Space) => {
+					self.camera.key_interact(Directions::Up, enable)
+				}
+				_ => {}
+			}
+		}
+
 		if event.state == ElementState::Pressed {
 			match event.logical_key {
 				Key::Named(NamedKey::Escape) => event_loop.exit(),
@@ -289,93 +335,6 @@ impl App {
 					info!("Cursor lock = {}", self.params.cursor_lock);
 				}
 				_ => {}
-			}
-
-			if self.params.pov_camera {
-				match event.physical_key {
-					PhysicalKey::Code(KeyCode::KeyW) => {
-						self.player.move_forward = true;
-					}
-					PhysicalKey::Code(KeyCode::KeyS) => {
-						self.player.move_backward = true;
-					}
-					PhysicalKey::Code(KeyCode::KeyA) => {
-						self.player.move_left = true;
-					}
-					PhysicalKey::Code(KeyCode::KeyD) => {
-						self.player.move_right = true;
-					}
-					PhysicalKey::Code(KeyCode::Space) => {
-						self.player.jump = true;
-					}
-					_ => {}
-				}
-			} else {
-				match event.physical_key {
-					PhysicalKey::Code(KeyCode::ShiftLeft) => self.camera.move_fast(true),
-					PhysicalKey::Code(KeyCode::KeyW) => {
-						self.camera.key_interact(Directions::Forward, true)
-					}
-					PhysicalKey::Code(KeyCode::KeyS) => {
-						self.camera.key_interact(Directions::Backward, true)
-					}
-					PhysicalKey::Code(KeyCode::KeyA) => {
-						self.camera.key_interact(Directions::Left, true)
-					}
-					PhysicalKey::Code(KeyCode::KeyD) => {
-						self.camera.key_interact(Directions::Right, true)
-					}
-					PhysicalKey::Code(KeyCode::ControlLeft) => {
-						self.camera.key_interact(Directions::Down, true)
-					}
-					PhysicalKey::Code(KeyCode::Space) => {
-						self.camera.key_interact(Directions::Up, true)
-					}
-					_ => {}
-				}
-			}
-		}
-
-		if event.state == ElementState::Released {
-			if self.params.pov_camera {
-				match event.physical_key {
-					PhysicalKey::Code(KeyCode::KeyW) => {
-						self.player.move_forward = false;
-					}
-					PhysicalKey::Code(KeyCode::KeyS) => {
-						self.player.move_backward = false;
-					}
-					PhysicalKey::Code(KeyCode::KeyA) => {
-						self.player.move_left = false;
-					}
-					PhysicalKey::Code(KeyCode::KeyD) => {
-						self.player.move_right = false;
-					}
-					_ => {}
-				}
-			} else {
-				match event.physical_key {
-					PhysicalKey::Code(KeyCode::ShiftLeft) => self.camera.move_fast(false),
-					PhysicalKey::Code(KeyCode::KeyW) => {
-						self.camera.key_interact(Directions::Forward, false)
-					}
-					PhysicalKey::Code(KeyCode::KeyS) => {
-						self.camera.key_interact(Directions::Backward, false)
-					}
-					PhysicalKey::Code(KeyCode::KeyA) => {
-						self.camera.key_interact(Directions::Left, false)
-					}
-					PhysicalKey::Code(KeyCode::KeyD) => {
-						self.camera.key_interact(Directions::Right, false)
-					}
-					PhysicalKey::Code(KeyCode::ControlLeft) => {
-						self.camera.key_interact(Directions::Down, false)
-					}
-					PhysicalKey::Code(KeyCode::Space) => {
-						self.camera.key_interact(Directions::Up, false)
-					}
-					_ => {}
-				}
 			}
 		}
 	}
