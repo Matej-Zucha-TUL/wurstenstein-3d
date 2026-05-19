@@ -86,6 +86,7 @@ struct Assets {
 	rizz_program: Program,
 	background_program: Program,
 	background: Background,
+	terrain: Model,
 	model: Model,
 }
 
@@ -275,6 +276,11 @@ impl App {
 		let model = model.into_iter().next().unwrap();
 		let mesh = model.mesh;
 
+		let terrain_image = ImageReader::open("assets/textures/ferris.png")
+			.unwrap()
+			.decode()
+			.unwrap();
+
 		let image = ImageReader::open("assets/objects/pastry/pastry_tex.png")
 			.unwrap()
 			.decode()
@@ -286,11 +292,17 @@ impl App {
 			texcoord: Some("aTexCoord".into()),
 		};
 
+		let mut terrain = Model::new(gl.clone());
+		terrain.add_mesh(&normal_program, crate::playfield::EXAMPLE_MAZE.generate_mesh(), &vertex_attribs);
+		terrain.add_texture(&normal_program, terrain_image, "tex_unit");
+		terrain.scale = glm::vec3(1.0, 1.0, 1.0);
+		terrain.position = glm::vec3(0.0, 0.0, 0.0);
+
 		let mut model = Model::new(gl.clone());
-		model.add_mesh(&normal_program, crate::playfield::EXAMPLE_MAZE.generate_mesh(), &vertex_attribs);
+		model.add_mesh(&normal_program, mesh, &vertex_attribs);
 		model.add_texture(&normal_program, image, "tex_unit");
-		model.scale = glm::vec3(1.0, 1.0, 1.0);
-		model.position = glm::vec3(0.0, -10.0, 0.0);
+		model.scale = glm::vec3(50.0, 50.0, 50.0);
+		model.position = glm::vec3(0.0, 0.0, 0.0);
 
 		let file_dialog = egui_file_dialog::FileDialog::new()
 			.movable(false)
@@ -322,6 +334,7 @@ impl App {
 			rizz_program,
 			background_program,
 			background,
+			terrain,
 			model,
 		};
 
@@ -765,6 +778,7 @@ impl App {
 
 		self.assets.background.draw(&self.assets.background_program);
 
+		self.assets.terrain.draw(program, "model");
 		self.assets.model.draw(program, "model");
 
 		self.redraw_ui(event_loop);
