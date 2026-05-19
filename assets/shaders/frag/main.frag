@@ -16,7 +16,7 @@ uniform vec3 ambient_material   = vec3(0.5);
 uniform float specular_shininess = 32.0;
 
 // ---- Directional light ----
-uniform vec3 directional_light_position = vec3(0.0, 0.0, 10.0);
+uniform vec3 directional_light_direction = vec3(0.0, 0.0, 10.0);
 uniform vec3 directional_diffuse  = vec3(0.5);
 uniform vec3 directional_specular = vec3(0.5);
 
@@ -65,7 +65,7 @@ void main() {
 
 	// --- Directional light (always on, no attenuation) ---
 	{
-		vec3 L = normalize(directional_light_position - world_pos);
+    vec3 L = normalize(-directional_light_direction);
 		float n_dot_l = max(dot(N, L), 0.0);
 		vec3 H = normalize(L + V);
 		float n_dot_h = max(dot(N, H), 0.0);
