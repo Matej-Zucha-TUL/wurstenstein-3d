@@ -149,7 +149,7 @@ impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
 
 								normals.extend_from_slice(&normal);
 
-								texcoords.push(if inc_xz == 0 { tx1 } else { tx2 });
+								texcoords.push(if (inc_xz == 0) == reverse { tx1 } else { tx2 });
 								texcoords.push(if inc_y == 0 { ty1 } else { ty2 });
 							}
 						}
