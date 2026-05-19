@@ -108,7 +108,7 @@ impl Default for State {
 			ambient_color: [0.5, 0.5, 0.5],
 			diffuse_color: [0.5, 0.5, 0.5],
 			specular_color: [0.5, 0.5, 0.5],
-			specular_shininess: 5.0,
+			specular_shininess: 20.0,
 			enable_background: true,
 			rizz_mode: false,
 			pov_camera: false,
