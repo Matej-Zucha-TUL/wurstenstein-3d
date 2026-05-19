@@ -1,3 +1,6 @@
+use std::sync::Arc;
+
+use glow::*;
 use nalgebra_glm as glm;
 
 pub struct TransparentObject<'a> {
@@ -6,12 +9,14 @@ pub struct TransparentObject<'a> {
 }
 
 pub struct TransparentRenderer<'a> {
+	gl: Arc<Context>,
 	objects: Vec<TransparentObject<'a>>
 }
 
 impl<'a> TransparentRenderer<'a> {
-	pub fn new() -> Self {
+	pub fn new(gl: Arc<Context>) -> Self {
 		Self {
+			gl,
 			objects: vec![]
 		}
 	}
@@ -27,8 +32,21 @@ impl<'a> TransparentRenderer<'a> {
 
 		self.objects.sort_by(|a, b| a.position[2].partial_cmp(&b.position[2]).unwrap());
 
+		unsafe {
+			self.gl.blend_func(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
+			self.gl.enable(BLEND);
+			self.gl.depth_mask(false);
+			self.gl.disable(CULL_FACE);
+		}
+
 		for obj in self.objects {
 			(obj.render)();
+		}
+
+		unsafe {
+			self.gl.enable(CULL_FACE);
+			self.gl.disable(BLEND);
+			self.gl.depth_mask(true);
 		}
 	}
 }

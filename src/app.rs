@@ -818,23 +818,6 @@ impl App {
 		}
 	}
 
-	fn init_alpha_drawing(&self) {
-		unsafe {
-			self.gl.blend_func(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
-			self.gl.enable(BLEND);
-			self.gl.depth_mask(false);
-			self.gl.disable(CULL_FACE);
-		}
-	}
-
-	fn end_alpha_drawing(&self) {
-		unsafe {
-			self.gl.enable(CULL_FACE);
-			self.gl.disable(BLEND);
-			self.gl.depth_mask(true);
-		}
-	}
-
 	fn end_drawing(&self) {
 		self.gl_surface.swap_buffers(&self.gl_context).unwrap();
 		self.window.request_redraw();
@@ -919,9 +902,7 @@ impl App {
 		self.assets.player.draw(program, "model");
 		self.assets.enemy.draw(program, "model");
 
-		self.init_alpha_drawing();
-
-		let mut transparent = TransparentRenderer::new();
+		let mut transparent = TransparentRenderer::new(self.gl.clone());
 
 		transparent.add_object(self.assets.powerup_speed.position, || {
 			self.assets.powerup_program.set_uniform_f32_3("base_color", &[0.0, 1.0, 0.0]);
@@ -939,8 +920,6 @@ impl App {
 		});
 
 		transparent.render(view_mtx);
-
-		self.end_alpha_drawing();
 
 		self.redraw_ui(event_loop);
 
