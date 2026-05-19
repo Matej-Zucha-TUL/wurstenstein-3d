@@ -86,10 +86,14 @@ struct Assets {
 	normal_program: Program,
 	rizz_program: Program,
 	background_program: Program,
+	powerup_program: Program,
 	background: Background,
 	terrain: Model,
 	player: Model,
-	enemy: Model
+	enemy: Model,
+	powerup_hp: Model,
+	powerup_energy: Model,
+	powerup_speed: Model,
 }
 
 struct PlayerController {
@@ -284,6 +288,17 @@ impl App {
 			)
 			.link();
 
+		let powerup_program = ProgramBuilder::new(gl.clone())
+			.add_shader(
+				ShaderType::Vertex,
+				include_str!("./../assets/shaders/vert/main.vert"),
+			)
+			.add_shader(
+				ShaderType::Fragment,
+				include_str!("./../assets/shaders/frag/powerup.frag"),
+			)
+			.link();
+
 		let mut model_data = Cursor::new(include_bytes!("./../assets/objects/pastry/pastry.obj"));
 		let (model, _material) =
 			tobj::load_obj_buf(&mut model_data, &tobj::GPU_LOAD_OPTIONS, |_| {
@@ -301,6 +316,33 @@ impl App {
 			.unwrap();
 		let model = model.into_iter().next().unwrap();
 		let enemy_mesh = model.mesh;
+
+		let mut model_data = Cursor::new(include_bytes!("./../assets/objects/powerups/powerup-hp.obj"));
+		let (model, _material) =
+			tobj::load_obj_buf(&mut model_data, &tobj::GPU_LOAD_OPTIONS, |_| {
+				Err(tobj::LoadError::ReadError)
+			})
+			.unwrap();
+		let model = model.into_iter().next().unwrap();
+		let powerup_hp_mesh = model.mesh;
+
+		let mut model_data = Cursor::new(include_bytes!("./../assets/objects/powerups/powerup-energy.obj"));
+		let (model, _material) =
+			tobj::load_obj_buf(&mut model_data, &tobj::GPU_LOAD_OPTIONS, |_| {
+				Err(tobj::LoadError::ReadError)
+			})
+			.unwrap();
+		let model = model.into_iter().next().unwrap();
+		let powerup_energy_mesh = model.mesh;
+
+		let mut model_data = Cursor::new(include_bytes!("./../assets/objects/powerups/powerup-speed.obj"));
+		let (model, _material) =
+			tobj::load_obj_buf(&mut model_data, &tobj::GPU_LOAD_OPTIONS, |_| {
+				Err(tobj::LoadError::ReadError)
+			})
+			.unwrap();
+		let model = model.into_iter().next().unwrap();
+		let powerup_speed_mesh = model.mesh;
 
 		let terrain_tex = ImageReader::open("assets/textures/ferris.png")
 			.unwrap()
@@ -341,6 +383,21 @@ impl App {
 		enemy.scale = glm::vec3(30.0, 30.0, 30.0);
 		enemy.position = glm::vec3(12.5, 0.0, 7.5);
 
+		let mut powerup_hp = Model::new(gl.clone());
+		powerup_hp.add_mesh(&normal_program, powerup_hp_mesh, &vertex_attribs);
+		powerup_hp.scale = glm::vec3(2.0, 2.0, 2.0);
+		powerup_hp.position = glm::vec3(22.5, 1.5, 27.5);
+
+		let mut powerup_energy = Model::new(gl.clone());
+		powerup_energy.add_mesh(&normal_program, powerup_energy_mesh, &vertex_attribs);
+		powerup_energy.scale = glm::vec3(2.0, 2.0, 2.0);
+		powerup_energy.position = glm::vec3(22.5, 1.5, 22.5);
+
+		let mut powerup_speed = Model::new(gl.clone());
+		powerup_speed.add_mesh(&normal_program, powerup_speed_mesh, &vertex_attribs);
+		powerup_speed.scale = glm::vec3(2.0, 2.0, 2.0);
+		powerup_speed.position = glm::vec3(22.5, 1.5, 17.5);
+
 		let file_dialog = egui_file_dialog::FileDialog::new()
 			.movable(false)
 			.resizable(false)
@@ -370,9 +427,13 @@ impl App {
 			normal_program,
 			rizz_program,
 			background_program,
+			powerup_program,
 			background,
 			terrain,
 			player,
+			powerup_hp,
+			powerup_energy,
+			powerup_speed,
 			enemy
 		};
 
@@ -809,6 +870,23 @@ impl App {
 		}
 	}
 
+	fn init_alpha_drawing(&self) {
+		unsafe {
+			self.gl.blend_func(SRC_ALPHA, ONE_MINUS_SRC_ALPHA);
+			self.gl.enable(BLEND);
+			self.gl.depth_mask(false);
+			self.gl.disable(CULL_FACE);
+		}
+	}
+
+	fn end_alpha_drawing(&self) {
+		unsafe {
+			self.gl.enable(CULL_FACE);
+			self.gl.disable(BLEND);
+			self.gl.depth_mask(true);
+		}
+	}
+
 	fn end_drawing(&self) {
 		self.gl_surface.swap_buffers(&self.gl_context).unwrap();
 		self.window.request_redraw();
@@ -843,18 +921,16 @@ impl App {
 			true => &self.assets.rizz_program,
 		};
 
-		program.set_uniform_f32_3("camera_position", self.world.camera.get_position().as_slice().try_into().unwrap());
-		program.set_uniform_matrix_f32_4(
-			"view",
-			self.world
-				.camera
-				.get_view_matrix()
-				.as_slice()
-				.try_into()
-				.unwrap(),
-		);
-		program
-			.set_uniform_matrix_f32_4("projection", projection_mtx.as_slice().try_into().unwrap());
+		let camera_pos = self.world.camera.get_position();
+		let view_mtx = self.world.camera.get_view_matrix();
+
+		program.set_uniform_f32_3("camera_position", camera_pos.as_slice().try_into().unwrap());
+		program.set_uniform_matrix_f32_4("view", view_mtx.as_slice().try_into().unwrap());
+		program.set_uniform_matrix_f32_4("projection", projection_mtx.as_slice().try_into().unwrap());
+
+		self.assets.powerup_program.set_uniform_f32_3("camera_position", camera_pos.as_slice().try_into().unwrap());
+		self.assets.powerup_program.set_uniform_matrix_f32_4("view", view_mtx.as_slice().try_into().unwrap());
+		self.assets.powerup_program.set_uniform_matrix_f32_4("projection", projection_mtx.as_slice().try_into().unwrap());
 
 		let time = self.perf
 			.last_time
@@ -894,6 +970,35 @@ impl App {
 		self.assets.terrain.draw(program, "model");
 		self.assets.player.draw(program, "model");
 		self.assets.enemy.draw(program, "model");
+
+		self.init_alpha_drawing();
+
+		let powerup_speed_distance = ("speed", view_mtx * glm::vec3_to_vec4(&self.assets.powerup_speed.position));
+		let powerup_hp_distance = ("hp", view_mtx * glm::vec3_to_vec4(&self.assets.powerup_hp.position));
+		let powerup_energy_distance = ("energy", view_mtx * glm::vec3_to_vec4(&self.assets.powerup_energy.position));
+
+		let mut distances = [powerup_speed_distance, powerup_hp_distance, powerup_energy_distance];
+		distances.sort_by(|a, b| a.1[2].partial_cmp(&b.1[2]).unwrap());
+
+		for (obj, _) in distances {
+			match obj {
+				"speed" => {
+					self.assets.powerup_program.set_uniform_f32_3("base_color", &[0.0, 1.0, 0.0]);
+					self.assets.powerup_speed.draw(&self.assets.powerup_program, "model");
+				},
+				"hp" => {
+					self.assets.powerup_program.set_uniform_f32_3("base_color", &[1.0, 0.0, 0.0]);
+					self.assets.powerup_hp.draw(&self.assets.powerup_program, "model");
+				},
+				"energy" => {
+					self.assets.powerup_program.set_uniform_f32_3("base_color", &[0.0, 0.0, 1.0]);
+					self.assets.powerup_energy.draw(&self.assets.powerup_program, "model");
+				},
+				_ => unreachable!()
+			}
+		}
+
+		self.end_alpha_drawing();
 
 		self.redraw_ui(event_loop);
 
