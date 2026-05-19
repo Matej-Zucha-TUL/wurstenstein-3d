@@ -25,6 +25,8 @@ mod playfield;
 
 mod player;
 
+mod screenshot;
+
 mod shader;
 
 mod transparent;

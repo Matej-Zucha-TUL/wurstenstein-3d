@@ -7,7 +7,7 @@ use glutin::{
 	surface::{GlSurface, Surface, SwapInterval, WindowSurface},
 };
 use glutin_winit::{DisplayBuilder, GlWindow};
-use image::{ExtendedColorType, ImageEncoder, ImageReader, codecs::png::PngEncoder};
+use image::ImageReader;
 use log::*;
 use nalgebra_glm as glm;
 use raw_window_handle::HasWindowHandle;
@@ -24,7 +24,7 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use crate::{background::Background, config::Config, player::PlayerController, transparent::TransparentRenderer};
+use crate::{background::Background, config::Config, player::PlayerController, screenshot::take_screenshot, transparent::TransparentRenderer};
 use crate::shader::{Program, ProgramBuilder, ShaderType};
 use crate::{
 	camera::{Camera, Directions},
@@ -457,7 +457,7 @@ impl App {
 					info!("Fullscreen = {}", self.screen_config.fullscreen);
 				}
 				Key::Character(x) if x == "o" => {
-					self.take_screenshot();
+					take_screenshot(&self.gl, self.window.inner_size());
 				}
 				Key::Character(x) if x == "l" => {
 					self.screen_config.cursor_lock = !self.screen_config.cursor_lock;
@@ -706,49 +706,6 @@ impl App {
 			);
 			self.perf.last_update = SystemTime::now();
 		}
-	}
-
-	fn take_screenshot(&self) {
-		let width = self.window.inner_size().width as usize;
-		let height = self.window.inner_size().height as usize;
-
-		let mut buf = vec![0; width * height * 4];
-
-		unsafe {
-			self.gl.read_pixels(
-				0,
-				0,
-				width as i32,
-				height as i32,
-				RGBA,
-				UNSIGNED_BYTE,
-				PixelPackData::Slice(Some(buf.as_mut_slice())),
-			);
-		}
-
-		std::thread::spawn(move || {
-			let mut out_file = std::fs::File::create("screenshot.png").unwrap();
-
-			// Reverse the rows so that the image is not upside down
-
-			let buf = buf
-				.chunks(width * 4)
-				.rev()
-				.flatten()
-				.copied()
-				.collect::<Vec<_>>();
-
-			PngEncoder::new(&mut out_file)
-				.write_image(
-					buf.as_slice(),
-					width as u32,
-					height as u32,
-					ExtendedColorType::Rgba8,
-				)
-				.unwrap();
-
-			info!("Screenshot saved!");
-		});
 	}
 
 	fn update_cursor_lock(&mut self) {
