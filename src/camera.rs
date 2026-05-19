@@ -1,3 +1,5 @@
+use std::ops::RangeInclusive;
+
 use nalgebra_glm as glm;
 
 pub enum Directions {
@@ -9,7 +11,7 @@ pub enum Directions {
 	Backward,
 }
 
-#[derive(Debug, Copy, Clone, PartialEq)]
+#[derive(Debug, Clone)]
 pub struct Camera {
 	position: glm::Vec3,
 	front: glm::Vec3,
@@ -31,6 +33,7 @@ pub struct Camera {
 
 	yaw: f32,
 	pitch: f32,
+	pitch_range: RangeInclusive<f32>,
 	speed: f32,
 	sensitivity: f32,
 	zoom: f32,
@@ -63,6 +66,7 @@ impl Camera {
 			move_fast: false,
 			yaw,
 			pitch,
+			pitch_range: -89.9..=89.9,
 			speed: 2.5f32,
 			sensitivity: 0.1f32,
 			zoom: 45.0f32,
@@ -72,18 +76,36 @@ impl Camera {
 	pub fn set_pov(&mut self, enabled: bool) {
 		self.use_pov = enabled;
 	}
+
 	pub fn set_target(&mut self, target: glm::Vec3) {
 		self.target = target;
 	}
+
+	pub fn set_pitch_range(&mut self, range: RangeInclusive<f32>) {
+		if self.pitch < *range.start() {
+			self.pitch = *range.start();
+		}
+
+		if self.pitch > *range.end() {
+			self.pitch = *range.end();
+		}
+
+		self.pitch_range = range;
+		self.update_vectors();
+	}
+
 	pub fn get_zoom(&self) -> f32 {
 		self.zoom
 	}
+
 	pub fn get_position(&self) -> &glm::Vec3 {
 		&self.position
 	}
+
 	pub fn get_front(&self) -> &glm::Vec3 {
 		&self.front
 	}
+
 	pub fn get_yaw_pitch(&self) -> (f32, f32) {
 		(self.yaw, self.pitch)
 	}
@@ -137,12 +159,12 @@ impl Camera {
 			}
 
 			if self.move_up {
-				self.pitch = (self.pitch + orbit_speed * dt).clamp(-89.0, 89.0);
+				self.pitch = (self.pitch + orbit_speed * dt).clamp(*self.pitch_range.start(), *self.pitch_range.end());
 				self.update_vectors();
 			}
 
 			if self.move_down {
-				self.pitch = (self.pitch - orbit_speed * dt).clamp(-89.0, 89.0);
+				self.pitch = (self.pitch - orbit_speed * dt).clamp(*self.pitch_range.start(), *self.pitch_range.end());
 				self.update_vectors();
 			}
 		} else {
@@ -174,7 +196,7 @@ impl Camera {
 
 	pub fn mouse_interact(&mut self, dx: f32, dy: f32) {
 		self.yaw += dx * self.sensitivity;
-		self.pitch = (self.pitch - dy * self.sensitivity).clamp(-89.0, 89.0);
+		self.pitch = (self.pitch - dy * self.sensitivity).clamp(*self.pitch_range.start(), *self.pitch_range.end());
 		self.update_vectors();
 	}
 

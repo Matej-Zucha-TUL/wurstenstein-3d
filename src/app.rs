@@ -111,7 +111,7 @@ impl Default for State {
 			specular_shininess: 20.0,
 			enable_background: true,
 			rizz_mode: false,
-			pov_camera: false,
+			pov_camera: true,
 		}
 	}
 }
@@ -122,8 +122,11 @@ struct World {
 
 impl Default for World {
 	fn default() -> Self {
+		let mut camera = Camera::new(glm::vec3(0.0, 0.0, 0.0));
+		camera.set_pov(true);
+
 		Self {
-			camera: Camera::new(glm::vec3(0.0, 0.0, 0.0)),
+			camera
 		}
 	}
 }
@@ -458,8 +461,15 @@ impl App {
 	}
 
 	fn update_camera(&mut self, dt: f32) {
+		let pitch_range = if self.state.pov_camera {
+			-89.9..=-15.0
+		} else {
+			-89.9..=89.9
+		};
+
 		self.world.camera.set_pov(self.state.pov_camera);
-		self.world.camera.set_target(glm::vec3(0.0, 0.0, -10.0));
+		self.world.camera.set_pitch_range(pitch_range);
+		self.world.camera.set_target(self.assets.model.position);
 		self.world.camera.update_position(dt);
 	}
 
