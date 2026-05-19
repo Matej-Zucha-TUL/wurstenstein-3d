@@ -25,15 +25,43 @@ pub struct VertexAttributes {
 	pub texcoord: Option<Cow<'static, str>>,
 }
 
-pub struct Model {
-	gl: Arc<Context>,
-	vtx: OnceLock<ModelVertices>,
-	tex: Vec<ModelTexture>,
-	
+pub struct Transform {
 	pub position: glm::Vec3,
 	pub scale: glm::Vec3,
 	/// Yaw, Pitch, Roll
 	pub rotation: glm::Vec3
+}
+
+impl Transform {
+	pub fn origin() -> Self {
+		Self {
+			position: glm::vec3(0.0, 0.0, 0.0),
+			scale: glm::vec3(1.0, 1.0, 1.0),
+			rotation: glm::vec3(0.0, 0.0, 0.0)
+		}
+	}
+
+	pub fn with_position(mut self, position: glm::Vec3) -> Self {
+		self.position = position;
+		self
+	}
+
+	pub fn with_scale(mut self, scale: glm::Vec3) -> Self {
+		self.scale = scale;
+		self
+	}
+
+	pub fn with_rotation(mut self, rotation: glm::Vec3) -> Self {
+		self.rotation = rotation;
+		self
+	}
+}
+
+pub struct Model {
+	gl: Arc<Context>,
+	vtx: OnceLock<ModelVertices>,
+	tex: Vec<ModelTexture>,
+	scale: glm::Vec3
 }
 
 impl Model {
@@ -42,9 +70,7 @@ impl Model {
 			gl,
 			vtx: OnceLock::new(),
 			tex: Vec::new(),
-			position: glm::vec3(0.0, 0.0, 0.0),
-			scale: glm::vec3(1.0, 1.0, 1.0),
-			rotation: glm::vec3(0.0, 0.0, 0.0)
+			scale: glm::vec3(1.0, 1.0, 1.0)
 		}
 	}
 
@@ -177,29 +203,19 @@ impl Model {
 		self
 	}
 
-	pub fn with_position(mut self, position: glm::Vec3) -> Self {
-		self.position = position;
-		self
-	}
-
 	pub fn with_scale(mut self, scale: glm::Vec3) -> Self {
 		self.scale = scale;
 		self
 	}
 
-	pub fn with_rotation(mut self, rotation: glm::Vec3) -> Self {
-		self.rotation = rotation;
-		self
-	}
-
-	pub fn draw(&self, program: &Program, model_attrib: &str) {
+	pub fn draw(&self, transform: &Transform, program: &Program, model_attrib: &str) {
 		program.activate();
 
-		let model_mtx = glm::translate(&glm::Mat4::identity(), &self.position);
-		let model_mtx = glm::scale(&model_mtx, &self.scale);
-		let model_mtx = glm::rotate_z(&model_mtx, self.rotation[2]);
-		let model_mtx = glm::rotate_x(&model_mtx, self.rotation[0]);
-		let model_mtx = glm::rotate_y(&model_mtx, self.rotation[1]);
+		let model_mtx = glm::translate(&glm::Mat4::identity(), &transform.position);
+		let model_mtx = glm::scale(&model_mtx, &transform.scale.component_mul(&self.scale));
+		let model_mtx = glm::rotate_z(&model_mtx, transform.rotation[2]);
+		let model_mtx = glm::rotate_y(&model_mtx, transform.rotation[0]);
+		let model_mtx = glm::rotate_x(&model_mtx, transform.rotation[1]);
 
 		program.set_uniform_matrix_f32_4(model_attrib, model_mtx.as_slice().try_into().unwrap());
 

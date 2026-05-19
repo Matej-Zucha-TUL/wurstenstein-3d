@@ -1,5 +1,7 @@
 use nalgebra_glm as glm;
 
+use crate::model::Transform;
+
 pub struct PlayerController {
 	pub move_forward: bool,
 	pub move_backward: bool,
@@ -7,11 +9,12 @@ pub struct PlayerController {
 	pub move_right: bool,
 	pub jump: bool,
 	gravity: f32,
-	xz_force: [f32; 2]
+	xz_force: [f32; 2],
+	transform: Transform
 }
 
 impl PlayerController {
-	pub fn new() -> Self {
+	pub fn new(spawn: Transform) -> Self {
 		Self {
 			move_forward: false,
 			move_backward: false,
@@ -20,10 +23,15 @@ impl PlayerController {
 			jump: false,
 			gravity: 0.0,
 			xz_force: [0.0, 0.0],
+			transform: spawn
 		}
 	}
 
-	pub fn update_position(&mut self, old_pos: glm::Vec3, yaw: f32, dt: f32) -> glm::Vec3 {
+	pub fn update_yaw(&mut self, yaw: f32) {
+		self.transform.rotation[0] = -(yaw + 90.0).to_radians();
+	}
+
+	pub fn update_position(&mut self, dt: f32) {
 		const MAX_SPEED: f32 = 5.0;
 		const ACCEL: f32 = 20.0;
 		const BASE_GRAVITY: f32 = 10.0;
@@ -65,17 +73,17 @@ impl PlayerController {
 
 		self.xz_force = xz_force;
 
-		let rotated = glm::rotate_vec2(&xz_force.into(), (yaw + 90.0).to_radians());
+		let rotated = glm::rotate_vec2(&xz_force.into(), -self.transform.rotation[0]);
 
-		let out = glm::vec3(
-			old_pos[0] + rotated[0] * dt,
-			f32::max(0.0, old_pos[1] - self.gravity * dt * 2.0),
-			old_pos[2] + rotated[1] * dt
-		);
+		self.transform.position[0] += rotated[0] * dt;
+		self.transform.position[1] = f32::max(0.0, self.transform.position[1] - self.gravity * dt * 2.0);
+		self.transform.position[2] += rotated[1] * dt;
 
 		self.gravity = f32::min(self.gravity + BASE_GRAVITY_ACCEL * dt, BASE_GRAVITY);
+	}
 
-		out
+	pub fn get_transform(&self) -> &Transform {
+		&self.transform
 	}
 }
 

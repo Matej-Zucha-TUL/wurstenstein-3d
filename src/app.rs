@@ -20,7 +20,7 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use crate::{background::Background, player::PlayerController, screenshot::take_screenshot, transparent::TransparentRenderer};
+use crate::{background::Background, model::Transform, player::PlayerController, screenshot::take_screenshot, transparent::TransparentRenderer};
 use crate::shader::{Program, ProgramBuilder, ShaderType};
 use crate::{
 	camera::{Camera, Directions},
@@ -35,10 +35,36 @@ pub struct App {
 	gl_surface: Surface<WindowSurface>,
 
 	assets: Assets,
-	player: PlayerController,
 	perf: Perf,
-	camera: Camera,
+	scene: Scene,
 	params: Parameters,
+}
+
+enum PowerupKind {
+	Health,
+	Energy,
+	Speed
+}
+
+struct Powerup {
+	kind: PowerupKind,
+	transform: Transform
+}
+
+enum EnemyKind {
+	Apple
+}
+
+struct Enemy {
+	kind: EnemyKind,
+	transform: Transform
+}
+
+struct Scene {
+	camera: Camera,
+	player: PlayerController,
+	enemies: Vec<Enemy>,
+	powerups: Vec<Powerup>
 }
 
 struct Assets {
@@ -140,106 +166,132 @@ impl App {
 			.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap()))
 			.unwrap();
 
-		// Load shaders
+		let assets = {
+			// Load shaders
 
-		let normal_program = ProgramBuilder::new(gl.clone())
-			.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/main.vert"))
-			.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/main.frag"))
-			.link();
+			let normal_program = ProgramBuilder::new(gl.clone())
+				.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/main.vert"))
+				.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/main.frag"))
+				.link();
 
-		let rizz_program = ProgramBuilder::new(gl.clone())
-			.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/main.vert"))
-			.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/rizz.frag"))
-			.link();
+			let rizz_program = ProgramBuilder::new(gl.clone())
+				.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/main.vert"))
+				.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/rizz.frag"))
+				.link();
 
-		let powerup_program = ProgramBuilder::new(gl.clone())
-			.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/main.vert"))
-			.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/powerup.frag"))
-			.link();
+			let powerup_program = ProgramBuilder::new(gl.clone())
+				.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/main.vert"))
+				.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/powerup.frag"))
+				.link();
 
-		let background_program = ProgramBuilder::new(gl.clone())
-			.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/screen.vert"))
-			.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/starfield.frag"))
-			.link();
+			let background_program = ProgramBuilder::new(gl.clone())
+				.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/screen.vert"))
+				.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/starfield.frag"))
+				.link();
 
-		// Load background effect
+			// Load background effect
 
-		let mut background = Background::new(gl.clone());
-		background.register(&background_program, "aPos");
+			let mut background = Background::new(gl.clone());
+			background.register(&background_program, "aPos");
 
-		// Load models
+			// Load models
 
-		let player_mesh = load_mesh(include_bytes!("../assets/objects/pastry/pastry.obj"));
-		let enemy_mesh = load_mesh(include_bytes!("../assets/objects/apple/apple.obj"));
-		let powerup_hp_mesh = load_mesh(include_bytes!("../assets/objects/powerups/powerup-hp.obj"));
-		let powerup_energy_mesh = load_mesh(include_bytes!("../assets/objects/powerups/powerup-energy.obj"));
-		let powerup_speed_mesh = load_mesh(include_bytes!("../assets/objects/powerups/powerup-speed.obj"));
+			let player_mesh = load_mesh(include_bytes!("../assets/objects/pastry/pastry.obj"));
+			let enemy_mesh = load_mesh(include_bytes!("../assets/objects/apple/apple.obj"));
+			let powerup_hp_mesh = load_mesh(include_bytes!("../assets/objects/powerups/powerup-hp.obj"));
+			let powerup_energy_mesh = load_mesh(include_bytes!("../assets/objects/powerups/powerup-energy.obj"));
+			let powerup_speed_mesh = load_mesh(include_bytes!("../assets/objects/powerups/powerup-speed.obj"));
 
-		let terrain_tex = load_texture(include_bytes!("../assets/textures/ferris.png"));
-		let player_tex = load_texture(include_bytes!("../assets/objects/pastry/pastry_tex.png"));
-		let enemy_tex = load_texture(include_bytes!("../assets/objects/apple/apple_tex.png"));
+			let terrain_tex = load_texture(include_bytes!("../assets/textures/ferris.png"));
+			let player_tex = load_texture(include_bytes!("../assets/objects/pastry/pastry_tex.png"));
+			let enemy_tex = load_texture(include_bytes!("../assets/objects/apple/apple_tex.png"));
 
-		let vertex_attribs = VertexAttributes {
-			position: Some("aPos".into()),
-			normal: Some("aNormal".into()),
-			texcoord: Some("aTexCoord".into()),
+			let vertex_attribs = VertexAttributes {
+				position: Some("aPos".into()),
+				normal: Some("aNormal".into()),
+				texcoord: Some("aTexCoord".into()),
+			};
+
+			let terrain = Model::new(gl.clone())
+				.with_mesh(&normal_program, crate::playfield::EXAMPLE_MAZE.generate_mesh(), &vertex_attribs)
+				.with_texture(&normal_program, terrain_tex, "tex_unit");
+
+			let player = Model::new(gl.clone())
+				.with_mesh(&normal_program, player_mesh, &vertex_attribs)
+				.with_texture(&normal_program, player_tex, "tex_unit")
+				.with_scale(glm::vec3(20.0, 20.0, 20.0));
+
+			let enemy = Model::new(gl.clone())
+				.with_mesh(&normal_program, enemy_mesh, &vertex_attribs)
+				.with_texture(&normal_program, enemy_tex, "tex_unit")
+				.with_scale(glm::vec3(30.0, 30.0, 30.0));
+
+			let powerup_hp = Model::new(gl.clone())
+				.with_mesh(&normal_program, powerup_hp_mesh, &vertex_attribs)
+				.with_scale(glm::vec3(2.0, 2.0, 2.0));
+
+			let powerup_energy = Model::new(gl.clone())
+				.with_mesh(&normal_program, powerup_energy_mesh, &vertex_attribs)
+				.with_scale(glm::vec3(2.0, 2.0, 2.0));
+
+			let powerup_speed = Model::new(gl.clone())
+				.with_mesh(&normal_program, powerup_speed_mesh, &vertex_attribs)
+				.with_scale(glm::vec3(2.0, 2.0, 2.0));
+
+			Assets {
+				normal_program,
+				rizz_program,
+				background_program,
+				powerup_program,
+				background,
+				terrain,
+				player,
+				powerup_hp,
+				powerup_energy,
+				powerup_speed,
+				enemy
+			}
 		};
 
-		let terrain = Model::new(gl.clone())
-			.with_mesh(&normal_program, crate::playfield::EXAMPLE_MAZE.generate_mesh(), &vertex_attribs)
-			.with_texture(&normal_program, terrain_tex, "tex_unit")
-			.with_scale(glm::vec3(1.0, 1.0, 1.0))
-			.with_position(glm::vec3(0.0, 0.0, 0.0));
+		let scene = {
+			let player = PlayerController::new(Transform::origin().with_position(glm::vec3(7.5, 0.0, 7.5)));
 
-		let player = Model::new(gl.clone())
-			.with_mesh(&normal_program, player_mesh, &vertex_attribs)
-			.with_texture(&normal_program, player_tex, "tex_unit")
-			.with_scale(glm::vec3(20.0, 20.0, 20.0))
-			.with_position(glm::vec3(7.5, 0.0, 7.5));
+			let mut camera = Camera::new(glm::vec3(0.0, 0.0, 0.0));
+			camera.set_pov(true);
 
-		let enemy = Model::new(gl.clone())
-			.with_mesh(&normal_program, enemy_mesh, &vertex_attribs)
-			.with_texture(&normal_program, enemy_tex, "tex_unit")
-			.with_scale(glm::vec3(30.0, 30.0, 30.0))
-			.with_position(glm::vec3(12.5, 0.0, 7.5));
+			let enemies = vec![
+				Enemy {
+					kind: EnemyKind::Apple,
+					transform: Transform::origin().with_position(glm::vec3(12.5, 0.0, 7.5))
+				}
+			];
 
-		let powerup_hp = Model::new(gl.clone())
-			.with_mesh(&normal_program, powerup_hp_mesh, &vertex_attribs)
-			.with_scale(glm::vec3(2.0, 2.0, 2.0))
-			.with_position(glm::vec3(22.5, 1.5, 27.5));
+			let powerups = vec![
+				Powerup {
+					kind: PowerupKind::Speed,
+					transform: Transform::origin().with_position(glm::vec3(22.5, 1.5, 17.5))
+				},
+				Powerup {
+					kind: PowerupKind::Energy,
+					transform: Transform::origin().with_position(glm::vec3(22.5, 1.5, 22.5))
+				},
+				Powerup {
+					kind: PowerupKind::Health,
+					transform: Transform::origin().with_position(glm::vec3(22.5, 1.5, 27.5))
+				},
+			];
 
-		let powerup_energy = Model::new(gl.clone())
-			.with_mesh(&normal_program, powerup_energy_mesh, &vertex_attribs)
-			.with_scale(glm::vec3(2.0, 2.0, 2.0))
-			.with_position(glm::vec3(22.5, 1.5, 22.5));
-
-		let powerup_speed = Model::new(gl.clone())
-			.with_mesh(&normal_program, powerup_speed_mesh, &vertex_attribs)
-			.with_scale(glm::vec3(2.0, 2.0, 2.0))
-			.with_position(glm::vec3(22.5, 1.5, 17.5));
-
-		let assets = Assets {
-			normal_program,
-			rizz_program,
-			background_program,
-			powerup_program,
-			background,
-			terrain,
-			player,
-			powerup_hp,
-			powerup_energy,
-			powerup_speed,
-			enemy
+			Scene {
+				camera,
+				player,
+				enemies,
+				powerups
+			}
 		};
 
 		let egui = egui_glow::EguiGlow::new(event_loop, gl.clone(), None, None, true);
-
-		let player = PlayerController::new();
 		let perf = Perf::default();
-		let state = Parameters::default();
-
-		let mut camera = Camera::new(glm::vec3(0.0, 0.0, 0.0));
-		camera.set_pov(true);
+		let params = Parameters::default();
 
 		window.set_visible(true);
 
@@ -251,10 +303,9 @@ impl App {
 			gl_surface,
 
 			assets,
-			player,
+			scene,
 			perf,
-			camera,
-			params: state,
+			params,
 		};
 
 		app.update_cursor_lock();
@@ -270,42 +321,42 @@ impl App {
 		if self.params.pov_camera {
 			match event.physical_key {
 				PhysicalKey::Code(KeyCode::KeyW) => {
-					self.player.move_forward = enable;
+					self.scene.player.move_forward = enable;
 				}
 				PhysicalKey::Code(KeyCode::KeyS) => {
-					self.player.move_backward = enable;
+					self.scene.player.move_backward = enable;
 				}
 				PhysicalKey::Code(KeyCode::KeyA) => {
-					self.player.move_left = enable;
+					self.scene.player.move_left = enable;
 				}
 				PhysicalKey::Code(KeyCode::KeyD) => {
-					self.player.move_right = enable;
+					self.scene.player.move_right = enable;
 				}
 				PhysicalKey::Code(KeyCode::Space) => {
-					self.player.jump = enable;
+					self.scene.player.jump = enable;
 				}
 				_ => {}
 			}
 		} else {
 			match event.physical_key {
-				PhysicalKey::Code(KeyCode::ShiftLeft) => self.camera.move_fast(enable),
+				PhysicalKey::Code(KeyCode::ShiftLeft) => self.scene.camera.move_fast(enable),
 				PhysicalKey::Code(KeyCode::KeyW) => {
-					self.camera.key_interact(Directions::Forward, enable)
+					self.scene.camera.key_interact(Directions::Forward, enable)
 				}
 				PhysicalKey::Code(KeyCode::KeyS) => {
-					self.camera.key_interact(Directions::Backward, enable)
+					self.scene.camera.key_interact(Directions::Backward, enable)
 				}
 				PhysicalKey::Code(KeyCode::KeyA) => {
-					self.camera.key_interact(Directions::Left, enable)
+					self.scene.camera.key_interact(Directions::Left, enable)
 				}
 				PhysicalKey::Code(KeyCode::KeyD) => {
-					self.camera.key_interact(Directions::Right, enable)
+					self.scene.camera.key_interact(Directions::Right, enable)
 				}
 				PhysicalKey::Code(KeyCode::ControlLeft) => {
-					self.camera.key_interact(Directions::Down, enable)
+					self.scene.camera.key_interact(Directions::Down, enable)
 				}
 				PhysicalKey::Code(KeyCode::Space) => {
-					self.camera.key_interact(Directions::Up, enable)
+					self.scene.camera.key_interact(Directions::Up, enable)
 				}
 				_ => {}
 			}
@@ -340,12 +391,11 @@ impl App {
 	}
 
 	fn handle_mouse_motion_event(&mut self, delta: (f64, f64)) {
-		self.camera
-			.mouse_interact(delta.0 as f32, delta.1 as f32);
+		self.scene.camera.mouse_interact(delta.0 as f32, delta.1 as f32);
 	}
 
 	fn handle_mouse_wheel(&mut self, dy: f32) {
-		self.camera.scroll_wheel_interact(dy / 5.0);
+		self.scene.camera.scroll_wheel_interact(dy / 5.0);
 	}
 
 	fn update_camera(&mut self, dt: f32) {
@@ -355,10 +405,10 @@ impl App {
 			-89.9..=89.9
 		};
 
-		self.camera.set_pov(self.params.pov_camera);
-		self.camera.set_pitch_range(pitch_range);
-		self.camera.set_target(self.assets.player.position);
-		self.camera.update_position(dt);
+		self.scene.camera.set_pov(self.params.pov_camera);
+		self.scene.camera.set_pitch_range(pitch_range);
+		self.scene.camera.set_target(self.scene.player.get_transform().position);
+		self.scene.camera.update_position(dt);
 	}
 
 	fn redraw_ui(&mut self, event_loop: &ActiveEventLoop) {
@@ -373,13 +423,14 @@ impl App {
 					ui.add_space(4.0);
 
 					let [x, y, z] = self
-						.assets
+						.scene
 						.player
+						.get_transform()
 						.position
 						.as_slice()
 						.try_into()
 						.unwrap();
-					let (yaw, pitch) = self.camera.get_yaw_pitch();
+					let (yaw, pitch) = self.scene.camera.get_yaw_pitch();
 
 					ui.horizontal(|ui| {
 						ui.vertical(|ui| {
@@ -391,7 +442,7 @@ impl App {
 						ui.vertical(|ui| {
 							ui.label(format!("Camera yaw: {:.3}", yaw));
 							ui.label(format!("Camera pitch: {:.3}", pitch));
-							ui.label(format!("Camera FOV: {:.3}", self.camera.get_zoom()));
+							ui.label(format!("Camera FOV: {:.3}", self.scene.camera.get_zoom()));
 						})
 					});
 
@@ -401,10 +452,6 @@ impl App {
 						ui.label("Cursor is locked.");
 						return;
 					}
-
-					let mut scale = self.assets.player.scale[0];
-					ui.add(egui::Slider::new(&mut scale, 0.0..=100.0));
-					self.assets.player.scale = glm::vec3(scale, scale, scale);
 
 					ui.checkbox(&mut self.params.vsync, "Enable Vsync");
 
@@ -564,18 +611,14 @@ impl App {
 			.as_secs_f32();
 		self.perf.last_time = new_time;
 
-		self.assets.player.position = self.player.update_position(self.assets.player.position, self.camera.get_yaw_pitch().0, dt);
+		self.scene.player.update_yaw(self.scene.camera.get_yaw_pitch().0);
+		self.scene.player.update_position(dt);
 		self.update_camera(dt);
-
-		self.assets.player.rotation[1] = -(self.camera.get_yaw_pitch().0 - 90.0).to_radians();
-
-		// self.assets.model.position[2] = -10.0;
-		// self.assets.model.rotation[1] += (dt * 50.0).to_radians();
 
 		let aspect = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
 		let projection_mtx = glm::perspective(
 			aspect,
-			self.camera.get_zoom().to_radians(),
+			self.scene.camera.get_zoom().to_radians(),
 			0.1f32,
 			100.0f32,
 		);
@@ -585,8 +628,8 @@ impl App {
 			true => &self.assets.rizz_program,
 		};
 
-		let camera_pos = self.camera.get_position();
-		let view_mtx = self.camera.get_view_matrix();
+		let camera_pos = self.scene.camera.get_position();
+		let view_mtx = self.scene.camera.get_view_matrix();
 
 		program.set_uniform_f32_3("camera_position", camera_pos.as_slice().try_into().unwrap());
 		program.set_uniform_matrix_f32_4("view", view_mtx.as_slice().try_into().unwrap());
@@ -631,26 +674,27 @@ impl App {
 			self.assets.background.draw(&self.assets.background_program);
 		}
 
-		self.assets.terrain.draw(program, "model");
-		self.assets.player.draw(program, "model");
-		self.assets.enemy.draw(program, "model");
+		self.assets.terrain.draw(&Transform::origin(), program, "model");
+		self.assets.player.draw(self.scene.player.get_transform(), program, "model");
+
+		for enemy in &self.scene.enemies {
+			self.assets.enemy.draw(&enemy.transform, program, "model");
+		}
 
 		let mut transparent = TransparentRenderer::new(self.gl.clone());
 
-		transparent.add_object(&self.assets.powerup_speed, || {
-			self.assets.powerup_program.set_uniform_f32_3("base_color", &[0.0, 1.0, 0.0]);
-			(&self.assets.powerup_program, "model")
-		});
+		for powerup in &self.scene.powerups {
+			let (model, color) = match powerup.kind {
+				PowerupKind::Health => (&self.assets.powerup_hp, &[1.0, 0.0, 0.0]),
+				PowerupKind::Energy => (&self.assets.powerup_energy, &[0.0, 0.0, 1.0]),
+				PowerupKind::Speed => (&self.assets.powerup_speed, &[0.0, 1.0, 0.0]),
+			};
 
-		transparent.add_object(&self.assets.powerup_hp, || {
-			self.assets.powerup_program.set_uniform_f32_3("base_color", &[1.0, 0.0, 0.0]);
-			(&self.assets.powerup_program, "model")
-		});
-
-		transparent.add_object(&self.assets.powerup_energy, || {
-			self.assets.powerup_program.set_uniform_f32_3("base_color", &[0.0, 0.0, 1.0]);
-			(&self.assets.powerup_program, "model")
-		});
+			transparent.add_object(&powerup.transform, || {
+				self.assets.powerup_program.set_uniform_f32_3("base_color", color);
+				model.draw(&powerup.transform, &self.assets.powerup_program, "model");
+			});
+		}
 
 		transparent.render(view_mtx);
 

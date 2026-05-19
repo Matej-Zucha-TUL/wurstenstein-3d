@@ -3,13 +3,12 @@ use std::sync::Arc;
 use glow::*;
 use nalgebra_glm as glm;
 
-use crate::shader::Program;
-use crate::model::Model;
+use crate::model::Transform;
 
 pub struct TransparentObject<'a> {
-	model: &'a Model,
+	transform: &'a Transform,
 	transformed_position: glm::Vec3,
-	render: Box<dyn FnOnce() -> (&'a Program, &'a str) + 'a>
+	render: Box<dyn FnOnce() + 'a>
 }
 
 pub struct TransparentRenderer<'a> {
@@ -25,17 +24,17 @@ impl<'a> TransparentRenderer<'a> {
 		}
 	}
 
-	pub fn add_object<F: FnOnce() -> (&'a Program, &'a str) + 'a>(&mut self, model: &'a Model, render: F) {
+	pub fn add_object<F: FnOnce() + 'a>(&mut self, transform: &'a Transform, render: F) {
 		self.objects.push(TransparentObject {
-			model,
 			transformed_position: glm::vec3(0.0, 0.0, 0.0),
+			transform,
 			render: Box::new(render)
 		});
 	}
 
 	pub fn render(mut self, view_mtx: glm::Mat4) {
 		for obj in &mut self.objects {
-			obj.transformed_position = glm::vec4_to_vec3(&(view_mtx * glm::vec3_to_vec4(&obj.model.position)));
+			obj.transformed_position = glm::vec4_to_vec3(&(view_mtx * glm::vec3_to_vec4(&obj.transform.position)));
 		}
 
 		self.objects.sort_by(|a, b| a.transformed_position[2].partial_cmp(&b.transformed_position[2]).unwrap());
@@ -48,8 +47,7 @@ impl<'a> TransparentRenderer<'a> {
 		}
 
 		for obj in self.objects {
-			let (prog, attr) = (obj.render)();
-			obj.model.draw(prog, attr);
+			(obj.render)();
 		}
 
 		unsafe {
