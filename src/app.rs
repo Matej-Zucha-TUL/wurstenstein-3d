@@ -88,7 +88,8 @@ struct Assets {
 	background_program: Program,
 	background: Background,
 	terrain: Model,
-	model: Model,
+	player: Model,
+	enemy: Model
 }
 
 struct PlayerController {
@@ -290,14 +291,28 @@ impl App {
 			})
 			.unwrap();
 		let model = model.into_iter().next().unwrap();
-		let mesh = model.mesh;
+		let player_mesh = model.mesh;
 
-		let terrain_image = ImageReader::open("assets/textures/ferris.png")
+		let mut model_data = Cursor::new(include_bytes!("./../assets/objects/apple/apple.obj"));
+		let (model, _material) =
+			tobj::load_obj_buf(&mut model_data, &tobj::GPU_LOAD_OPTIONS, |_| {
+				Err(tobj::LoadError::ReadError)
+			})
+			.unwrap();
+		let model = model.into_iter().next().unwrap();
+		let enemy_mesh = model.mesh;
+
+		let terrain_tex = ImageReader::open("assets/textures/ferris.png")
 			.unwrap()
 			.decode()
 			.unwrap();
 
-		let image = ImageReader::open("assets/objects/pastry/pastry_tex.png")
+		let player_tex = ImageReader::open("assets/objects/pastry/pastry_tex.png")
+			.unwrap()
+			.decode()
+			.unwrap();
+
+		let enemy_tex = ImageReader::open("assets/objects/apple/apple_tex.png")
 			.unwrap()
 			.decode()
 			.unwrap();
@@ -310,15 +325,21 @@ impl App {
 
 		let mut terrain = Model::new(gl.clone());
 		terrain.add_mesh(&normal_program, crate::playfield::EXAMPLE_MAZE.generate_mesh(), &vertex_attribs);
-		terrain.add_texture(&normal_program, terrain_image, "tex_unit");
+		terrain.add_texture(&normal_program, terrain_tex, "tex_unit");
 		terrain.scale = glm::vec3(1.0, 1.0, 1.0);
 		terrain.position = glm::vec3(0.0, 0.0, 0.0);
 
-		let mut model = Model::new(gl.clone());
-		model.add_mesh(&normal_program, mesh, &vertex_attribs);
-		model.add_texture(&normal_program, image, "tex_unit");
-		model.scale = glm::vec3(20.0, 20.0, 20.0);
-		model.position = glm::vec3(7.5, 0.0, 7.5);
+		let mut player = Model::new(gl.clone());
+		player.add_mesh(&normal_program, player_mesh, &vertex_attribs);
+		player.add_texture(&normal_program, player_tex, "tex_unit");
+		player.scale = glm::vec3(20.0, 20.0, 20.0);
+		player.position = glm::vec3(7.5, 0.0, 7.5);
+
+		let mut enemy = Model::new(gl.clone());
+		enemy.add_mesh(&normal_program, enemy_mesh, &vertex_attribs);
+		enemy.add_texture(&normal_program, enemy_tex, "tex_unit");
+		enemy.scale = glm::vec3(30.0, 30.0, 30.0);
+		enemy.position = glm::vec3(12.5, 0.0, 7.5);
 
 		let file_dialog = egui_file_dialog::FileDialog::new()
 			.movable(false)
@@ -351,7 +372,8 @@ impl App {
 			background_program,
 			background,
 			terrain,
-			model,
+			player,
+			enemy
 		};
 
 		let player = PlayerController {
@@ -419,6 +441,8 @@ impl App {
 				}
 				_ => {}
 			}
+
+			// TODO - if not pov_camera, allow camera movement
 
 			match event.physical_key {
 				PhysicalKey::Code(KeyCode::ShiftLeft) => self.world.camera.move_fast(true),
@@ -488,7 +512,7 @@ impl App {
 
 		self.world.camera.set_pov(self.state.pov_camera);
 		self.world.camera.set_pitch_range(pitch_range);
-		self.world.camera.set_target(self.assets.model.position);
+		self.world.camera.set_target(self.assets.player.position);
 		self.world.camera.update_position(dt);
 	}
 
@@ -536,9 +560,9 @@ impl App {
 
 		let rotated = glm::rotate_vec2(&xz_force.into(), (self.world.camera.get_yaw_pitch().0 + 90.0).to_radians());
 
-		self.assets.model.position[1] = f32::max(0.0, self.assets.model.position[1] - self.player.gravity * dt * 2.0);
-		self.assets.model.position[0] += rotated[0] * dt;
-		self.assets.model.position[2] += rotated[1] * dt;
+		self.assets.player.position[1] = f32::max(0.0, self.assets.player.position[1] - self.player.gravity * dt * 2.0);
+		self.assets.player.position[0] += rotated[0] * dt;
+		self.assets.player.position[2] += rotated[1] * dt;
 
 		self.player.gravity = f32::min(self.player.gravity + BASE_GRAVITY_ACCEL * dt, BASE_GRAVITY);
 	}
@@ -559,7 +583,7 @@ impl App {
 
 					let [x, y, z] = self
 						.assets
-						.model
+						.player
 						.position
 						.as_slice()
 						.try_into()
@@ -587,9 +611,9 @@ impl App {
 						return;
 					}
 
-					let mut scale = self.assets.model.scale[0];
+					let mut scale = self.assets.player.scale[0];
 					ui.add(egui::Slider::new(&mut scale, 0.0..=100.0));
-					self.assets.model.scale = glm::vec3(scale, scale, scale);
+					self.assets.player.scale = glm::vec3(scale, scale, scale);
 
 					ui.checkbox(&mut self.screen_config.vsync, "Enable Vsync");
 
@@ -801,7 +825,7 @@ impl App {
 		self.update_player(dt);
 		self.update_camera(dt);
 
-		self.assets.model.rotation[1] = -(self.world.camera.get_yaw_pitch().0 - 90.0).to_radians();
+		self.assets.player.rotation[1] = -(self.world.camera.get_yaw_pitch().0 - 90.0).to_radians();
 
 		// self.assets.model.position[2] = -10.0;
 		// self.assets.model.rotation[1] += (dt * 50.0).to_radians();
@@ -868,7 +892,8 @@ impl App {
 		}
 
 		self.assets.terrain.draw(program, "model");
-		self.assets.model.draw(program, "model");
+		self.assets.player.draw(program, "model");
+		self.assets.enemy.draw(program, "model");
 
 		self.redraw_ui(event_loop);
 
