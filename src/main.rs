@@ -12,6 +12,8 @@ use std::sync::OnceLock;
 mod app;
 use app::App;
 
+mod background;
+
 mod camera;
 
 mod config;

@@ -24,7 +24,7 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use crate::config::Config;
+use crate::{background::Background, config::Config};
 use crate::shader::{Program, ProgramBuilder, ShaderType};
 use crate::{
 	camera::{Camera, Directions},
@@ -84,6 +84,8 @@ pub struct App {
 struct Assets {
 	normal_program: Program,
 	rizz_program: Program,
+	background_program: Program,
+	background: Background,
 	model: Model,
 }
 
@@ -301,9 +303,25 @@ impl App {
 
 		let egui = egui_glow::EguiGlow::new(event_loop, gl.clone(), None, None, true);
 
+		let background_program = ProgramBuilder::new(gl.clone())
+			.add_shader(
+				ShaderType::Vertex,
+				include_str!("./../assets/shaders/vert/screen.vert"),
+			)
+			.add_shader(
+				ShaderType::Fragment,
+				include_str!("./../assets/shaders/frag/starfield.frag"),
+			)
+			.link();
+
+		let mut background = Background::new(gl.clone());
+		background.register(&background_program, "aPos");
+
 		let assets = Assets {
 			normal_program,
 			rizz_program,
+			background_program,
+			background,
 			model,
 		};
 
@@ -713,20 +731,23 @@ impl App {
 		);
 		program
 			.set_uniform_matrix_f32_4("projection", projection_mtx.as_slice().try_into().unwrap());
+
+		let time = self.perf
+			.last_time
+			.duration_since(self.perf.start_time)
+			.unwrap()
+			.as_secs_f32();
+
 		program.set_uniform_f32("screen_w", self.window.inner_size().width as f32);
 		program.set_uniform_f32("screen_h", self.window.inner_size().height as f32);
-		program.set_uniform_f32(
-			"time",
-			self.perf
-				.last_time
-				.duration_since(self.perf.start_time)
-				.unwrap()
-				.as_secs_f32(),
-		);
+		program.set_uniform_f32("time", time);
 		program.set_uniform_f32("specular_shininess", self.state.specular_shininess);
 		program.set_uniform_f32_3("ambient_material", &self.state.ambient_color);
 		program.set_uniform_f32_3("directional_diffuse", &self.state.diffuse_color);
 		program.set_uniform_f32_3("directional_specular", &self.state.specular_color);
+
+		self.assets.background_program.set_uniform_f32("time", time);
+		self.assets.background_program.set_uniform_f32("screen_w", self.window.inner_size().width as f32);
 
 		// program.set_uniform_u32("point_enabled[0]", 1);
 		// program.set_uniform_f32_3("point_position[0]", self.world.camera.get_position().as_slice().try_into().unwrap());
@@ -741,6 +762,8 @@ impl App {
 		// program.set_uniform_f32_3("spot_specular", &[0.5, 0.0, 0.0]);
 
 		self.init_drawing();
+
+		self.assets.background.draw(&self.assets.background_program);
 
 		self.assets.model.draw(program, "model");
 
