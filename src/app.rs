@@ -34,11 +34,10 @@ pub struct App {
 	gl_surface: Surface<WindowSurface>,
 
 	assets: Assets,
-	screen_config: ScreenConfig,
 	player: PlayerController,
 	perf: Perf,
 	camera: Camera,
-	state: State,
+	params: Parameters,
 }
 
 struct Assets {
@@ -55,7 +54,7 @@ struct Assets {
 	powerup_speed: Model,
 }
 
-struct State {
+struct Parameters {
 	background_color: [f32; 4],
 	ambient_color: [f32; 3],
 	diffuse_color: [f32; 3],
@@ -64,9 +63,12 @@ struct State {
 	enable_background: bool,
 	rizz_mode: bool,
 	pov_camera: bool,
+	cursor_lock: bool,
+	fullscreen: bool,
+	vsync: bool,
 }
 
-impl Default for State {
+impl Default for Parameters {
 	fn default() -> Self {
 		Self {
 			background_color: [0.1, 0.2, 0.3, 1.0],
@@ -77,6 +79,9 @@ impl Default for State {
 			enable_background: true,
 			rizz_mode: false,
 			pov_camera: true,
+			cursor_lock: true,
+			fullscreen: false,
+			vsync: true,
 		}
 	}
 }
@@ -99,22 +104,6 @@ impl Default for Perf {
 			last_update: start_time,
 			fps_update_interval: Duration::from_millis(500),
 			fps_string: "FPS = ???".into(),
-		}
-	}
-}
-
-struct ScreenConfig {
-	cursor_lock: bool,
-	fullscreen: bool,
-	vsync: bool,
-}
-
-impl Default for ScreenConfig {
-	fn default() -> Self {
-		Self {
-			cursor_lock: true,
-			fullscreen: false,
-			vsync: true,
 		}
 	}
 }
@@ -265,8 +254,6 @@ impl App {
 		powerup_speed.scale = glm::vec3(2.0, 2.0, 2.0);
 		powerup_speed.position = glm::vec3(22.5, 1.5, 17.5);
 
-		let screen_config = ScreenConfig::default();
-
 		window.set_visible(true);
 
 		let egui = egui_glow::EguiGlow::new(event_loop, gl.clone(), None, None, true);
@@ -301,7 +288,7 @@ impl App {
 
 		let player = PlayerController::new();
 		let perf = Perf::default();
-		let state = State::default();
+		let state = Parameters::default();
 
 		let mut camera = Camera::new(glm::vec3(0.0, 0.0, 0.0));
 		camera.set_pov(true);
@@ -315,10 +302,9 @@ impl App {
 
 			assets,
 			player,
-			screen_config,
 			perf,
 			camera,
-			state,
+			params: state,
 		};
 
 		app.update_cursor_lock();
@@ -333,29 +319,29 @@ impl App {
 			match event.logical_key {
 				Key::Named(NamedKey::Escape) => event_loop.exit(),
 				Key::Character(x) if x == "v" => {
-					self.screen_config.vsync = !self.screen_config.vsync;
-					info!("VSync = {}", self.screen_config.vsync);
+					self.params.vsync = !self.params.vsync;
+					info!("VSync = {}", self.params.vsync);
 				}
 				Key::Character(x) if x == "p" => {
-					self.state.pov_camera = !self.state.pov_camera;
-					info!("POV camera = {}", self.state.pov_camera);
+					self.params.pov_camera = !self.params.pov_camera;
+					info!("POV camera = {}", self.params.pov_camera);
 				}
 				Key::Character(x) if x == "f" => {
-					self.screen_config.fullscreen = !self.screen_config.fullscreen;
-					info!("Fullscreen = {}", self.screen_config.fullscreen);
+					self.params.fullscreen = !self.params.fullscreen;
+					info!("Fullscreen = {}", self.params.fullscreen);
 				}
 				Key::Character(x) if x == "o" => {
 					take_screenshot(&self.gl, self.window.inner_size());
 				}
 				Key::Character(x) if x == "l" => {
-					self.screen_config.cursor_lock = !self.screen_config.cursor_lock;
+					self.params.cursor_lock = !self.params.cursor_lock;
 					self.update_cursor_lock();
-					info!("Cursor lock = {}", self.screen_config.cursor_lock);
+					info!("Cursor lock = {}", self.params.cursor_lock);
 				}
 				_ => {}
 			}
 
-			if self.state.pov_camera {
+			if self.params.pov_camera {
 				match event.physical_key {
 					PhysicalKey::Code(KeyCode::KeyW) => {
 						self.player.move_forward = true;
@@ -401,7 +387,7 @@ impl App {
 		}
 
 		if event.state == ElementState::Released {
-			if self.state.pov_camera {
+			if self.params.pov_camera {
 				match event.physical_key {
 					PhysicalKey::Code(KeyCode::KeyW) => {
 						self.player.move_forward = false;
@@ -454,13 +440,13 @@ impl App {
 	}
 
 	fn update_camera(&mut self, dt: f32) {
-		let pitch_range = if self.state.pov_camera {
+		let pitch_range = if self.params.pov_camera {
 			-89.9..=-15.0
 		} else {
 			-89.9..=89.9
 		};
 
-		self.camera.set_pov(self.state.pov_camera);
+		self.camera.set_pov(self.params.pov_camera);
 		self.camera.set_pitch_range(pitch_range);
 		self.camera.set_target(self.assets.player.position);
 		self.camera.update_position(dt);
@@ -502,7 +488,7 @@ impl App {
 
 					ui.add_space(4.0);
 
-					if self.screen_config.cursor_lock {
+					if self.params.cursor_lock {
 						ui.label("Cursor is locked.");
 						return;
 					}
@@ -511,38 +497,38 @@ impl App {
 					ui.add(egui::Slider::new(&mut scale, 0.0..=100.0));
 					self.assets.player.scale = glm::vec3(scale, scale, scale);
 
-					ui.checkbox(&mut self.screen_config.vsync, "Enable Vsync");
+					ui.checkbox(&mut self.params.vsync, "Enable Vsync");
 
-					ui.checkbox(&mut self.state.rizz_mode, "Rizz mode");
+					ui.checkbox(&mut self.params.rizz_mode, "Rizz mode");
 
-					ui.checkbox(&mut self.state.enable_background, "Enable background");
+					ui.checkbox(&mut self.params.enable_background, "Enable background");
 
-					ui.checkbox(&mut self.state.pov_camera, "POV camera");
+					ui.checkbox(&mut self.params.pov_camera, "POV camera");
 
 					ui.horizontal(|ui| {
-						ui.color_edit_button_rgb(&mut self.state.ambient_color);
+						ui.color_edit_button_rgb(&mut self.params.ambient_color);
 						ui.label("Ambient color");
 					});
 
 					ui.horizontal(|ui| {
-						ui.color_edit_button_rgb(&mut self.state.diffuse_color);
+						ui.color_edit_button_rgb(&mut self.params.diffuse_color);
 						ui.label("Diffuse color");
 					});
 
 					ui.horizontal(|ui| {
-						ui.color_edit_button_rgb(&mut self.state.specular_color);
+						ui.color_edit_button_rgb(&mut self.params.specular_color);
 						ui.label("Specular color");
 					});
 
 					ui.label("Specular shininess");
 					ui.add(egui::Slider::new(
-						&mut self.state.specular_shininess,
+						&mut self.params.specular_shininess,
 						1.0..=100.0,
 					));
 
 					ui.horizontal(|ui| {
 						ui.color_edit_button_rgb(
-							(&mut self.state.background_color[..3]).try_into().unwrap(),
+							(&mut self.params.background_color[..3]).try_into().unwrap(),
 						);
 						ui.label("Background");
 					});
@@ -563,7 +549,7 @@ impl App {
 			self.perf.fps_string = format!("FPS = {:.1}", fps);
 			let vsync_string = format!(
 				"VSync = {}",
-				if self.screen_config.vsync {
+				if self.params.vsync {
 					"on"
 				} else {
 					"off"
@@ -571,7 +557,7 @@ impl App {
 			);
 			let cursor_lock_string = format!(
 				"Cursor lock = {}",
-				if self.screen_config.cursor_lock {
+				if self.params.cursor_lock {
 					"on"
 				} else {
 					"off"
@@ -590,7 +576,7 @@ impl App {
 	}
 
 	fn update_cursor_lock(&mut self) {
-		if self.screen_config.cursor_lock {
+		if self.params.cursor_lock {
 			if let Err(err) = self
 				.window
 				.set_cursor_grab(CursorGrabMode::Confined)
@@ -611,7 +597,7 @@ impl App {
 			self.window.inner_size().height / 2,
 		);
 
-		if self.screen_config.cursor_lock {
+		if self.params.cursor_lock {
 			self.window.set_cursor_visible(false);
 			let _ = self.window.set_cursor_position(middle_point);
 		} else {
@@ -620,7 +606,7 @@ impl App {
 	}
 
 	fn enforce_vsync(&self) {
-		if self.screen_config.vsync {
+		if self.params.vsync {
 			self.gl_surface
 				.set_swap_interval(
 					&self.gl_context,
@@ -636,7 +622,7 @@ impl App {
 
 	fn enforce_fullscreen(&self) {
 		self.window.set_fullscreen(
-			self.screen_config
+			self.params
 				.fullscreen
 				.then_some(Fullscreen::Borderless(self.window.current_monitor())),
 		);
@@ -650,7 +636,7 @@ impl App {
 
 			self.gl.enable(DEPTH_TEST);
 
-			let [r, g, b, a] = self.state.background_color;
+			let [r, g, b, a] = self.params.background_color;
 			self.gl.clear_color(r, g, b, a);
 			self.gl.clear(COLOR_BUFFER_BIT | DEPTH_BUFFER_BIT);
 		}
@@ -685,7 +671,7 @@ impl App {
 			100.0f32,
 		);
 
-		let program = match self.state.rizz_mode {
+		let program = match self.params.rizz_mode {
 			false => &self.assets.normal_program,
 			true => &self.assets.rizz_program,
 		};
@@ -710,10 +696,10 @@ impl App {
 		program.set_uniform_f32("screen_w", self.window.inner_size().width as f32);
 		program.set_uniform_f32("screen_h", self.window.inner_size().height as f32);
 		program.set_uniform_f32("time", time);
-		program.set_uniform_f32("specular_shininess", self.state.specular_shininess);
-		program.set_uniform_f32_3("ambient_material", &self.state.ambient_color);
-		program.set_uniform_f32_3("directional_diffuse", &self.state.diffuse_color);
-		program.set_uniform_f32_3("directional_specular", &self.state.specular_color);
+		program.set_uniform_f32("specular_shininess", self.params.specular_shininess);
+		program.set_uniform_f32_3("ambient_material", &self.params.ambient_color);
+		program.set_uniform_f32_3("directional_diffuse", &self.params.diffuse_color);
+		program.set_uniform_f32_3("directional_specular", &self.params.specular_color);
 
 		self.assets.background_program.set_uniform_f32("time", time);
 		self.assets.background_program.set_uniform_f32("screen_w", self.window.inner_size().width as f32);
@@ -732,7 +718,7 @@ impl App {
 
 		self.init_drawing();
 
-		if self.state.enable_background {
+		if self.params.enable_background {
 			self.assets.background.draw(&self.assets.background_program);
 		}
 
@@ -780,12 +766,12 @@ impl App {
 	pub fn handle_device_event(&mut self, _event_loop: &ActiveEventLoop, event: DeviceEvent) {
 		match event {
 			DeviceEvent::MouseMotion { delta } => {
-				if self.screen_config.cursor_lock {
+				if self.params.cursor_lock {
 					self.handle_mouse_motion_event(delta);
 				}
 			}
 			DeviceEvent::MouseWheel { delta } => {
-				if !self.screen_config.cursor_lock {
+				if !self.params.cursor_lock {
 					return;
 				};
 
