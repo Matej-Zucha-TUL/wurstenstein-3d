@@ -1,4 +1,3 @@
-use egui_file_dialog::FileDialog;
 use glow::*;
 use glutin::{
 	context::{PossiblyCurrentContext},
@@ -33,7 +32,6 @@ pub struct App {
 	gl: Arc<Context>,
 	gl_context: PossiblyCurrentContext,
 	gl_surface: Surface<WindowSurface>,
-	file_dialog: FileDialog,
 
 	assets: Assets,
 	screen_config: ScreenConfig,
@@ -282,11 +280,6 @@ impl App {
 		powerup_speed.scale = glm::vec3(2.0, 2.0, 2.0);
 		powerup_speed.position = glm::vec3(22.5, 1.5, 17.5);
 
-		let file_dialog = egui_file_dialog::FileDialog::new()
-			.movable(false)
-			.resizable(false)
-			.anchor(egui::Align2::CENTER_CENTER, egui::vec2(0.0, 0.0));
-
 		let screen_config = ScreenConfig::default();
 
 		window.set_visible(true);
@@ -332,7 +325,6 @@ impl App {
 			gl,
 			gl_context,
 			gl_surface,
-			file_dialog,
 
 			assets,
 			player,
@@ -541,10 +533,6 @@ impl App {
 
 					ui.checkbox(&mut self.state.pov_camera, "POV camera");
 
-					if ui.button("Pick model").clicked() {
-						self.file_dialog.pick_file();
-					}
-
 					ui.horizontal(|ui| {
 						ui.color_edit_button_rgb(&mut self.state.ambient_color);
 						ui.label("Ambient color");
@@ -577,8 +565,6 @@ impl App {
 						event_loop.exit();
 					}
 				});
-
-			self.file_dialog.update(ctx);
 		});
 
 		self.egui.paint(&self.window);
