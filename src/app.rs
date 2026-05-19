@@ -742,19 +742,19 @@ impl App {
 
 		let mut transparent = TransparentRenderer::new(self.gl.clone());
 
-		transparent.add_object(self.assets.powerup_speed.position, || {
+		transparent.add_object(&self.assets.powerup_speed, || {
 			self.assets.powerup_program.set_uniform_f32_3("base_color", &[0.0, 1.0, 0.0]);
-			self.assets.powerup_speed.draw(&self.assets.powerup_program, "model");
+			(&self.assets.powerup_program, "model")
 		});
 
-		transparent.add_object(self.assets.powerup_hp.position, || {
+		transparent.add_object(&self.assets.powerup_hp, || {
 			self.assets.powerup_program.set_uniform_f32_3("base_color", &[1.0, 0.0, 0.0]);
-			self.assets.powerup_hp.draw(&self.assets.powerup_program, "model");
+			(&self.assets.powerup_program, "model")
 		});
 
-		transparent.add_object(self.assets.powerup_energy.position, || {
+		transparent.add_object(&self.assets.powerup_energy, || {
 			self.assets.powerup_program.set_uniform_f32_3("base_color", &[0.0, 0.0, 1.0]);
-			self.assets.powerup_energy.draw(&self.assets.powerup_program, "model");
+			(&self.assets.powerup_program, "model")
 		});
 
 		transparent.render(view_mtx);
