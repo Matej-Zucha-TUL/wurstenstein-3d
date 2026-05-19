@@ -24,7 +24,7 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
 
-use crate::{background::Background, config::Config, player::PlayerController};
+use crate::{background::Background, config::Config, player::PlayerController, transparent::TransparentRenderer};
 use crate::shader::{Program, ProgramBuilder, ShaderType};
 use crate::{
 	camera::{Camera, Directions},
@@ -921,30 +921,24 @@ impl App {
 
 		self.init_alpha_drawing();
 
-		let powerup_speed_distance = ("speed", view_mtx * glm::vec3_to_vec4(&self.assets.powerup_speed.position));
-		let powerup_hp_distance = ("hp", view_mtx * glm::vec3_to_vec4(&self.assets.powerup_hp.position));
-		let powerup_energy_distance = ("energy", view_mtx * glm::vec3_to_vec4(&self.assets.powerup_energy.position));
+		let mut transparent = TransparentRenderer::new();
 
-		let mut distances = [powerup_speed_distance, powerup_hp_distance, powerup_energy_distance];
-		distances.sort_by(|a, b| a.1[2].partial_cmp(&b.1[2]).unwrap());
+		transparent.add_object(self.assets.powerup_speed.position, || {
+			self.assets.powerup_program.set_uniform_f32_3("base_color", &[0.0, 1.0, 0.0]);
+			self.assets.powerup_speed.draw(&self.assets.powerup_program, "model");
+		});
 
-		for (obj, _) in distances {
-			match obj {
-				"speed" => {
-					self.assets.powerup_program.set_uniform_f32_3("base_color", &[0.0, 1.0, 0.0]);
-					self.assets.powerup_speed.draw(&self.assets.powerup_program, "model");
-				},
-				"hp" => {
-					self.assets.powerup_program.set_uniform_f32_3("base_color", &[1.0, 0.0, 0.0]);
-					self.assets.powerup_hp.draw(&self.assets.powerup_program, "model");
-				},
-				"energy" => {
-					self.assets.powerup_program.set_uniform_f32_3("base_color", &[0.0, 0.0, 1.0]);
-					self.assets.powerup_energy.draw(&self.assets.powerup_program, "model");
-				},
-				_ => unreachable!()
-			}
-		}
+		transparent.add_object(self.assets.powerup_hp.position, || {
+			self.assets.powerup_program.set_uniform_f32_3("base_color", &[1.0, 0.0, 0.0]);
+			self.assets.powerup_hp.draw(&self.assets.powerup_program, "model");
+		});
+
+		transparent.add_object(self.assets.powerup_energy.position, || {
+			self.assets.powerup_program.set_uniform_f32_3("base_color", &[0.0, 0.0, 1.0]);
+			self.assets.powerup_energy.draw(&self.assets.powerup_program, "model");
+		});
+
+		transparent.render(view_mtx);
 
 		self.end_alpha_drawing();
 

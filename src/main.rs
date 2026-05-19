@@ -27,6 +27,8 @@ mod player;
 
 mod shader;
 
+mod transparent;
+
 struct WinitApp {
 	preinit: Option<PreInitData>,
 	app: OnceLock<App>,
