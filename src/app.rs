@@ -3,10 +3,8 @@ use glutin::{
 	context::{PossiblyCurrentContext},
 	surface::{GlSurface, Surface, SwapInterval, WindowSurface},
 };
-use image::{DynamicImage, ImageReader};
 use log::*;
 use nalgebra_glm as glm;
-use tobj::Mesh;
 use winit::{
 	dpi::PhysicalSize,
 	event::{DeviceEvent, ElementState, KeyEvent, MouseScrollDelta, WindowEvent},
@@ -15,17 +13,11 @@ use winit::{
 	window::{CursorGrabMode, Fullscreen, Window},
 };
 
-use std::io::Cursor;
 use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use crate::{background::Background, model::Transform, player::PlayerController, screenshot::take_screenshot, transparent::TransparentRenderer};
-use crate::shader::{Program, ProgramBuilder, ShaderType};
-use crate::{
-	camera::{Camera, Directions},
-	model::{Model, VertexAttributes},
-};
+use crate::{assets::Assets, camera::{Camera, Directions}, model::Transform, player::PlayerController, screenshot::take_screenshot, transparent::TransparentRenderer};
 
 pub struct App {
 	window: Window,
@@ -86,20 +78,6 @@ struct Scene {
 	powerups: Vec<Powerup>
 }
 
-struct Assets {
-	normal_program: Program,
-	rizz_program: Program,
-	background_program: Program,
-	powerup_program: Program,
-	background: Background,
-	terrain: Model,
-	player: Model,
-	enemy: Model,
-	powerup_hp: Model,
-	powerup_energy: Model,
-	powerup_speed: Model,
-}
-
 struct Parameters {
 	background_color: [f32; 4],
 	ambient_color: [f32; 3],
@@ -154,25 +132,6 @@ impl Default for Perf {
 	}
 }
 
-fn load_mesh(bytes: &[u8]) -> Mesh {
-	let mut model_data = Cursor::new(bytes);
-	let (model, _material) =
-		tobj::load_obj_buf(&mut model_data, &tobj::GPU_LOAD_OPTIONS, |_| {
-			Err(tobj::LoadError::ReadError)
-		})
-		.unwrap();
-	let model = model.into_iter().next().unwrap();
-	model.mesh
-}
-
-fn load_texture(bytes: &[u8]) -> DynamicImage {
-	ImageReader::new(Cursor::new(bytes))
-		.with_guessed_format()
-		.unwrap()
-		.decode()
-		.unwrap()
-}
-
 impl App {
 	pub fn init(
 		event_loop: &ActiveEventLoop,
@@ -185,92 +144,7 @@ impl App {
 			.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap()))
 			.unwrap();
 
-		let assets = {
-			// Load shaders
-
-			let normal_program = ProgramBuilder::new(gl.clone())
-				.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/main.vert"))
-				.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/main.frag"))
-				.link();
-
-			let rizz_program = ProgramBuilder::new(gl.clone())
-				.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/main.vert"))
-				.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/rizz.frag"))
-				.link();
-
-			let powerup_program = ProgramBuilder::new(gl.clone())
-				.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/main.vert"))
-				.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/powerup.frag"))
-				.link();
-
-			let background_program = ProgramBuilder::new(gl.clone())
-				.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/screen.vert"))
-				.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/starfield.frag"))
-				.link();
-
-			// Load background effect
-
-			let mut background = Background::new(gl.clone());
-			background.register(&background_program, "aPos");
-
-			// Load models
-
-			let player_mesh = load_mesh(include_bytes!("../assets/objects/pastry/pastry.obj"));
-			let enemy_mesh = load_mesh(include_bytes!("../assets/objects/apple/apple.obj"));
-			let powerup_hp_mesh = load_mesh(include_bytes!("../assets/objects/powerups/powerup-hp.obj"));
-			let powerup_energy_mesh = load_mesh(include_bytes!("../assets/objects/powerups/powerup-energy.obj"));
-			let powerup_speed_mesh = load_mesh(include_bytes!("../assets/objects/powerups/powerup-speed.obj"));
-
-			let terrain_tex = load_texture(include_bytes!("../assets/textures/ferris.png"));
-			let player_tex = load_texture(include_bytes!("../assets/objects/pastry/pastry_tex.png"));
-			let enemy_tex = load_texture(include_bytes!("../assets/objects/apple/apple_tex.png"));
-
-			let vertex_attribs = VertexAttributes {
-				position: Some("aPos".into()),
-				normal: Some("aNormal".into()),
-				texcoord: Some("aTexCoord".into()),
-			};
-
-			let terrain = Model::new(gl.clone())
-				.with_mesh(&normal_program, crate::playfield::EXAMPLE_MAZE.generate_mesh(), &vertex_attribs)
-				.with_texture(&normal_program, terrain_tex, "tex_unit");
-
-			let player = Model::new(gl.clone())
-				.with_mesh(&normal_program, player_mesh, &vertex_attribs)
-				.with_texture(&normal_program, player_tex, "tex_unit")
-				.with_scale(glm::vec3(20.0, 20.0, 20.0));
-
-			let enemy = Model::new(gl.clone())
-				.with_mesh(&normal_program, enemy_mesh, &vertex_attribs)
-				.with_texture(&normal_program, enemy_tex, "tex_unit")
-				.with_scale(glm::vec3(30.0, 30.0, 30.0));
-
-			let powerup_hp = Model::new(gl.clone())
-				.with_mesh(&normal_program, powerup_hp_mesh, &vertex_attribs)
-				.with_scale(glm::vec3(2.0, 2.0, 2.0));
-
-			let powerup_energy = Model::new(gl.clone())
-				.with_mesh(&normal_program, powerup_energy_mesh, &vertex_attribs)
-				.with_scale(glm::vec3(2.0, 2.0, 2.0));
-
-			let powerup_speed = Model::new(gl.clone())
-				.with_mesh(&normal_program, powerup_speed_mesh, &vertex_attribs)
-				.with_scale(glm::vec3(2.0, 2.0, 2.0));
-
-			Assets {
-				normal_program,
-				rizz_program,
-				background_program,
-				powerup_program,
-				background,
-				terrain,
-				player,
-				powerup_hp,
-				powerup_energy,
-				powerup_speed,
-				enemy
-			}
-		};
+		let assets = Assets::init(gl.clone());
 
 		let scene = {
 			let player = PlayerController::new(Transform::origin().with_position(glm::vec3(7.5, 0.0, 7.5)));

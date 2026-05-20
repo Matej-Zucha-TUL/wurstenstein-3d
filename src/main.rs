@@ -14,6 +14,8 @@ use std::sync::{Arc, OnceLock};
 mod app;
 use app::App;
 
+mod assets;
+
 mod background;
 
 mod camera;
