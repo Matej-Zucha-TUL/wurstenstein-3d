@@ -15,7 +15,7 @@ use winit::{
 	window::{CursorGrabMode, Fullscreen, Window},
 };
 
-use std::io::Cursor;
+use std::{io::Cursor, time::Instant};
 use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, SystemTime};
@@ -114,16 +114,16 @@ impl Default for Parameters {
 }
 
 struct Perf {
-	start_time: SystemTime,
-	last_time: SystemTime,
-	last_update: SystemTime,
+	start_time: Instant,
+	last_time: Instant,
+	last_update: Instant,
 	fps_update_interval: Duration,
 	fps_string: String,
 }
 
 impl Default for Perf {
 	fn default() -> Self {
-		let start_time = SystemTime::now();
+		let start_time = Instant::now();
 
 		Self {
 			start_time,
@@ -501,7 +501,7 @@ impl App {
 	fn update_perf_data(&mut self, dt: f32) {
 		let fps = 1.0 / dt;
 
-		if self.perf.last_update.elapsed().unwrap() >= self.perf.fps_update_interval {
+		if self.perf.last_update.elapsed() >= self.perf.fps_update_interval {
 			self.perf.fps_string = format!("FPS = {:.1}", fps);
 			let vsync_string = format!(
 				"VSync = {}",
@@ -527,7 +527,7 @@ impl App {
 				"{}, {}, {}",
 				self.perf.fps_string, vsync_string, cursor_lock_string
 			);
-			self.perf.last_update = SystemTime::now();
+			self.perf.last_update = Instant::now();
 		}
 	}
 
@@ -604,10 +604,9 @@ impl App {
 	}
 
 	fn redraw(&mut self, event_loop: &ActiveEventLoop) {
-		let new_time = SystemTime::now();
+		let new_time = Instant::now();
 		let dt = new_time
 			.duration_since(self.perf.last_time)
-			.unwrap()
 			.as_secs_f32();
 		self.perf.last_time = new_time;
 
@@ -642,7 +641,6 @@ impl App {
 		let time = self.perf
 			.last_time
 			.duration_since(self.perf.start_time)
-			.unwrap()
 			.as_secs_f32();
 
 		program.set_uniform_f32("screen_w", self.window.inner_size().width as f32);
