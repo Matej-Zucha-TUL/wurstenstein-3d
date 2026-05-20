@@ -15,10 +15,10 @@ use winit::{
 	window::{CursorGrabMode, Fullscreen, Window},
 };
 
-use std::{io::Cursor, time::Instant};
+use std::io::Cursor;
 use std::num::NonZeroU32;
 use std::sync::Arc;
-use std::time::{Duration, SystemTime};
+use std::time::{Duration, Instant};
 
 use crate::{background::Background, model::Transform, player::PlayerController, screenshot::take_screenshot, transparent::TransparentRenderer};
 use crate::shader::{Program, ProgramBuilder, ShaderType};
@@ -48,7 +48,26 @@ enum PowerupKind {
 
 struct Powerup {
 	kind: PowerupKind,
-	transform: Transform
+	base_y: f32,
+	transform: Transform,
+	timer: f32
+}
+
+impl Powerup {
+	pub fn new(kind: PowerupKind, transform: Transform) -> Self {
+		Self {
+			kind,
+			base_y: transform.position[1],
+			transform,
+			timer: 0.0
+		}
+	}
+
+	pub fn update(&mut self, dt: f32) {
+		self.transform.rotation[0] += 1.0 * dt;
+		self.timer += dt;
+		self.transform.position[1] = self.base_y + (self.timer * 2.0).sin() * 0.3;
+	}
 }
 
 enum EnemyKind {
@@ -267,42 +286,42 @@ impl App {
 			];
 
 			let powerups = vec![
-				Powerup {
-					kind: PowerupKind::Speed,
-					transform: Transform::origin().with_position(glm::vec3(22.5, 1.5, 17.5))
-				},
-				Powerup {
-					kind: PowerupKind::Energy,
-					transform: Transform::origin().with_position(glm::vec3(22.5, 1.5, 22.5))
-				},
-				Powerup {
-					kind: PowerupKind::Health,
-					transform: Transform::origin().with_position(glm::vec3(22.5, 1.5, 27.5))
-				},
-				Powerup {
-					kind: PowerupKind::Health,
-					transform: Transform::origin().with_position(glm::vec3(32.5, 1.5, 17.5))
-				},
-				Powerup {
-					kind: PowerupKind::Speed,
-					transform: Transform::origin().with_position(glm::vec3(32.5, 1.5, 22.5))
-				},
-				Powerup {
-					kind: PowerupKind::Energy,
-					transform: Transform::origin().with_position(glm::vec3(32.5, 1.5, 27.5))
-				},
-				Powerup {
-					kind: PowerupKind::Energy,
-					transform: Transform::origin().with_position(glm::vec3(27.5, 1.5, 17.5))
-				},
-				Powerup {
-					kind: PowerupKind::Health,
-					transform: Transform::origin().with_position(glm::vec3(27.5, 1.5, 22.5))
-				},
-				Powerup {
-					kind: PowerupKind::Speed,
-					transform: Transform::origin().with_position(glm::vec3(27.5, 1.5, 27.5))
-				},
+				Powerup::new(
+					PowerupKind::Speed,
+					Transform::origin().with_position(glm::vec3(22.5, 1.5, 17.5))
+				),
+				Powerup::new(
+					PowerupKind::Energy,
+					Transform::origin().with_position(glm::vec3(22.5, 1.5, 22.5))
+				),
+				Powerup::new(
+					PowerupKind::Health,
+					Transform::origin().with_position(glm::vec3(22.5, 1.5, 27.5))
+				),
+				Powerup::new(
+					PowerupKind::Health,
+					Transform::origin().with_position(glm::vec3(32.5, 1.5, 17.5))
+				),
+				Powerup::new(
+					PowerupKind::Speed,
+					Transform::origin().with_position(glm::vec3(32.5, 1.5, 22.5))
+				),
+				Powerup::new(
+					PowerupKind::Energy,
+					Transform::origin().with_position(glm::vec3(32.5, 1.5, 27.5))
+				),
+				Powerup::new(
+					PowerupKind::Energy,
+					Transform::origin().with_position(glm::vec3(27.5, 1.5, 17.5))
+				),
+				Powerup::new(
+					PowerupKind::Health,
+					Transform::origin().with_position(glm::vec3(27.5, 1.5, 22.5))
+				),
+				Powerup::new(
+					PowerupKind::Speed,
+					Transform::origin().with_position(glm::vec3(27.5, 1.5, 27.5))
+				),
 			];
 
 			Scene {
@@ -637,6 +656,10 @@ impl App {
 		self.scene.player.update_yaw(self.scene.camera.get_yaw_pitch().0);
 		self.scene.player.update_position(dt);
 		self.update_camera(dt);
+
+		for powerup in &mut self.scene.powerups {
+			powerup.update(dt);
+		}
 
 		let aspect = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
 		let projection_mtx = glm::perspective(
