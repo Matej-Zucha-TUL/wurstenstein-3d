@@ -279,6 +279,30 @@ impl App {
 					kind: PowerupKind::Health,
 					transform: Transform::origin().with_position(glm::vec3(22.5, 1.5, 27.5))
 				},
+				Powerup {
+					kind: PowerupKind::Health,
+					transform: Transform::origin().with_position(glm::vec3(32.5, 1.5, 17.5))
+				},
+				Powerup {
+					kind: PowerupKind::Speed,
+					transform: Transform::origin().with_position(glm::vec3(32.5, 1.5, 22.5))
+				},
+				Powerup {
+					kind: PowerupKind::Energy,
+					transform: Transform::origin().with_position(glm::vec3(32.5, 1.5, 27.5))
+				},
+				Powerup {
+					kind: PowerupKind::Energy,
+					transform: Transform::origin().with_position(glm::vec3(27.5, 1.5, 17.5))
+				},
+				Powerup {
+					kind: PowerupKind::Health,
+					transform: Transform::origin().with_position(glm::vec3(27.5, 1.5, 22.5))
+				},
+				Powerup {
+					kind: PowerupKind::Speed,
+					transform: Transform::origin().with_position(glm::vec3(27.5, 1.5, 27.5))
+				},
 			];
 
 			Scene {
