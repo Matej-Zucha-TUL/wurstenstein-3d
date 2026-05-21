@@ -20,3 +20,11 @@ serde = { version = "1.0.228", features = ["derive"] }
 tobj = "4.0.3"
 toml = "1.0.6"
 winit = "0.30.12"
+
+[profile.release]
+lto = true
+codegen-units = 1
+# panic = "abort"
+opt-level = "s" # fast and small wasm
+# debug = true
+strip = true
