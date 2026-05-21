@@ -78,7 +78,7 @@ impl Assets {
 		let powerup_speed_mesh = load_mesh(include_bytes!("../assets/objects/powerups/powerup-speed.obj"));
 
 		let terrain_tex = load_texture(include_bytes!("../assets/textures/ferris.png"));
-		let player_tex = load_texture(include_bytes!("../assets/objects/pastry/pastry_tex.png"));
+		let player_tex = load_texture(include_bytes!("../assets/objects/pastry/pastry.png"));
 		let enemy_tex = load_texture(include_bytes!("../assets/objects/apple/apple_tex.png"));
 
 		let vertex_attribs = VertexAttributes {
