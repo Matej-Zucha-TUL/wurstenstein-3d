@@ -130,8 +130,7 @@ fn main() {
 
 	// Load config
 
-	let config = std::fs::read_to_string("config.toml").unwrap();
-	let config = Config::from_toml(&config);
+	let config = Config::load();
 
 	info!("Loaded config:\n{:#?}", config);
 
