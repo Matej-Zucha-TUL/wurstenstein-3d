@@ -25,6 +25,9 @@ use config::Config;
 
 mod model;
 
+mod modplay;
+use modplay::start_music;
+
 mod playfield;
 
 mod player;
@@ -204,6 +207,8 @@ fn main() {
 	};
 
 	// Run the app
+
+	start_music();
 
 	let mut app = WinitApp {
 		preinit: Some(PreInitData {

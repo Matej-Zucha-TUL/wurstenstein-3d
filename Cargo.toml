@@ -17,9 +17,14 @@ nalgebra-glm = "0.20.0"
 paste = "1.0.15"
 raw-window-handle = "0.6.2"
 serde = { version = "1.0.228", features = ["derive"] }
+tinyaudio = "2.0.0"
 tobj = "4.0.3"
 toml = "1.0.6"
 winit = "0.30.12"
+
+[build-dependencies]
+bindgen = "0.72.1"
+cc = "1.2.62"
 
 [profile.release]
 lto = true
