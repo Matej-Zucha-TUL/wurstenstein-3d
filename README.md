@@ -291,10 +291,10 @@ Each missing (non-functional) Essential nets -25 points (partial functionality =
 - [X] fullscreen vs. windowed switching
 - [ ] restore window position & size
 - [X] event processing (camera, object, app behaviour, ...): mouse (both axes, wheel), keyboard
-- [ ] multiple different independently moving 3D models, at least two loaded from file
-- [ ] at least three different textures (or subtextures from texture atlas etc.)
+- [X] multiple different independently moving 3D models, at least two loaded from file
+- [X] at least three different textures (or subtextures from texture atlas etc.)
 - [ ] lighting model, all basic lights types (1x anbient, min. 1x directional, min. 2x point, min. Ix reflector; at least two are moving independently
-- [ ] correct full alpha scale transparency (at least two transparent objects; NOT if(alpha<0.1) {discard;} )
+- [X] correct full alpha scale transparency (at least two transparent objects; NOT if(alpha<0.1) {discard;} )
 - [ ] correct collisions
 
 ## Extras:
@@ -302,7 +302,7 @@ Each missing (non-functional) Essential nets -25 points (partial functionality =
 Each working Extra nets +10 points
 
 - [ ] height map textured by height t proper player height coords
-- [ ] audio (better than just background)
+- [X] audio (better than just background)
 - [ ] particle effects
 - [ ] scripting (useful)
 - [ ] some other nice complicated effect..
