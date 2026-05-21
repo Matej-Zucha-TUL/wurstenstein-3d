@@ -674,4 +674,8 @@ impl App {
 			_ => {}
 		}
 	}
+
+	pub fn get_window(&self) -> &Window {
+		&self.window
+	}
 }

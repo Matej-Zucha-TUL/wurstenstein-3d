@@ -289,7 +289,7 @@ Each missing (non-functional) Essential nets -25 points (partial functionality =
 - [X] allow VSync control
 - [X] allow antialiasing
 - [X] fullscreen vs. windowed switching
-- [ ] restore window position & size
+- [X] restore window position & size
 - [X] event processing (camera, object, app behaviour, ...): mouse (both axes, wheel), keyboard
 - [X] multiple different independently moving 3D models, at least two loaded from file
 - [X] at least three different textures (or subtextures from texture atlas etc.)

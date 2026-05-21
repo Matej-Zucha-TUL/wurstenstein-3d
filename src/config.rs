@@ -2,8 +2,10 @@ use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 pub struct WindowConfig {
-	pub width: usize,
-	pub height: usize,
+	pub width: u32,
+	pub height: u32,
+	pub x: Option<i32>,
+	pub y: Option<i32>
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -47,6 +49,19 @@ impl Config {
 		}
 	}
 
+	pub fn save(&self) {
+		match toml::to_string(self) {
+			Ok(val) => {
+				if let Err(err) = std::fs::write(CONFIG_PATH, &val) {
+					error!("Error saving default config to disk: {:?}", err);
+				}
+			},
+			Err(err) => {
+				error!("Error serializing current config: {:?} Something is definitely wrong here.", err);
+			}
+		}
+	}
+
 	pub fn from_toml(toml: &str) -> Self {
 		match toml::from_str(toml) {
 			Ok(val) => val,
@@ -63,7 +78,9 @@ impl Default for Config {
 	   Self {
 			window: WindowConfig {
 				width: 1024,
-				height: 768
+				height: 768,
+				x: None,
+				y: None
 			},
 			graphics: GraphicsConfig {
 				antialiasing: 4

@@ -4,9 +4,7 @@ use glow::*;
 use log::*;
 use raw_window_handle::HasWindowHandle;
 use winit::{
-	application::ApplicationHandler,
-	event::{DeviceEvent, WindowEvent},
-	event_loop::ActiveEventLoop, window::Window,
+	application::ApplicationHandler, dpi::PhysicalPosition, event::{DeviceEvent, WindowEvent}, event_loop::ActiveEventLoop, window::Window
 };
 
 use std::sync::{Arc, OnceLock};
@@ -130,19 +128,24 @@ fn main() {
 
 	// Load config
 
-	let config = Config::load();
+	let mut config = Config::load();
 
 	info!("Loaded config:\n{:#?}", config);
 
 	// Create window
 
 	let event_loop = winit::event_loop::EventLoop::builder().build().unwrap();
-	let window_builder = winit::window::Window::default_attributes()
+	let mut window_builder = winit::window::Window::default_attributes()
 		.with_title("Hello triangle!")
 		.with_inner_size(winit::dpi::LogicalSize::new(
-			config.window.width as f32,
-			config.window.height as f32,
-		));
+			config.window.width,
+			config.window.height,
+		))
+		.with_visible(false);
+
+	if let Some(x) = config.window.x && let Some(y) = config.window.y {
+		window_builder = window_builder.with_position(PhysicalPosition::new(x, y));
+	}
 
 	let template = ConfigTemplateBuilder::new();
 
@@ -179,9 +182,6 @@ fn main() {
 		.build(raw_window_handle);
 
 	let window = window.unwrap();
-
-	window.set_title("Triangle");
-	window.set_visible(false);
 
 	let (gl, gl_context, gl_surface) = unsafe {
 		let not_current_gl_context = gl_display
@@ -220,4 +220,18 @@ fn main() {
 	};
 
 	let _ = event_loop.run_app(&mut app);
+
+	let window = app.app.get().unwrap().get_window();
+
+	let size = window.inner_size();
+
+	config.window.width = (size.width as f64 / window.scale_factor()) as u32;
+	config.window.height = (size.height as f64 / window.scale_factor()) as u32;
+
+	if let Ok(pos) = window.outer_position() {
+		config.window.x = Some(pos.x);
+		config.window.y = Some(pos.y);
+	}
+
+	config.save();
 }
