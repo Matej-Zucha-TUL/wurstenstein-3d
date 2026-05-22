@@ -28,14 +28,14 @@ const INGAME_RULES: *const *const ModRule_t = [
 		].as_ptr()
 	} as *const _,
 	&ModRule_t {
-		order: 12,
+		order: 9,
 		row: 0,
 		actions: [
 			&ModAction_t {
 				kind: ModActionKind_t_Jump,
 				__bindgen_anon_1: ModAction_t__bindgen_ty_1 {
 					jump: ModActionJump_t {
-						order: 17,
+						order: 19,
 						row: 0
 					}
 				}
@@ -44,14 +44,14 @@ const INGAME_RULES: *const *const ModRule_t = [
 		].as_ptr()
 	} as *const _,
 	&ModRule_t {
-		order: 19,
+		order: 28,
 		row: 0,
 		actions: [
 			&ModAction_t {
 				kind: ModActionKind_t_Jump,
 				__bindgen_anon_1: ModAction_t__bindgen_ty_1 {
 					jump: ModActionJump_t {
-						order: 9,
+						order: 19,
 						row: 0
 					}
 				}
