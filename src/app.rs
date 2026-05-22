@@ -147,7 +147,7 @@ impl App {
 		let assets = Assets::init(gl.clone());
 
 		let scene = {
-			let player = PlayerController::new(Transform::origin().with_position(glm::vec3(7.5, 0.0, 7.5)));
+			let player = PlayerController::new(Transform::origin().with_position(glm::vec3(7.5, 0.0, 7.5)), assets.player_bounding_box.clone());
 
 			let mut camera = Camera::new(glm::vec3(0.0, 0.0, 0.0));
 			camera.set_pov(true);
