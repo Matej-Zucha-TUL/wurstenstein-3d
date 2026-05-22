@@ -13,6 +13,8 @@ pub struct PlayerController {
 	pub move_left: bool,
 	pub move_right: bool,
 	pub jump: bool,
+	fall_jump_triggered: bool,
+	force_jump: bool,
 	bounding_box: BoundingBox,
 	gravity: f32,
 	xz_force: [f32; 2],
@@ -27,6 +29,8 @@ impl PlayerController {
 			move_left: false,
 			move_right: false,
 			jump: false,
+			fall_jump_triggered: false,
+			force_jump: false,
 			bounding_box,
 			gravity: 0.0,
 			xz_force: [0.0, 0.0],
@@ -130,16 +134,27 @@ impl PlayerController {
 		let floor = if !has_contact_with_world || self.transform.position[1] < -world.height {
 			world.death_barrier
 		} else {
+			if self.transform.position[1] < -0.01 && !self.fall_jump_triggered {
+				self.fall_jump_triggered = true;
+				self.force_jump = true;
+			}
+
 			0.0
 		};
 
 		// Allow jumping if at (or very near) floor level
 
 		if self.jump && self.transform.position[1] <= floor + 0.01 {
-			self.gravity = -BASE_GRAVITY;
+			self.force_jump = true;
 		}
 
 		self.jump = false;
+
+		if self.force_jump {
+			self.gravity = -BASE_GRAVITY;
+		}
+
+		self.force_jump = false;
 
 		// Update Y coordinate
 
@@ -148,6 +163,7 @@ impl PlayerController {
 		if self.transform.position[1] == floor && self.gravity >= 0.0 {
 			// If at floor level, reset gravity
 			self.gravity = 0.0;
+			self.fall_jump_triggered = false;
 		} else {
 			self.gravity = f32::min(self.gravity + BASE_GRAVITY_ACCEL * dt, BASE_GRAVITY);
 		}
