@@ -17,7 +17,7 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use crate::{assets::Assets, camera::{Camera, Directions}, model::Transform, player::PlayerController, screenshot::take_screenshot, transparent::TransparentRenderer};
+use crate::{assets::Assets, camera::{Camera, Directions}, model::Transform, player::PlayerController, playfield::EXAMPLE_MAZE, screenshot::take_screenshot, transparent::TransparentRenderer};
 
 pub struct App {
 	window: Window,
@@ -528,7 +528,7 @@ impl App {
 		self.perf.last_time = new_time;
 
 		self.scene.player.update_yaw(self.scene.camera.get_yaw_pitch().0);
-		self.scene.player.update_position(dt);
+		self.scene.player.update_position(&EXAMPLE_MAZE, dt);
 		self.update_camera(dt);
 
 		for powerup in &mut self.scene.powerups {

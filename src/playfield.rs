@@ -35,6 +35,8 @@ pub struct Playfield<'a, T: PlayfieldPiece> {
 	pub scale: f32,
 	// Y size of each wall piece.
 	pub height: f32,
+	// Y coordinate of the death barrier when the player falls off.
+	pub death_barrier: f32,
 	// Vector of rows, containing a vector of cells.
 	pub field: &'a [&'a [T]]
 }
@@ -185,6 +187,7 @@ use TestPiece::*;
 pub const EXAMPLE_MAZE: Playfield<TestPiece> = Playfield {
 	scale: 5.0,
 	height: 3.0,
+	death_barrier: -20.0,
 	field: &[
 		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
 		&[Stone, __,    __,    __,    __,    __,    __,    __,    __,    Stone],
