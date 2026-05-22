@@ -82,7 +82,7 @@ impl PlayerController {
 		let (w, h) = world.dimensions();
 		let (w, h) = (w as isize, h as isize);
 
-		let floor = if world_x < 0 || world_z < 0 || world_x >= w || world_z >= h {
+		let floor = if world_x < 0 || world_z < 0 || world_x >= w || world_z >= h || world.field[world_z as usize][world_x as usize].is_empty() {
 			world.death_barrier
 		} else {
 			0.0

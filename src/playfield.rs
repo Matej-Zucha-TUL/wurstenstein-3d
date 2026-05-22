@@ -11,6 +11,10 @@ pub enum TestPiece {
 }
 
 impl PlayfieldPiece for TestPiece {
+	fn is_empty(&self) -> bool {
+		*self == Self::__
+	}
+
 	fn vert_texture(&self) -> (f32, f32, f32, f32) {
 		(0.0, 0.0, 1.0, 1.0)
 	}
@@ -21,6 +25,9 @@ impl PlayfieldPiece for TestPiece {
 }
 
 pub trait PlayfieldPiece {
+	// Return whether this piece is a hole in the floor or not.
+	fn is_empty(&self) -> bool;
+
 	// Returns coordinates for the border wall texture (undefined if not at the border).
 	// (X1, Y1, X2, Y2) - all in range 0.0..=1.0.
 	fn vert_texture(&self) -> (f32, f32, f32, f32);
@@ -64,6 +71,8 @@ impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
 			for x in 0..w {
 				let piece = &self.field[z][x];
 
+				if piece.is_empty() { continue }
+
 				// Generate horizontal wall
 
 				{
@@ -105,10 +114,26 @@ impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
 				{
 					let (tx1, ty1, tx2, ty2) = piece.vert_texture();
 
-					let left_wall = x == 0;
-					let right_wall = x == w - 1;
-					let front_wall = z == 0;
-					let back_wall = z == h - 1;
+					let left_wall = match x {
+						0 => true,
+						x => self.field[z][x - 1].is_empty()
+					};
+
+					let right_wall = match x {
+						x if x == w - 1 => true,
+						x => self.field[z][x + 1].is_empty()
+					};
+
+					let front_wall = match z {
+						0 => true,
+						z => self.field[z - 1][x].is_empty()
+					};
+
+					let back_wall = match z {
+						z if z == h - 1 => true,
+						z => self.field[z + 1][x].is_empty()
+					};
+					
 
 					let mut generate_wall = |base: [usize; 2], diff: [usize; 2], normal: [f32; 3], reverse: bool| {
 						// Create 4 points
@@ -185,7 +210,7 @@ impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
 use TestPiece::*;
 
 pub const EXAMPLE_MAZE: Playfield<TestPiece> = Playfield {
-	scale: 5.0,
+	scale: 3.0,
 	height: 3.0,
 	death_barrier: -20.0,
 	field: &[
