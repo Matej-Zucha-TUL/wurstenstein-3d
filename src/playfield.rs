@@ -11,10 +11,6 @@ pub enum TestPiece {
 }
 
 impl PlayfieldPiece for TestPiece {
-	fn is_empty(&self) -> bool {
-		*self == Self::__
-	}
-
 	fn vert_texture(&self) -> (f32, f32, f32, f32) {
 		(0.0, 0.0, 1.0, 1.0)
 	}
@@ -25,14 +21,11 @@ impl PlayfieldPiece for TestPiece {
 }
 
 pub trait PlayfieldPiece {
-	// True if the playfield piece should not be a wall.
-	fn is_empty(&self) -> bool;
-
-	// Returns coordinates for the wall texture (or undefined if not a wall).
+	// Returns coordinates for the border wall texture (undefined if not at the border).
 	// (X1, Y1, X2, Y2) - all in range 0.0..=1.0.
 	fn vert_texture(&self) -> (f32, f32, f32, f32);
 
-	// Returns coordinates for the floor texture (if not a wall), or the ceiling texture (if a wall).
+	// Returns coordinates for the floor texture.
 	// (X1, Y1, X2, Y2) - all in range 0.0..=1.0.
 	fn horiz_texture(&self) -> (f32, f32, f32, f32);
 }
@@ -69,14 +62,10 @@ impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
 			for x in 0..w {
 				let piece = &self.field[z][x];
 
-				let elevated = !piece.is_empty();
-
 				// Generate horizontal wall
 
 				{
 					let (tx1, ty1, tx2, ty2) = piece.horiz_texture();
-
-					let y = if elevated { self.height } else { 0.0 };
 
 					// Create 4 points
 
@@ -85,7 +74,7 @@ impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
 					for inc_z in 0..=1 {
 						for inc_x in 0..=1 {
 							positions.push((x + inc_x) as f32 * self.scale);
-							positions.push(y);
+							positions.push(0.0);
 							positions.push((z + inc_z) as f32 * self.scale);
 
 							// Normals will always point up
@@ -111,31 +100,14 @@ impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
 
 				// Generate up to 4 vertical walls
 
-				'vertical: {
+				{
 					let (tx1, ty1, tx2, ty2) = piece.vert_texture();
 
-					if !elevated { break 'vertical }
+					let left_wall = x == 0;
+					let right_wall = x == w - 1;
+					let front_wall = z == 0;
+					let back_wall = z == h - 1;
 
-					let left_wall = match x {
-						0 => true,
-						x => self.field[z][x - 1].is_empty()
-					};
-
-					let right_wall = match x {
-						x if x == w - 1 => true,
-						x => self.field[z][x + 1].is_empty()
-					};
-
-					let front_wall = match z {
-						0 => true,
-						z => self.field[z - 1][x].is_empty()
-					};
-
-					let back_wall = match z {
-						z if z == h - 1 => true,
-						z => self.field[z + 1][x].is_empty()
-					};
-					
 					let mut generate_wall = |base: [usize; 2], diff: [usize; 2], normal: [f32; 3], reverse: bool| {
 						// Create 4 points
 
@@ -144,7 +116,7 @@ impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
 						for inc_y in 0..=1 {
 							for inc_xz in 0..=1 {
 								positions.push((base[0] + inc_xz * diff[0]) as f32 * self.scale);
-								positions.push(if inc_y > 0 { self.height } else { 0.0 });
+								positions.push(if inc_y > 0 { 0.0 } else { -self.height });
 								positions.push((base[1] + inc_xz * diff[1]) as f32 * self.scale);
 
 								normals.extend_from_slice(&normal);
