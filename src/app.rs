@@ -17,7 +17,7 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use crate::{assets::Assets, player::{MAX_AMMO, MAX_HEALTH}};
+use crate::{assets::Assets, player::{MAX_AMMO, MAX_HEALTH}, powerup::PowerupKind};
 use crate::audio::{Audio, MusicRequest, SoundRequest};
 use crate::camera::{Camera, Directions};
 use crate::collision;
@@ -557,6 +557,12 @@ impl App {
 
 		if let Some(idx) = collision::check_with_powerups(&self.scene.player, &self.scene.powerups) && let Some(kind) = self.scene.powerups.pick_up(idx) {
 			self.scene.player.pick_up_powerup(kind);
+
+			match kind {
+				PowerupKind::Health => self.audio.play_sound(SoundRequest::PowerupHpPickup, None, 1.0),
+				PowerupKind::Energy => self.audio.play_sound(SoundRequest::PowerupEnergyPickup, None, 1.0),
+				PowerupKind::Speed => self.audio.play_sound(SoundRequest::PowerupSpeedPickup, None, 1.0),
+			}
 		}
 
 		self.scene.player.update_yaw(self.scene.camera.get_yaw_pitch().0);
