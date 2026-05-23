@@ -14,6 +14,9 @@ pub struct PlayerController {
 	pub move_right: bool,
 	pub jump: bool,
 	pub has_contact_with_world: bool,
+	health: usize,
+	ammo: usize,
+	powerup_speed_timer: f32,
 	fall_jump_triggered: bool,
 	force_jump: bool,
 	already_fell_to_death: bool,
@@ -28,6 +31,9 @@ pub enum PlayerAction {
 	FellToDeath
 }
 
+const MAX_AMMO: usize = 10;
+const MAX_HEALTH: usize = 10;
+
 impl PlayerController {
 	pub fn new(spawn: Transform, bounding_box: BoundingBox) -> Self {
 		Self {
@@ -37,6 +43,9 @@ impl PlayerController {
 			move_right: false,
 			jump: false,
 			has_contact_with_world: true,
+			health: MAX_HEALTH,
+			ammo: MAX_AMMO,
+			powerup_speed_timer: 0.0,
 			fall_jump_triggered: false,
 			force_jump: false,
 			already_fell_to_death: false,
@@ -54,7 +63,8 @@ impl PlayerController {
 	pub fn update<T: PlayfieldPiece>(&mut self, world: &Playfield<'_, T>, dt: f32) -> Option<PlayerAction> {
 		let mut action = None;
 
-		const MAX_SPEED: f32 = 5.0;
+		let max_speed: f32 = if self.powerup_speed_timer > 0.0 { 10.0 } else { 5.0 };
+
 		const ACCEL: f32 = 20.0;
 		const BASE_GRAVITY: f32 = 10.0;
 		const BASE_GRAVITY_ACCEL: f32 = 40.0;
@@ -66,25 +76,25 @@ impl PlayerController {
 		let mut xz_force = self.xz_force;
 
 		if self.move_left {
-			xz_force[0] = f32::max(xz_force[0] - accel, -MAX_SPEED);
+			xz_force[0] = f32::max(xz_force[0] - accel, -max_speed);
 		} else if xz_force[0] < 0.0 {
 			xz_force[0] = f32::min(xz_force[0] + accel, 0.0);
 		}
 
 		if self.move_right {
-			xz_force[0] = f32::min(xz_force[0] + accel, MAX_SPEED);
+			xz_force[0] = f32::min(xz_force[0] + accel, max_speed);
 		} else if xz_force[0] > 0.0 {
 			xz_force[0] = f32::max(xz_force[0] - accel, 0.0);
 		}
 
 		if self.move_forward {
-			xz_force[1] = f32::max(xz_force[1] - accel, -MAX_SPEED);
+			xz_force[1] = f32::max(xz_force[1] - accel, -max_speed);
 		} else if xz_force[1] < 0.0 {
 			xz_force[1] = f32::min(xz_force[1] + accel, 0.0);
 		}
 
 		if self.move_backward {
-			xz_force[1] = f32::min(xz_force[1] + accel, MAX_SPEED);
+			xz_force[1] = f32::min(xz_force[1] + accel, max_speed);
 		} else if xz_force[1] > 0.0 {
 			xz_force[1] = f32::max(xz_force[1] - accel, 0.0);
 		}
@@ -141,6 +151,8 @@ impl PlayerController {
 			self.already_fell_to_death = true;
 		}
 
+		self.powerup_speed_timer -= dt;
+
 		action
 	}
 
@@ -153,7 +165,17 @@ impl PlayerController {
 	}
 
 	pub fn pick_up_powerup(&mut self, kind: PowerupKind) {
-
+		match kind {
+			PowerupKind::Health => {
+				self.health = (self.health + 5).min(MAX_HEALTH);
+			},
+			PowerupKind::Speed => {
+				self.powerup_speed_timer = 10.0;
+			},
+			PowerupKind::Energy => {
+				self.ammo = MAX_AMMO;
+			}
+		}
 	}
 }
 
