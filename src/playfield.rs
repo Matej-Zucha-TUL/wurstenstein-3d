@@ -1,29 +1,5 @@
 use tobj::Mesh;
 
-#[derive(Clone, Copy, PartialEq, Eq)]
-pub enum TestPiece {
-	__,
-	Stone,
-	Brick,
-	Enemy,
-	Ammo,
-	Spawn
-}
-
-impl PlayfieldPiece for TestPiece {
-	fn is_empty(&self) -> bool {
-		*self == Self::__
-	}
-
-	fn vert_texture(&self) -> (f32, f32, f32, f32) {
-		(0.0, 0.0, 1.0, 1.0)
-	}
-
-	fn horiz_texture(&self) -> (f32, f32, f32, f32) {
-		(0.0, 0.0, 1.0, 1.0)
-	}
-}
-
 pub trait PlayfieldPiece {
 	// Return whether this piece is a hole in the floor or not.
 	fn is_empty(&self) -> bool;
@@ -45,7 +21,11 @@ pub struct Playfield<'a, T: PlayfieldPiece> {
 	// Y coordinate of the death barrier when the player falls off.
 	pub death_barrier: f32,
 	// Vector of rows, containing a vector of cells.
-	pub field: &'a [&'a [T]]
+	pub field: &'a [&'a [T]],
+	// Possible spawn points for powerups.
+	pub powerup_spawn_points: &'a [[usize; 2]],
+	// Possible spawn points for enemies.
+	pub enemy_spawn_points: &'a [[usize; 2]],
 }
 
 impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
@@ -207,6 +187,27 @@ impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
 	}
 }
 
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum TestPiece {
+	__,
+	Stone,
+	Brick
+}
+
+impl PlayfieldPiece for TestPiece {
+	fn is_empty(&self) -> bool {
+		*self == Self::__
+	}
+
+	fn vert_texture(&self) -> (f32, f32, f32, f32) {
+		(0.0, 0.0, 1.0, 1.0)
+	}
+
+	fn horiz_texture(&self) -> (f32, f32, f32, f32) {
+		(0.0, 0.0, 1.0, 1.0)
+	}
+}
+
 use TestPiece::*;
 
 pub const EXAMPLE_MAZE: Playfield<TestPiece> = Playfield {
@@ -224,6 +225,18 @@ pub const EXAMPLE_MAZE: Playfield<TestPiece> = Playfield {
 		&[Stone, __,    Brick, Brick, __,    __,    Brick, Brick, __,    Stone],
 		&[Stone, __,    __,    __,    __,    __,    __,    __,    __,    Stone],
 		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
+	],
+	powerup_spawn_points: &[
+		[0, 0],
+		[9, 0],
+		[9, 9],
+		[0, 9]
+	],
+	enemy_spawn_points: &[
+		[2, 2],
+		[2, 7],
+		[7, 7],
+		[7, 2]
 	]
 };
 
