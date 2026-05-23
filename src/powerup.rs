@@ -12,11 +12,20 @@ pub enum PowerupKind {
 	Speed
 }
 
+#[derive(PartialEq, Eq)]
+enum PowerupState {
+	Spawn,
+	Floating,
+	PickedUp,
+	Gone,
+}
+
 pub struct Powerup {
 	kind: PowerupKind,
 	base_y: f32,
 	transform: Transform,
-	timer: f32
+	timer: f32,
+	state: PowerupState,
 }
 
 impl Powerup {
@@ -25,19 +34,55 @@ impl Powerup {
 			kind,
 			base_y: transform.position[1],
 			transform,
-			timer: 0.0
+			timer: 0.0,
+			state: PowerupState::Spawn
 		}
 	}
 
 	pub fn update(&mut self, dt: f32) {
-		self.transform.rotation[0] += 1.0 * dt;
 		self.timer += dt;
-		self.transform.position[1] = self.base_y + (self.timer * 2.0).sin() * 0.3;
+
+		match self.state {
+			PowerupState::Spawn => {
+				self.transform.rotation[0] += 4.0 * dt;
+				let scale = (self.timer * 2.0).min(1.0);
+				self.transform.scale[0] = scale;
+				self.transform.scale[1] = scale;
+				self.transform.scale[2] = scale;
+
+				if self.timer >= 0.5 {
+					self.timer = 0.0;
+					self.state = PowerupState::Floating;
+				}
+			},
+			PowerupState::Floating => {
+				self.transform.rotation[0] += 1.0 * dt;
+				self.transform.position[1] = self.base_y + (self.timer * 2.0).sin() * 0.3;
+			},
+			PowerupState::PickedUp => {
+				self.transform.rotation[0] += 4.0 * dt;
+				let scale = (1.0 - self.timer * 2.0).max(0.0);
+				self.transform.scale[0] = scale;
+				self.transform.scale[1] = scale;
+				self.transform.scale[2] = scale;
+
+				self.transform.position[1] += dt;
+
+				if self.timer >= 0.5 {
+					self.state = PowerupState::Gone;
+				}
+			},
+			PowerupState::Gone => {
+				self.transform.scale[0] = 0.0;
+				self.transform.scale[1] = 0.0;
+				self.transform.scale[2] = 0.0;
+			}
+		}
 	}
 }
 
 pub struct PowerupManager {
-	powerups: Vec<Powerup>,
+	powerups: Vec<Option<Powerup>>,
 	rng: ThreadRng,
 	spawn_timer: f32,
 }
@@ -54,24 +99,41 @@ impl PowerupManager {
 	fn spawn_new_powerup<T: PlayfieldPiece>(&mut self, world: &Playfield<'_, T>) {
 		let kind = self.rng.random_range(0..=2);
 
-		let kind = match kind {
-			0 => PowerupKind::Health,
-			1 => PowerupKind::Energy,
-			2 => PowerupKind::Speed,
-			_ => unreachable!()
-		};
+		let spawn_point_num = world.powerup_spawn_points.len();
 
-		let pos = world.powerup_spawn_points[self.rng.random_range(0..=world.powerup_spawn_points.len())];
+		let idx = self.rng.random_range(0..spawn_point_num);
 
-		let pos = pos.map(|x| x as f32 * world.scale + world.scale * 0.5);
+		// Find a free slot for a powerup
 
-		self.powerups.push(Powerup::new(
-			kind,
-			Transform::origin().with_position([pos[0], 1.5, pos[1]].into())
-		));
+		for off in 0..spawn_point_num {
+			let idx = (idx + off) % spawn_point_num;
+
+			if self.powerups[idx].is_some() {
+				continue
+			}
+
+			let pos = world.powerup_spawn_points[idx];
+			let pos = pos.map(|x| x as f32 * world.scale + world.scale * 0.5);
+
+			let kind = match kind {
+				0 => PowerupKind::Health,
+				1 => PowerupKind::Energy,
+				2 => PowerupKind::Speed,
+				_ => unreachable!()
+			};
+
+			self.powerups[idx] = Some(Powerup::new(
+				kind,
+				Transform::origin().with_position([pos[0], 1.5, pos[1]].into())
+			));
+
+			break
+		}
 	}
 
 	pub fn update<T: PlayfieldPiece>(&mut self, world: &Playfield<'_, T>, dt: f32) {
+		self.powerups.resize_with(world.powerup_spawn_points.len(), || None);
+
 		self.spawn_timer -= dt;
 
 		if self.spawn_timer < 0.0 {
@@ -80,12 +142,20 @@ impl PowerupManager {
 		}
 
 		for powerup in &mut self.powerups {
-			powerup.update(dt);
+			let Some(power) = powerup else { continue };
+
+			power.update(dt);
+
+			if power.state == PowerupState::Gone {
+				*powerup = None;
+			}
 		}
 	}
 
 	pub fn render<'a>(&'a self, assets: &'a Assets, transparent: &mut TransparentRenderer<'a>) {
 		for powerup in &self.powerups {
+			let Some(powerup) = powerup else { continue };
+
 			let (model, color) = match powerup.kind {
 				PowerupKind::Health => (&assets.powerup_hp, &[1.0, 0.0, 0.0]),
 				PowerupKind::Energy => (&assets.powerup_energy, &[0.0, 0.0, 1.0]),
