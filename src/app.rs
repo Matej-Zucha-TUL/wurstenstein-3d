@@ -85,6 +85,7 @@ struct Parameters {
 	specular_color: [f32; 3],
 	specular_shininess: f32,
 	enable_background: bool,
+	debug_window_visible: bool,
 	rizz_mode: bool,
 	pov_camera: bool,
 	cursor_lock: bool,
@@ -101,6 +102,7 @@ impl Default for Parameters {
 			specular_color: [0.5, 0.5, 0.5],
 			specular_shininess: 20.0,
 			enable_background: true,
+			debug_window_visible: false,
 			rizz_mode: false,
 			pov_camera: true,
 			cursor_lock: true,
@@ -364,6 +366,8 @@ impl App {
 	}
 
 	fn redraw_ui(&mut self, event_loop: &ActiveEventLoop) {
+		if !self.params.debug_window_visible && self.params.cursor_lock { return }
+
 		self.egui.run(&self.window, |ctx| {
 			egui::Window::new("Debug window")
 				.resizable(false)
@@ -404,6 +408,8 @@ impl App {
 						ui.label("Cursor is locked.");
 						return;
 					}
+
+					ui.checkbox(&mut self.params.debug_window_visible, "Debug window always visible");
 
 					ui.checkbox(&mut self.params.vsync, "Enable Vsync");
 
