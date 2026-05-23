@@ -1,3 +1,5 @@
+use parry2d::math::Pose;
+use parry2d::shape::Ball;
 use rand::RngExt as _;
 use rand::rngs::ThreadRng;
 
@@ -153,6 +155,21 @@ impl EnemyManager {
 
 			model.draw(&enemy.transform, program, "model");
 		}
+	}
+
+	pub fn get_collision_shapes(&self) -> Vec<Option<(Ball, Pose)>> {
+		self.enemies.iter()
+			.map(|x| if let Some(x) = &x && x.state == EnemyState::Idle { Some(x) } else { None })
+			.map(|x| x.map(|x| (Ball::new(1.5), Pose::translation(x.transform.position[0], x.transform.position[2]))))
+			.collect::<Vec<_>>()
+	}
+
+	pub fn collide_with_player(&mut self, idx: usize) -> Option<usize> {
+		self.enemies[idx].as_mut().map(|x| {
+			match x.kind {
+				EnemyKind::Apple => 3
+			}
+		})
 	}
 }
 

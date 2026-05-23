@@ -19,7 +19,9 @@ pub struct PlayerController {
 	powerup_speed_timer: f32,
 	fall_jump_triggered: bool,
 	force_jump: bool,
-	already_fell_to_death: bool,
+	damage_timeout: f32,
+	death_from_damage: bool,
+	already_dead: bool,
 	bounding_box: BoundingBox,
 	gravity: f32,
 	xz_force: [f32; 2],
@@ -28,7 +30,8 @@ pub struct PlayerController {
 
 pub enum PlayerAction {
 	Jumped,
-	FellToDeath
+	FellToDeath,
+	DiedFromDamage,
 }
 
 pub struct PlayerStats {
@@ -55,7 +58,9 @@ impl PlayerController {
 			powerup_speed_timer: 0.0,
 			fall_jump_triggered: false,
 			force_jump: false,
-			already_fell_to_death: false,
+			damage_timeout: 0.0,
+			death_from_damage: false,
+			already_dead: false,
 			bounding_box,
 			gravity: 0.0,
 			xz_force: [0.0, 0.0],
@@ -68,6 +73,16 @@ impl PlayerController {
 	}
 
 	pub fn update<T: PlayfieldPiece>(&mut self, world: &Playfield<'_, T>, dt: f32) -> Option<PlayerAction> {
+		if self.already_dead {
+			return None
+		}
+
+		if self.death_from_damage {
+			self.death_from_damage = false;
+			self.already_dead = true;
+			return Some(PlayerAction::DiedFromDamage);
+		}
+
 		let mut action = None;
 
 		let max_speed: f32 = if self.powerup_speed_timer > 0.0 { 10.0 } else { 5.0 };
@@ -153,10 +168,12 @@ impl PlayerController {
 			self.gravity = f32::min(self.gravity + BASE_GRAVITY_ACCEL * dt, BASE_GRAVITY);
 		}
 
-		if self.transform.position[1] <= world.death_barrier + 0.01 && !self.already_fell_to_death {
+		if self.transform.position[1] <= world.death_barrier + 0.01 && !self.already_dead {
 			action = Some(PlayerAction::FellToDeath);
-			self.already_fell_to_death = true;
+			self.already_dead = true;
 		}
+
+		self.damage_timeout -= dt;
 
 		self.powerup_speed_timer -= dt;
 
@@ -191,6 +208,21 @@ impl PlayerController {
 			ammo: self.ammo,
 			speed_timer: self.powerup_speed_timer.max(0.0)
 		}
+	}
+
+	pub fn decrease_hp(&mut self, amount: usize) -> bool {
+		if self.damage_timeout > 0.0 {
+			return false;
+		}
+
+		self.health = self.health.saturating_sub(amount);
+		self.damage_timeout = 0.5;
+
+		if self.health == 0 {
+			self.death_from_damage = true;
+		}
+
+		true
 	}
 }
 

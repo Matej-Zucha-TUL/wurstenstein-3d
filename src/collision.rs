@@ -2,6 +2,7 @@ use parry2d::math::{Pose, Rot2, Vec2};
 use parry2d::query;
 use parry2d::shape::Cuboid;
 
+use crate::enemy::EnemyManager;
 use crate::playfield::{Playfield, PlayfieldPiece};
 use crate::player::PlayerController;
 use crate::powerup::PowerupManager;
@@ -66,6 +67,26 @@ pub fn check_with_powerups(player: &PlayerController, powerups: &PowerupManager)
 		let Some((powerup_shape, powerup_pose)) = powerup else { continue };
 
 		if query::intersection_test(&player_pose, &player_shape, powerup_pose, powerup_shape).unwrap() {
+			return Some(idx);
+		}
+	}
+
+	None
+}
+
+pub fn check_with_enemies(player: &PlayerController, enemies: &EnemyManager) -> Option<usize> {
+	let transform = player.get_transform();
+	let (player_shape, mut player_pose) = player.get_collision_shape();
+
+	player_pose.rotation = Rot2::from_angle(-transform.rotation[0]);
+	player_pose.translation += Vec2::new(transform.position[0], transform.position[2]);
+
+	let enemies = enemies.get_collision_shapes();
+
+	for (idx, enemy) in enemies.iter().enumerate() {
+		let Some((enemy_shape, enemy_pose)) = enemy else { continue };
+
+		if query::intersection_test(&player_pose, &player_shape, enemy_pose, enemy_shape).unwrap() {
 			return Some(idx);
 		}
 	}

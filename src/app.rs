@@ -21,7 +21,7 @@ use crate::assets::Assets;
 use crate::audio::{Audio, MusicRequest, SoundRequest};
 use crate::camera::{Camera, Directions};
 use crate::collision;
-use crate::enemy::{Enemy, EnemyManager};
+use crate::enemy::EnemyManager;
 use crate::model::Transform;
 use crate::player::{PlayerAction, PlayerController, MAX_AMMO, MAX_HEALTH};
 use crate::playfield::EXAMPLE_MAZE;
@@ -552,6 +552,12 @@ impl App {
 			}
 		}
 
+		if let Some(idx) = collision::check_with_enemies(&self.scene.player, &self.scene.enemies) && let Some(damage) = self.scene.enemies.collide_with_player(idx) {
+			if self.scene.player.decrease_hp(damage) {
+				self.audio.play_sound(SoundRequest::EnemyHit, None, 1.0);
+			}
+		}
+
 		self.scene.player.update_yaw(self.scene.camera.get_yaw_pitch().0);
 		if let Some(action) = self.scene.player.update(&EXAMPLE_MAZE, dt) {
 			match action {
@@ -559,6 +565,9 @@ impl App {
 					self.audio.play_sound(SoundRequest::PlayerJump, None, 1.0);
 				},
 				PlayerAction::FellToDeath => {
+					self.audio.play_sound(SoundRequest::PlayerDeath, None, 1.0);
+				},
+				PlayerAction::DiedFromDamage => {
 					self.audio.play_sound(SoundRequest::PlayerDeath, None, 1.0);
 				},
 			}
