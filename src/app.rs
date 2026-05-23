@@ -116,6 +116,8 @@ struct Perf {
 	last_update: Instant,
 	fps_update_interval: Duration,
 	fps_string: String,
+	accumulated_dt: f32,
+	accumulated_count: usize
 }
 
 impl Default for Perf {
@@ -128,6 +130,8 @@ impl Default for Perf {
 			last_update: start_time,
 			fps_update_interval: Duration::from_millis(500),
 			fps_string: "FPS = ???".into(),
+			accumulated_dt: 0.0,
+			accumulated_count: 0
 		}
 	}
 }
@@ -447,9 +451,15 @@ impl App {
 	}
 
 	fn update_perf_data(&mut self, dt: f32) {
-		let fps = 1.0 / dt;
+		self.perf.accumulated_dt += dt;
+		self.perf.accumulated_count += 1;
 
 		if self.perf.last_update.elapsed() >= self.perf.fps_update_interval {
+			let fps = (1.0 / self.perf.accumulated_dt) * self.perf.accumulated_count as f32;
+
+			self.perf.accumulated_count = 0;
+			self.perf.accumulated_dt = 0.0;
+
 			self.perf.fps_string = format!("FPS = {:.1}", fps);
 			let vsync_string = format!(
 				"VSync = {}",
