@@ -25,6 +25,9 @@ winit = "0.30.12"
 
 assets = { path = "./crates/assets" }
 modplay = { path = "./crates/modplay" }
+oddio = "0.7.4"
+mint = "0.5.9"
+hound = "3.5.1"
 
 [profile.release]
 lto = true

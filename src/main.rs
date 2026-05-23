@@ -14,6 +14,8 @@ use app::App;
 
 mod assets;
 
+mod audio;
+
 mod background;
 
 mod camera;
@@ -22,8 +24,6 @@ mod config;
 use config::Config;
 
 mod model;
-
-mod modplay;
 
 mod playfield;
 

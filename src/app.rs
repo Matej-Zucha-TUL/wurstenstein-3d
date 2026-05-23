@@ -17,7 +17,7 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use crate::{assets::Assets, camera::{Camera, Directions}, model::Transform, modplay::start_music, player::PlayerController, playfield::EXAMPLE_MAZE, screenshot::take_screenshot, transparent::TransparentRenderer};
+use crate::{assets::Assets, audio::{Audio, MusicRequest}, camera::{Camera, Directions}, model::Transform, player::PlayerController, playfield::EXAMPLE_MAZE, screenshot::take_screenshot, transparent::TransparentRenderer};
 
 pub struct App {
 	window: Window,
@@ -27,6 +27,7 @@ pub struct App {
 	gl_surface: Surface<WindowSurface>,
 
 	assets: Assets,
+	audio: Audio,
 	perf: Perf,
 	scene: Scene,
 	params: Parameters,
@@ -150,9 +151,15 @@ impl App {
 			.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap()))
 			.unwrap();
 
-		let assets = Assets::init(gl.clone());
+		info!("Loading assets archive...");
 
-		start_music(&assets.music);
+		let files = assets::Assets::parse_from_data(&std::fs::read("assets.bin").unwrap()).unwrap();
+
+		info!("Loading music and sound effects...");
+
+		let audio = Audio::init(&files.music, &files.sounds);
+
+		let assets = Assets::init(gl.clone(), &files.shader_programs, &files.models, &files.textures);
 
 		let scene = {
 			let player = PlayerController::new(Transform::origin().with_position(glm::vec3(7.5, 0.0, 7.5)), assets.player_bounding_box.clone());
@@ -249,6 +256,8 @@ impl App {
 
 		window.set_visible(true);
 
+		audio.play_music(MusicRequest::InGame);
+
 		let mut app = App {
 			window,
 			egui,
@@ -257,6 +266,7 @@ impl App {
 			gl_surface,
 
 			assets,
+			audio,
 			scene,
 			perf,
 			params,
@@ -577,6 +587,11 @@ impl App {
 		self.scene.player.update_yaw(self.scene.camera.get_yaw_pitch().0);
 		self.scene.player.update_position(&EXAMPLE_MAZE, dt);
 		self.update_camera(dt);
+
+		let pos = self.scene.player.get_transform().position;
+		let rot = self.scene.player.get_transform().rotation[0];
+
+		self.audio.update_position(pos.into(), rot);
 
 		for powerup in &mut self.scene.powerups {
 			powerup.update(dt);

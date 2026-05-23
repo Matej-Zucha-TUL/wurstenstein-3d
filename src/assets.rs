@@ -5,6 +5,7 @@ use crate::shader::{Program, ProgramBuilder, ShaderType};
 use std::io::Cursor;
 use std::sync::Arc;
 
+use assets::{Models, ShaderPrograms, Textures};
 use log::info;
 use nalgebra_glm as glm;
 use glow::Context;
@@ -44,7 +45,6 @@ pub struct Assets {
 	pub powerup_energy: Model,
 	pub powerup_speed: Model,
 	pub player_bounding_box: BoundingBox,
-	pub music: Vec<u8>
 }
 
 #[derive(Debug, Clone)]
@@ -138,33 +138,29 @@ impl BoundingBox {
 }
 
 impl Assets {
-	pub fn init(gl: Arc<Context>) -> Self {
-		info!("Loading assets archive...");
-
-		let files = assets::Assets::parse_from_data(&std::fs::read("assets.bin").unwrap()).unwrap();
-
+	pub fn init(gl: Arc<Context>, shader_programs: &ShaderPrograms, models: &Models, textures: &Textures) -> Self {
 		// Load shaders
 
 		info!("Loading shaders...");
 
 		let normal_program = ProgramBuilder::new(gl.clone())
-			.add_shader(ShaderType::Vertex, &files.shader_programs.main_vert)
-			.add_shader(ShaderType::Fragment, &files.shader_programs.main_frag)
+			.add_shader(ShaderType::Vertex, &shader_programs.main_vert)
+			.add_shader(ShaderType::Fragment, &shader_programs.main_frag)
 			.link();
 
 		let rizz_program = ProgramBuilder::new(gl.clone())
-			.add_shader(ShaderType::Vertex, &files.shader_programs.main_vert)
-			.add_shader(ShaderType::Fragment, &files.shader_programs.rizz_frag)
+			.add_shader(ShaderType::Vertex, &shader_programs.main_vert)
+			.add_shader(ShaderType::Fragment, &shader_programs.rizz_frag)
 			.link();
 
 		let powerup_program = ProgramBuilder::new(gl.clone())
-			.add_shader(ShaderType::Vertex, &files.shader_programs.main_vert)
-			.add_shader(ShaderType::Fragment, &files.shader_programs.powerup_frag)
+			.add_shader(ShaderType::Vertex, &shader_programs.main_vert)
+			.add_shader(ShaderType::Fragment, &shader_programs.powerup_frag)
 			.link();
 
 		let background_program = ProgramBuilder::new(gl.clone())
-			.add_shader(ShaderType::Vertex, &files.shader_programs.background_vert)
-			.add_shader(ShaderType::Fragment, &files.shader_programs.background_frag)
+			.add_shader(ShaderType::Vertex, &shader_programs.background_vert)
+			.add_shader(ShaderType::Fragment, &shader_programs.background_frag)
 			.link();
 
 		// Load background effect
@@ -176,17 +172,17 @@ impl Assets {
 
 		info!("Loading meshes...");
 
-		let player_mesh = load_mesh(&files.models.player);
-		let enemy_mesh = load_mesh(&files.models.enemy);
-		let powerup_hp_mesh = load_mesh(&files.models.powerup_hp);
-		let powerup_energy_mesh = load_mesh(&files.models.powerup_energy);
-		let powerup_speed_mesh = load_mesh(&files.models.powerup_speed);
+		let player_mesh = load_mesh(&models.player);
+		let enemy_mesh = load_mesh(&models.enemy);
+		let powerup_hp_mesh = load_mesh(&models.powerup_hp);
+		let powerup_energy_mesh = load_mesh(&models.powerup_energy);
+		let powerup_speed_mesh = load_mesh(&models.powerup_speed);
 
 		info!("Loading textures...");
 
-		let terrain_tex = load_texture(&files.textures.terrain);
-		let player_tex = load_texture(&files.textures.player);
-		let enemy_tex = load_texture(&files.textures.enemy);
+		let terrain_tex = load_texture(&textures.terrain);
+		let player_tex = load_texture(&textures.player);
+		let enemy_tex = load_texture(&textures.enemy);
 
 		info!("Linking models...");
 
@@ -252,7 +248,6 @@ impl Assets {
 			powerup_speed,
 			enemy,
 			player_bounding_box,
-			music: files.music.mod_file
 		}
 	}
 }

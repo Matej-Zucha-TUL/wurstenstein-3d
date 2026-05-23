@@ -1187,6 +1187,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fc0fef456e4baa96da950455cd02c081ca953b141298e41db3fc7e36b1da849c"
 
 [[package]]
+name = "hound"
+version = "3.5.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "62adaabb884c94955b19907d60019f4e145d091c75345379e70d1ee696f7854f"
+
+[[package]]
 name = "ident_case"
 version = "1.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1484,6 +1490,12 @@ checksum = "b63fbc4a50860e98e7b2aa7804ded1db5cbc3aff9193adaff57a6931bf7c4b4c"
 dependencies = [
  "adler2",
 ]
+
+[[package]]
+name = "mint"
+version = "0.5.9"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e53debba6bda7a793e5f99b8dacf19e626084f525f7829104ba9898f367d85ff"
 
 [[package]]
 name = "modplay"
@@ -1951,6 +1963,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "oddio"
+version = "0.7.4"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c287b2b60511f53bd87e59adca987a46d4bdde6f16ad5cfa89531bffca344cf2"
+dependencies = [
+ "mint",
+]
+
+[[package]]
 name = "once_cell"
 version = "1.21.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2075,10 +2096,13 @@ dependencies = [
  "glow",
  "glutin",
  "glutin-winit",
+ "hound",
  "image",
  "log",
+ "mint",
  "modplay",
  "nalgebra-glm",
+ "oddio",
  "parry2d",
  "paste",
  "raw-window-handle",
