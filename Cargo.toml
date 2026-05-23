@@ -24,10 +24,7 @@ toml = "1.0.6"
 winit = "0.30.12"
 
 assets = { path = "./crates/assets" }
-
-[build-dependencies]
-bindgen = "0.72.1"
-cc = "1.2.62"
+modplay = { path = "./crates/modplay" }
 
 [profile.release]
 lto = true

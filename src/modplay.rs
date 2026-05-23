@@ -1,13 +1,4 @@
-#[allow(non_upper_case_globals)]
-#[allow(non_camel_case_types)]
-#[allow(non_snake_case)]
-#[allow(unused)]
-mod bindings {
-	include!(concat!(env!("OUT_DIR"), "/bindings.rs"));
-}
-
-use bindings::*;
-
+use modplay::*;
 use tinyaudio::prelude::*;
 
 const INGAME_RULES: *const *const ModRule_t = [

@@ -1486,6 +1486,14 @@ dependencies = [
 ]
 
 [[package]]
+name = "modplay"
+version = "0.1.0"
+dependencies = [
+ "bindgen",
+ "cc",
+]
+
+[[package]]
 name = "moxcms"
 version = "0.7.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2060,9 +2068,7 @@ name = "pg2-mm"
 version = "0.1.0"
 dependencies = [
  "assets",
- "bindgen",
  "bytemuck",
- "cc",
  "egui",
  "egui_glow",
  "env_logger",
@@ -2071,6 +2077,7 @@ dependencies = [
  "glutin-winit",
  "image",
  "log",
+ "modplay",
  "nalgebra-glm",
  "parry2d",
  "paste",
