@@ -25,6 +25,8 @@ mod collision;
 mod config;
 use config::Config;
 
+mod enemy;
+
 mod model;
 
 mod playfield;

@@ -17,14 +17,15 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use crate::{assets::Assets, player::{MAX_AMMO, MAX_HEALTH}, powerup::PowerupKind};
+use crate::assets::Assets;
 use crate::audio::{Audio, MusicRequest, SoundRequest};
 use crate::camera::{Camera, Directions};
 use crate::collision;
+use crate::enemy::{Enemy, EnemyManager};
 use crate::model::Transform;
-use crate::player::{PlayerAction, PlayerController};
+use crate::player::{PlayerAction, PlayerController, MAX_AMMO, MAX_HEALTH};
 use crate::playfield::EXAMPLE_MAZE;
-use crate::powerup::PowerupManager;
+use crate::powerup::{PowerupManager, PowerupKind};
 use crate::screenshot::take_screenshot;
 use crate::transparent::TransparentRenderer;
 
@@ -42,19 +43,10 @@ pub struct App {
 	params: Parameters,
 }
 
-enum EnemyKind {
-	Apple
-}
-
-struct Enemy {
-	kind: EnemyKind,
-	transform: Transform
-}
-
 struct Scene {
 	camera: Camera,
 	player: PlayerController,
-	enemies: Vec<Enemy>,
+	enemies: EnemyManager,
 	powerups: PowerupManager
 }
 
@@ -148,12 +140,7 @@ impl App {
 			let mut camera = Camera::new(glm::vec3(0.0, 0.0, 0.0));
 			camera.set_pov(true);
 
-			let enemies = vec![
-				Enemy {
-					kind: EnemyKind::Apple,
-					transform: Transform::origin().with_position(glm::vec3(12.5, 0.0, 7.5))
-				}
-			];
+			let enemies = EnemyManager::new();
 
 			let powerups = PowerupManager::new();
 
@@ -584,6 +571,7 @@ impl App {
 		self.audio.update_position(pos.into(), rot);
 
 		self.scene.powerups.update(&EXAMPLE_MAZE, dt);
+		self.scene.enemies.update(&EXAMPLE_MAZE, dt);
 
 		let aspect = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
 		let projection_mtx = glm::perspective(
@@ -643,9 +631,7 @@ impl App {
 		self.assets.terrain.draw(&Transform::origin(), program, "model");
 		self.assets.player.draw(self.scene.player.get_transform(), program, "model");
 
-		for enemy in &self.scene.enemies {
-			self.assets.enemy.draw(&enemy.transform, program, "model");
-		}
+		self.scene.enemies.render(&self.assets, program);
 
 		let mut transparent = TransparentRenderer::new(self.gl.clone());
 
