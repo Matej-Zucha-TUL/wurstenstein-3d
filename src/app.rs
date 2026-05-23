@@ -564,11 +564,9 @@ impl App {
 				PlayerAction::Jumped => {
 					self.audio.play_sound(SoundRequest::PlayerJump, None, 1.0);
 				},
-				PlayerAction::FellToDeath => {
+				PlayerAction::FellToDeath | PlayerAction::DiedFromDamage => {
 					self.audio.play_sound(SoundRequest::PlayerDeath, None, 1.0);
-				},
-				PlayerAction::DiedFromDamage => {
-					self.audio.play_sound(SoundRequest::PlayerDeath, None, 1.0);
+					self.audio.play_music(MusicRequest::Death);
 				},
 			}
 		}

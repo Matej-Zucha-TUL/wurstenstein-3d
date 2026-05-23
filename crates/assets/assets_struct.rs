@@ -26,7 +26,8 @@ pub struct Textures {
 
 #[derive(wincode::SchemaWrite, wincode::SchemaRead)]
 pub struct Music {
-	pub mod_file: Vec<u8>,
+	pub space_debris: Vec<u8>,
+	pub humntrgt: Vec<u8>,
 }
 
 #[derive(wincode::SchemaWrite, wincode::SchemaRead)]

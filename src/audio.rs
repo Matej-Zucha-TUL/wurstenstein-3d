@@ -62,6 +62,7 @@ const INGAME_RULES: *const *const ModRule_t = [
 pub enum MusicRequest {
 	Stop,
 	InGame,
+	Death,
 }
 
 pub enum SoundRequest {
@@ -94,7 +95,8 @@ impl Audio {
 		let (tx, rx) = mpsc::channel();
 		let (music_tx, music_rx) = mpsc::channel();
 
-		let mod_file = music.mod_file.clone();
+		let space_debris = music.space_debris.clone();
+		let humntrgt = music.humntrgt.clone();
 
 		let params = OutputDeviceParameters {
 			channels_count: 2,
@@ -115,10 +117,16 @@ impl Audio {
 					MusicRequest::InGame => {
 						play_music = true;
 						unsafe {
-							InitMOD(mod_file.as_ptr(), 44100);
+							InitMOD(space_debris.as_ptr(), 44100);
 							UpdateMODRules(INGAME_RULES);
 						}
 					},
+					MusicRequest::Death => {
+						play_music = true;
+						unsafe {
+							InitMOD(humntrgt.as_ptr(), 44100);
+						}
+					}
 				}
 			}
 

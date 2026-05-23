@@ -25,7 +25,8 @@ fn main() {
 			terrain: include_bytes!("./files/textures/ferris.png").to_vec(),
 		},
 		music: Music {
-			mod_file: include_bytes!("./files/music/space_debris.mod").to_vec(),
+			space_debris: include_bytes!("./files/music/space_debris.mod").to_vec(),
+			humntrgt: include_bytes!("./files/music/humntrgt.mod").to_vec(),
 		},
 		sounds: Sounds {
 			player_jump: include_bytes!("./files/sounds/sfx_movement_jump14.wav").to_vec(),
