@@ -5,6 +5,7 @@ use parry2d::shape::Cuboid;
 use crate::assets::BoundingBox;
 use crate::model::Transform;
 use crate::playfield::{Playfield, PlayfieldPiece};
+use crate::powerup::PowerupKind;
 
 pub struct PlayerController {
 	pub move_forward: bool,
@@ -149,6 +150,10 @@ impl PlayerController {
 
 	pub fn get_collision_shape(&self) -> (Cuboid, Pose) {
 		self.bounding_box.get_collision_shape()
+	}
+
+	pub fn pick_up_powerup(&mut self, kind: PowerupKind) {
+
 	}
 }
 

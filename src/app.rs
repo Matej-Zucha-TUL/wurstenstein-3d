@@ -528,8 +528,13 @@ impl App {
 			.as_secs_f32();
 		self.perf.last_time = new_time;
 
-		self.scene.player.update_yaw(self.scene.camera.get_yaw_pitch().0);
 		self.scene.player.has_contact_with_world = collision::check_with_ground(&self.scene.player, &EXAMPLE_MAZE);
+
+		if let Some(idx) = collision::check_with_powerups(&self.scene.player, &self.scene.powerups) && let Some(kind) = self.scene.powerups.pick_up(idx) {
+			self.scene.player.pick_up_powerup(kind);
+		}
+
+		self.scene.player.update_yaw(self.scene.camera.get_yaw_pitch().0);
 		if let Some(action) = self.scene.player.update(&EXAMPLE_MAZE, dt) {
 			match action {
 				PlayerAction::Jumped => {

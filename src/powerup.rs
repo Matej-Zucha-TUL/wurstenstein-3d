@@ -1,3 +1,5 @@
+use parry2d::math::Pose;
+use parry2d::shape::Ball;
 use rand::RngExt as _;
 use rand::rngs::ThreadRng;
 
@@ -7,6 +9,7 @@ use crate::playfield::{Playfield, PlayfieldPiece};
 use crate::shader::Program;
 use crate::transparent::TransparentRenderer;
 
+#[derive(Debug, Copy, Clone)]
 pub enum PowerupKind {
 	Health,
 	Energy,
@@ -71,13 +74,13 @@ impl Powerup {
 				self.transform.position[1] = self.base_y + (self.timer * 2.0).sin() * 0.3;
 			},
 			PowerupState::PickedUp => {
-				self.transform.rotation[0] += 4.0 * dt;
+				self.transform.rotation[0] += 8.0 * dt;
 				let scale = (1.0 - self.timer * 2.0).max(0.0);
 				self.transform.scale[0] = scale;
 				self.transform.scale[1] = scale;
 				self.transform.scale[2] = scale;
 
-				self.transform.position[1] += dt;
+				self.transform.position[1] += dt * 3.0;
 
 				if self.timer >= 0.5 {
 					self.state = PowerupState::Gone;
@@ -202,6 +205,21 @@ impl PowerupManager {
 				model.draw(&powerup.transform, &assets.powerup_program, "model");
 			});
 		}
+	}
+
+	pub fn get_collision_shapes(&self) -> Vec<Option<(Ball, Pose)>> {
+		self.powerups.iter()
+			.map(|x| if let Some(x) = &x && x.state == PowerupState::Floating { Some(x) } else { None })
+			.map(|x| x.map(|x| (Ball::new(1.5), Pose::translation(x.transform.position[0], x.transform.position[2]))))
+			.collect::<Vec<_>>()
+	}
+
+	pub fn pick_up(&mut self, idx: usize) -> Option<PowerupKind> {
+		self.powerups[idx].as_mut().map(|x| {
+			x.state = PowerupState::PickedUp;
+			x.timer = 0.0;
+			x.kind
+		})
 	}
 }
 
