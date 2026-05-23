@@ -16,7 +16,7 @@ struct ModelVertices {
 
 struct ModelTexture {
 	tex: NativeTexture,
-	sampler: NativeUniformLocation
+	sampler: String
 }
 
 pub struct VertexAttributes {
@@ -159,7 +159,7 @@ impl Model {
 		assert_eq!(width * height * 3, raw_img.len() as i32);
 
 		let tex;
-		let sampler;
+		let sampler = sampler_attrib.to_string();
 
 		unsafe {
 			tex = self.gl.create_named_texture(TEXTURE_2D).unwrap();
@@ -179,16 +179,7 @@ impl Model {
 				.texture_parameter_i32(tex, TEXTURE_MIN_FILTER, NEAREST as i32);
 			self.gl
 				.texture_parameter_i32(tex, TEXTURE_MAG_FILTER, LINEAR as i32);
-
-			sampler = self
-				.gl
-				.get_uniform_location(program.program, sampler_attrib);
 		}
-
-		let Some(sampler) = sampler else {
-			warn!("Sampler {} not found in shader program", sampler_attrib);
-			return
-		};
 
 		self.tex.push(ModelTexture { tex, sampler });
 	}
@@ -221,7 +212,7 @@ impl Model {
 
 		unsafe {
 			for (tex_unit, tex) in self.tex.iter().enumerate() {
-				self.gl.program_uniform_1_i32(program.program, Some(&tex.sampler), tex_unit as i32);
+				program.set_uniform_i32(&tex.sampler, tex_unit as i32);
 				self.gl.bind_texture_unit(tex_unit as u32, Some(tex.tex));
 			}
 
