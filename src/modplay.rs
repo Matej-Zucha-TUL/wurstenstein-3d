@@ -62,9 +62,7 @@ const INGAME_RULES: *const *const ModRule_t = [
 	std::ptr::null()
 ].as_ptr();
 
-pub fn start_music() {
-	let module = include_bytes!("../assets/music/space_debris.mod");
-
+pub fn start_music(module: &[u8]) {
 	let _ = unsafe { InitMOD(module.as_ptr(), 44100) };
 
 	let params = OutputDeviceParameters {

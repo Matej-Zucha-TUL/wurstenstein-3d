@@ -1,6 +1,9 @@
-use crate::{background::Background, model::{Model, VertexAttributes}, shader::{Program, ProgramBuilder, ShaderType}};
+use crate::background::Background;
+use crate::model::{Model, VertexAttributes};
+use crate::shader::{Program, ProgramBuilder, ShaderType};
 
-use std::{io::Cursor, sync::Arc};
+use std::io::Cursor;
+use std::sync::Arc;
 
 use nalgebra_glm as glm;
 use glow::Context;
@@ -39,7 +42,8 @@ pub struct Assets {
 	pub powerup_hp: Model,
 	pub powerup_energy: Model,
 	pub powerup_speed: Model,
-	pub player_bounding_box: BoundingBox
+	pub player_bounding_box: BoundingBox,
+	pub music: Vec<u8>
 }
 
 #[derive(Debug, Clone)]
@@ -134,26 +138,28 @@ impl BoundingBox {
 
 impl Assets {
 	pub fn init(gl: Arc<Context>) -> Self {
+		let files = assets::Assets::parse_from_data(&std::fs::read("assets.bin").unwrap()).unwrap();
+
 		// Load shaders
 
 		let normal_program = ProgramBuilder::new(gl.clone())
-			.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/main.vert"))
-			.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/main.frag"))
+			.add_shader(ShaderType::Vertex, &files.main_vert_program)
+			.add_shader(ShaderType::Fragment, &files.main_frag_program)
 			.link();
 
 		let rizz_program = ProgramBuilder::new(gl.clone())
-			.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/main.vert"))
-			.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/rizz.frag"))
+			.add_shader(ShaderType::Vertex, &files.main_vert_program)
+			.add_shader(ShaderType::Fragment, &files.rizz_frag_program)
 			.link();
 
 		let powerup_program = ProgramBuilder::new(gl.clone())
-			.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/main.vert"))
-			.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/powerup.frag"))
+			.add_shader(ShaderType::Vertex, &files.main_vert_program)
+			.add_shader(ShaderType::Fragment, &files.powerup_frag_program)
 			.link();
 
 		let background_program = ProgramBuilder::new(gl.clone())
-			.add_shader(ShaderType::Vertex, include_str!("./../assets/shaders/vert/screen.vert"))
-			.add_shader(ShaderType::Fragment, include_str!("./../assets/shaders/frag/starfield.frag"))
+			.add_shader(ShaderType::Vertex, &files.background_vert_program)
+			.add_shader(ShaderType::Fragment, &files.background_frag_program)
 			.link();
 
 		// Load background effect
@@ -163,15 +169,15 @@ impl Assets {
 
 		// Load models
 
-		let player_mesh = load_mesh(include_bytes!("../assets/objects/pastry/pastry.obj"));
-		let enemy_mesh = load_mesh(include_bytes!("../assets/objects/apple/apple.obj"));
-		let powerup_hp_mesh = load_mesh(include_bytes!("../assets/objects/powerups/powerup-hp.obj"));
-		let powerup_energy_mesh = load_mesh(include_bytes!("../assets/objects/powerups/powerup-energy.obj"));
-		let powerup_speed_mesh = load_mesh(include_bytes!("../assets/objects/powerups/powerup-speed.obj"));
+		let player_mesh = load_mesh(&files.player);
+		let enemy_mesh = load_mesh(&files.enemy);
+		let powerup_hp_mesh = load_mesh(&files.powerup_hp);
+		let powerup_energy_mesh = load_mesh(&files.powerup_energy);
+		let powerup_speed_mesh = load_mesh(&files.powerup_speed);
 
-		let terrain_tex = load_texture(include_bytes!("../assets/textures/ferris.png"));
-		let player_tex = load_texture(include_bytes!("../assets/objects/pastry/pastry.png"));
-		let enemy_tex = load_texture(include_bytes!("../assets/objects/apple/apple_tex.png"));
+		let terrain_tex = load_texture(&files.terrain_tex);
+		let player_tex = load_texture(&files.player_tex);
+		let enemy_tex = load_texture(&files.enemy_tex);
 
 		let player_scale = 20.0;
 
@@ -232,7 +238,8 @@ impl Assets {
 			powerup_energy,
 			powerup_speed,
 			enemy,
-			player_bounding_box
+			player_bounding_box,
+			music: files.mod_file
 		}
 	}
 }

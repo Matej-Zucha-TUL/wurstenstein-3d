@@ -17,7 +17,7 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use crate::{assets::Assets, camera::{Camera, Directions}, model::Transform, player::PlayerController, playfield::EXAMPLE_MAZE, screenshot::take_screenshot, transparent::TransparentRenderer};
+use crate::{assets::Assets, camera::{Camera, Directions}, model::Transform, modplay::start_music, player::PlayerController, playfield::EXAMPLE_MAZE, screenshot::take_screenshot, transparent::TransparentRenderer};
 
 pub struct App {
 	window: Window,
@@ -145,6 +145,8 @@ impl App {
 			.unwrap();
 
 		let assets = Assets::init(gl.clone());
+
+		start_music(&assets.music);
 
 		let scene = {
 			let player = PlayerController::new(Transform::origin().with_position(glm::vec3(7.5, 0.0, 7.5)), assets.player_bounding_box.clone());
