@@ -17,7 +17,7 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use crate::assets::Assets;
+use crate::{assets::Assets, player::{MAX_AMMO, MAX_HEALTH}};
 use crate::audio::{Audio, MusicRequest, SoundRequest};
 use crate::camera::{Camera, Directions};
 use crate::collision;
@@ -321,90 +321,115 @@ impl App {
 
 	fn redraw_ui(&mut self, event_loop: &ActiveEventLoop) {
 		self.egui.run(&self.window, |ctx| {
-			if !self.params.debug_window_visible && self.params.cursor_lock { return }
+			if self.params.debug_window_visible || !self.params.cursor_lock {
+				egui::Window::new("Debug window")
+					.resizable(false)
+					.show(ctx, |ui| {
+						ui.label(&self.perf.fps_string);
 
-			egui::Window::new("Debug window")
-				.resizable(false)
-				.show(ctx, |ui| {
-					ui.label(&self.perf.fps_string);
+						ui.add_space(4.0);
 
-					ui.add_space(4.0);
+						ui.add_space(4.0);
 
-					ui.add_space(4.0);
+						let [x, y, z] = self
+							.scene
+							.player
+							.get_transform()
+							.position
+							.as_slice()
+							.try_into()
+							.unwrap();
+						let (yaw, pitch) = self.scene.camera.get_yaw_pitch();
 
-					let [x, y, z] = self
-						.scene
-						.player
-						.get_transform()
-						.position
-						.as_slice()
-						.try_into()
-						.unwrap();
-					let (yaw, pitch) = self.scene.camera.get_yaw_pitch();
+						ui.horizontal(|ui| {
+							ui.vertical(|ui| {
+								ui.label(format!("Player X: {:.3}", x));
+								ui.label(format!("Player Y: {:.3}", y));
+								ui.label(format!("Player Z: {:.3}", z));
+							});
 
-					ui.horizontal(|ui| {
-						ui.vertical(|ui| {
-							ui.label(format!("Player X: {:.3}", x));
-							ui.label(format!("Player Y: {:.3}", y));
-							ui.label(format!("Player Z: {:.3}", z));
+							ui.vertical(|ui| {
+								ui.label(format!("Camera yaw: {:.3}", yaw));
+								ui.label(format!("Camera pitch: {:.3}", pitch));
+								ui.label(format!("Camera FOV: {:.3}", self.scene.camera.get_zoom()));
+							})
 						});
 
-						ui.vertical(|ui| {
-							ui.label(format!("Camera yaw: {:.3}", yaw));
-							ui.label(format!("Camera pitch: {:.3}", pitch));
-							ui.label(format!("Camera FOV: {:.3}", self.scene.camera.get_zoom()));
-						})
+						ui.add_space(4.0);
+
+						if self.params.cursor_lock {
+							ui.label("Cursor is locked.");
+							return;
+						}
+
+						ui.checkbox(&mut self.params.debug_window_visible, "Debug window always visible");
+
+						ui.checkbox(&mut self.params.vsync, "Enable Vsync");
+
+						ui.checkbox(&mut self.params.rizz_mode, "Rizz mode");
+
+						ui.checkbox(&mut self.params.enable_background, "Enable background");
+
+						ui.checkbox(&mut self.params.pov_camera, "POV camera");
+
+						ui.horizontal(|ui| {
+							ui.color_edit_button_rgb(&mut self.params.ambient_color);
+							ui.label("Ambient color");
+						});
+
+						ui.horizontal(|ui| {
+							ui.color_edit_button_rgb(&mut self.params.diffuse_color);
+							ui.label("Diffuse color");
+						});
+
+						ui.horizontal(|ui| {
+							ui.color_edit_button_rgb(&mut self.params.specular_color);
+							ui.label("Specular color");
+						});
+
+						ui.label("Specular shininess");
+						ui.add(egui::Slider::new(
+							&mut self.params.specular_shininess,
+							1.0..=100.0,
+						));
+
+						ui.horizontal(|ui| {
+							ui.color_edit_button_rgb(
+								(&mut self.params.background_color[..3]).try_into().unwrap(),
+							);
+							ui.label("Background");
+						});
+
+						if ui.button("Quit").clicked() {
+							event_loop.exit();
+						}
 					});
 
-					ui.add_space(4.0);
+			}
 
-					if self.params.cursor_lock {
-						ui.label("Cursor is locked.");
-						return;
-					}
+			egui::TopBottomPanel::new(egui::panel::TopBottomSide::Bottom, egui::Id::new("hud")).show(ctx, |ui| {
+				ui.horizontal(|ui| {
+					let stats = self.scene.player.get_stats();
 
-					ui.checkbox(&mut self.params.debug_window_visible, "Debug window always visible");
+					let health = format!("Health: {}/{}", stats.health, MAX_HEALTH);
+					let speed = if stats.speed_timer > 0.0 {
+						format!("Speed: turbo {:.1}s", stats.speed_timer)
+					} else {
+						"Speed: normal".to_string()
+					};
+					let ammo = format!("Ammo: {}/{}", stats.ammo, MAX_AMMO);
 
-					ui.checkbox(&mut self.params.vsync, "Enable Vsync");
+					let health = egui::RichText::new(health).size(20.0).color(egui::Color32::RED);
+					let speed = egui::RichText::new(speed).size(20.0).color(egui::Color32::GREEN);
+					let ammo = egui::RichText::new(ammo).size(20.0).color(egui::Color32::BLUE);
 
-					ui.checkbox(&mut self.params.rizz_mode, "Rizz mode");
-
-					ui.checkbox(&mut self.params.enable_background, "Enable background");
-
-					ui.checkbox(&mut self.params.pov_camera, "POV camera");
-
-					ui.horizontal(|ui| {
-						ui.color_edit_button_rgb(&mut self.params.ambient_color);
-						ui.label("Ambient color");
-					});
-
-					ui.horizontal(|ui| {
-						ui.color_edit_button_rgb(&mut self.params.diffuse_color);
-						ui.label("Diffuse color");
-					});
-
-					ui.horizontal(|ui| {
-						ui.color_edit_button_rgb(&mut self.params.specular_color);
-						ui.label("Specular color");
-					});
-
-					ui.label("Specular shininess");
-					ui.add(egui::Slider::new(
-						&mut self.params.specular_shininess,
-						1.0..=100.0,
-					));
-
-					ui.horizontal(|ui| {
-						ui.color_edit_button_rgb(
-							(&mut self.params.background_color[..3]).try_into().unwrap(),
-						);
-						ui.label("Background");
-					});
-
-					if ui.button("Quit").clicked() {
-						event_loop.exit();
-					}
+					ui.label(health);
+					ui.separator();
+					ui.label(speed);
+					ui.separator();
+					ui.label(ammo);
 				});
+			});
 		});
 
 		self.egui.paint(&self.window);

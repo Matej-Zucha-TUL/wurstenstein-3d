@@ -31,8 +31,15 @@ pub enum PlayerAction {
 	FellToDeath
 }
 
-const MAX_AMMO: usize = 10;
-const MAX_HEALTH: usize = 10;
+pub struct PlayerStats {
+	pub health: usize,
+	pub ammo: usize,
+	pub speed_timer: f32
+}
+
+pub const MAX_AMMO: usize = 10;
+pub const MAX_HEALTH: usize = 10;
+pub const MAX_SPEED_TIMER: f32 = 10.0;
 
 impl PlayerController {
 	pub fn new(spawn: Transform, bounding_box: BoundingBox) -> Self {
@@ -170,11 +177,19 @@ impl PlayerController {
 				self.health = (self.health + 5).min(MAX_HEALTH);
 			},
 			PowerupKind::Speed => {
-				self.powerup_speed_timer = 10.0;
+				self.powerup_speed_timer = MAX_SPEED_TIMER;
 			},
 			PowerupKind::Energy => {
 				self.ammo = MAX_AMMO;
 			}
+		}
+	}
+
+	pub fn get_stats(&self) -> PlayerStats {
+		PlayerStats {
+			health: self.health,
+			ammo: self.ammo,
+			speed_timer: self.powerup_speed_timer.max(0.0)
 		}
 	}
 }
