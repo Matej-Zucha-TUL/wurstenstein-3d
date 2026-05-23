@@ -484,7 +484,7 @@ impl App {
 				}
 			);
 			self.window.set_title(&format!(
-				"Triangle - {}, {}, {}",
+				"Wurstenstein 3D - {}, {}, {}",
 				self.perf.fps_string, vsync_string, cursor_lock_string
 			));
 			info!(

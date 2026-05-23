@@ -135,7 +135,7 @@ fn main() {
 
 	let event_loop = winit::event_loop::EventLoop::builder().build().unwrap();
 	let mut window_builder = winit::window::Window::default_attributes()
-		.with_title("Hello triangle!")
+		.with_title("Wurstenstein 3D")
 		.with_inner_size(winit::dpi::LogicalSize::new(
 			config.window.width,
 			config.window.height,
