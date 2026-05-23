@@ -17,7 +17,7 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use crate::{assets::Assets, audio::{Audio, MusicRequest, SoundRequest}, camera::{Camera, Directions}, model::Transform, player::{PlayerAction, PlayerController}, playfield::EXAMPLE_MAZE, screenshot::take_screenshot, transparent::TransparentRenderer};
+use crate::{assets::Assets, audio::{Audio, MusicRequest, SoundRequest}, camera::{Camera, Directions}, collision, model::Transform, player::{PlayerAction, PlayerController}, playfield::EXAMPLE_MAZE, screenshot::take_screenshot, transparent::TransparentRenderer};
 
 pub struct App {
 	window: Window,
@@ -587,6 +587,7 @@ impl App {
 		self.perf.last_time = new_time;
 
 		self.scene.player.update_yaw(self.scene.camera.get_yaw_pitch().0);
+		self.scene.player.has_contact_with_world = collision::check_with_ground(&self.scene.player, &EXAMPLE_MAZE);
 		if let Some(action) = self.scene.player.update(&EXAMPLE_MAZE, dt) {
 			match action {
 				PlayerAction::Jumped => {

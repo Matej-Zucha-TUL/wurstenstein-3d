@@ -20,6 +20,8 @@ mod background;
 
 mod camera;
 
+mod collision;
+
 mod config;
 use config::Config;
 
