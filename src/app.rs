@@ -92,6 +92,7 @@ struct Parameters {
 	cursor_lock: bool,
 	fullscreen: bool,
 	vsync: bool,
+	window_focused: bool,
 }
 
 impl Default for Parameters {
@@ -109,6 +110,7 @@ impl Default for Parameters {
 			cursor_lock: true,
 			fullscreen: false,
 			vsync: true,
+			window_focused: true,
 		}
 	}
 }
@@ -527,7 +529,7 @@ impl App {
 			self.window.inner_size().height / 2,
 		);
 
-		if self.params.cursor_lock {
+		if self.params.cursor_lock && self.params.window_focused {
 			self.window.set_cursor_visible(false);
 			let _ = self.window.set_cursor_position(middle_point);
 		} else {
@@ -751,6 +753,9 @@ impl App {
 			}
 			WindowEvent::RedrawRequested => {
 				self.redraw(event_loop);
+			}
+			WindowEvent::Focused(focused) => {
+				self.params.window_focused = focused;
 			}
 			_ => {}
 		}
