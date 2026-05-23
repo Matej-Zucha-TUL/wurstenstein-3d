@@ -132,8 +132,7 @@ impl Audio {
 			}
 
 			for (sample, out) in buf.iter().zip(data.iter_mut()) {
-				// Mix sound effects from Oddio and music from MODPlay equally
-				*out = (*out + *sample as f32 / 32768.0) / 2.0;
+				*out = (*out + *sample as f32 / 32768.0 / 2.0) / 2.0;
 			}
 		})
 		.unwrap();
