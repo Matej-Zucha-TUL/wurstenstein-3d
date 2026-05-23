@@ -4,12 +4,23 @@ use rand::rngs::ThreadRng;
 use crate::assets::Assets;
 use crate::model::Transform;
 use crate::playfield::{Playfield, PlayfieldPiece};
+use crate::shader::Program;
 use crate::transparent::TransparentRenderer;
 
 pub enum PowerupKind {
 	Health,
 	Energy,
 	Speed
+}
+
+impl PowerupKind {
+	pub fn get_color(&self) -> [f32; 3] {
+		match self {
+			PowerupKind::Health => [1.0, 0.0, 0.0],
+			PowerupKind::Energy => [0.0, 0.0, 1.0],
+			PowerupKind::Speed => [0.0, 1.0, 0.0],
+		}
+	}
 }
 
 #[derive(PartialEq, Eq)]
@@ -152,18 +163,42 @@ impl PowerupManager {
 		}
 	}
 
+	pub fn update_point_lights(&self, program: &Program) {
+		// TODO - upload entire array at once
+
+		for (idx, powerup) in self.powerups.iter().enumerate() {
+			let enabled = format!("point_enabled[{idx}]");
+			let position = format!("point_position[{idx}]");
+			let diffuse = format!("point_diffuse[{idx}]");
+			let specular = format!("point_specular[{idx}]");
+
+			if let Some(powerup) = powerup {
+				let color = powerup.kind.get_color().map(|x| x * powerup.transform.scale[0]);
+
+				program.set_uniform_u32(&enabled, 1);
+				program.set_uniform_f32_3(&position, &powerup.transform.position.as_slice().try_into().unwrap());
+				program.set_uniform_f32_3(&diffuse, &color);
+				program.set_uniform_f32_3(&specular, &color);
+			} else {
+				program.set_uniform_u32(&enabled, 0);
+			}
+		}
+	}
+
 	pub fn render<'a>(&'a self, assets: &'a Assets, transparent: &mut TransparentRenderer<'a>) {
 		for powerup in &self.powerups {
 			let Some(powerup) = powerup else { continue };
 
-			let (model, color) = match powerup.kind {
-				PowerupKind::Health => (&assets.powerup_hp, &[1.0, 0.0, 0.0]),
-				PowerupKind::Energy => (&assets.powerup_energy, &[0.0, 0.0, 1.0]),
-				PowerupKind::Speed => (&assets.powerup_speed, &[0.0, 1.0, 0.0]),
+			let color = powerup.kind.get_color();
+
+			let model = match powerup.kind {
+				PowerupKind::Health => &assets.powerup_hp,
+				PowerupKind::Energy => &assets.powerup_energy,
+				PowerupKind::Speed => &assets.powerup_speed,
 			};
 
-			transparent.add_object(&powerup.transform, || {
-				assets.powerup_program.set_uniform_f32_3("base_color", color);
+			transparent.add_object(&powerup.transform, move || {
+				assets.powerup_program.set_uniform_f32_3("base_color", &color);
 				model.draw(&powerup.transform, &assets.powerup_program, "model");
 			});
 		}

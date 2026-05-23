@@ -589,20 +589,7 @@ impl App {
 		self.assets.background_program.set_uniform_f32("time", time);
 		self.assets.background_program.set_uniform_f32("screen_w", self.window.inner_size().width as f32);
 
-		program.set_uniform_u32("point_enabled[0]", 1);
-		program.set_uniform_f32_3("point_position[0]", &[22.5, 1.5, 17.5]);
-		program.set_uniform_f32_3("point_diffuse[0]", &[0.0, 1.0, 0.0]);
-		program.set_uniform_f32_3("point_specular[0]", &[0.5, 0.0, 0.0]);
-
-		program.set_uniform_u32("point_enabled[1]", 1);
-		program.set_uniform_f32_3("point_position[1]", &[27.5, 1.5, 17.5]);
-		program.set_uniform_f32_3("point_diffuse[1]", &[0.0, 0.0, 1.0]);
-		program.set_uniform_f32_3("point_specular[1]", &[0.5, 0.0, 0.0]);
-
-		program.set_uniform_u32("point_enabled[2]", 1);
-		program.set_uniform_f32_3("point_position[2]", &[22.5, 1.5, 22.5]);
-		program.set_uniform_f32_3("point_diffuse[2]", &[0.0, 0.0, 1.0]);
-		program.set_uniform_f32_3("point_specular[2]", &[0.5, 0.0, 0.0]);
+		self.scene.powerups.update_point_lights(program);
 
 		// program.set_uniform_u32("spot_enabled", 1);
 		// program.set_uniform_f32_3("spot_position", &[0.0, 0.5, 10.0]);
