@@ -15,10 +15,16 @@ pub struct PlayerController {
 	pub jump: bool,
 	fall_jump_triggered: bool,
 	force_jump: bool,
+	already_fell_to_death: bool,
 	bounding_box: BoundingBox,
 	gravity: f32,
 	xz_force: [f32; 2],
 	transform: Transform
+}
+
+pub enum PlayerAction {
+	Jumped,
+	FellToDeath
 }
 
 impl PlayerController {
@@ -31,6 +37,7 @@ impl PlayerController {
 			jump: false,
 			fall_jump_triggered: false,
 			force_jump: false,
+			already_fell_to_death: false,
 			bounding_box,
 			gravity: 0.0,
 			xz_force: [0.0, 0.0],
@@ -42,7 +49,9 @@ impl PlayerController {
 		self.transform.rotation[0] = -(yaw + 90.0).to_radians();
 	}
 
-	pub fn update_position<T: PlayfieldPiece>(&mut self, world: &Playfield<'_, T>, dt: f32) {
+	pub fn update<T: PlayfieldPiece>(&mut self, world: &Playfield<'_, T>, dt: f32) -> Option<PlayerAction> {
+		let mut action = None;
+
 		const MAX_SPEED: f32 = 5.0;
 		const ACCEL: f32 = 20.0;
 		const BASE_GRAVITY: f32 = 10.0;
@@ -152,6 +161,7 @@ impl PlayerController {
 
 		if self.force_jump {
 			self.gravity = -BASE_GRAVITY;
+			action = Some(PlayerAction::Jumped);
 		}
 
 		self.force_jump = false;
@@ -167,6 +177,13 @@ impl PlayerController {
 		} else {
 			self.gravity = f32::min(self.gravity + BASE_GRAVITY_ACCEL * dt, BASE_GRAVITY);
 		}
+
+		if self.transform.position[1] <= world.death_barrier + 0.01 && !self.already_fell_to_death {
+			action = Some(PlayerAction::FellToDeath);
+			self.already_fell_to_death = true;
+		}
+
+		action
 	}
 
 	pub fn get_transform(&self) -> &Transform {
