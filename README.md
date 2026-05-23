@@ -244,22 +244,22 @@ There are even more realistic (complicated) models (object mass, applied force, 
 
 # ❌ 9th lab: Transparency, Physics
 
-## ⏱️ Task 1: Transparency
+## ✔️ Task 1: Transparency
 
 Allow the App to correctly draw transparent objects.
 
-- [ ] create at least 3 (semi)transparent objects. Use either material with A<1.0 or texture with alpha channel.
-- [ ] use correct, full scale transparency (NOT if(alpha<0.1) {discard;} )
+- [X] create at least 3 (semi)transparent objects. Use either material with A<1.0 or texture with alpha channel.
+- [X] use correct, full scale transparency (NOT if(alpha<0.1) {discard;} )
 
 ## ⏱️ Task 2: Implement collision detection
 
 The very basic collision detection is to disallow the player to leave the map. Better version should be implemented.
 
-- [ ] implement at least two of
+- [X] implement at least two of
   - [ ] correct behaviour of hit-wall (sliding)
   - [ ] detect hit of some object with projectile (touch player-object)
   - [ ] detect hit (touch) of the enemy with player
-  - [ ] some other idea...
+  - [X] some other idea... (collision with floor)
 
 ## ⏱️ Task 3: Implement simple particle effect
 
@@ -295,7 +295,7 @@ Each missing (non-functional) Essential nets -25 points (partial functionality =
 - [X] at least three different textures (or subtextures from texture atlas etc.)
 - [ ] lighting model, all basic lights types (1x anbient, min. 1x directional, min. 2x point, min. Ix reflector; at least two are moving independently
 - [X] correct full alpha scale transparency (at least two transparent objects; NOT if(alpha<0.1) {discard;} )
-- [ ] correct collisions
+- [X] correct collisions
 
 ## Extras:
 
