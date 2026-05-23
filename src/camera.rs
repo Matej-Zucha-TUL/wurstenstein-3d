@@ -98,8 +98,12 @@ impl Camera {
 		self.zoom
 	}
 
-	pub fn get_position(&self) -> &glm::Vec3 {
-		&self.position
+	pub fn get_position(&self) -> glm::Vec3 {
+		if self.use_pov {
+			self.target - self.front * self.distance
+		} else {
+			self.position
+		}
 	}
 
 	pub fn get_front(&self) -> &glm::Vec3 {
