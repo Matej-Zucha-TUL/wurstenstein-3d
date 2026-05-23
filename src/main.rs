@@ -31,6 +31,8 @@ mod playfield;
 
 mod player;
 
+mod powerup;
+
 mod screenshot;
 
 mod shader;

@@ -17,7 +17,16 @@ use std::num::NonZeroU32;
 use std::sync::Arc;
 use std::time::{Duration, Instant};
 
-use crate::{assets::Assets, audio::{Audio, MusicRequest, SoundRequest}, camera::{Camera, Directions}, collision, model::Transform, player::{PlayerAction, PlayerController}, playfield::EXAMPLE_MAZE, screenshot::take_screenshot, transparent::TransparentRenderer};
+use crate::assets::Assets;
+use crate::audio::{Audio, MusicRequest, SoundRequest};
+use crate::camera::{Camera, Directions};
+use crate::collision;
+use crate::model::Transform;
+use crate::player::{PlayerAction, PlayerController};
+use crate::playfield::EXAMPLE_MAZE;
+use crate::powerup::PowerupManager;
+use crate::screenshot::take_screenshot;
+use crate::transparent::TransparentRenderer;
 
 pub struct App {
 	window: Window,
@@ -33,36 +42,6 @@ pub struct App {
 	params: Parameters,
 }
 
-enum PowerupKind {
-	Health,
-	Energy,
-	Speed
-}
-
-struct Powerup {
-	kind: PowerupKind,
-	base_y: f32,
-	transform: Transform,
-	timer: f32
-}
-
-impl Powerup {
-	pub fn new(kind: PowerupKind, transform: Transform) -> Self {
-		Self {
-			kind,
-			base_y: transform.position[1],
-			transform,
-			timer: 0.0
-		}
-	}
-
-	pub fn update(&mut self, dt: f32) {
-		self.transform.rotation[0] += 1.0 * dt;
-		self.timer += dt;
-		self.transform.position[1] = self.base_y + (self.timer * 2.0).sin() * 0.3;
-	}
-}
-
 enum EnemyKind {
 	Apple
 }
@@ -76,7 +55,7 @@ struct Scene {
 	camera: Camera,
 	player: PlayerController,
 	enemies: Vec<Enemy>,
-	powerups: Vec<Powerup>
+	powerups: PowerupManager
 }
 
 struct Parameters {
@@ -176,44 +155,7 @@ impl App {
 				}
 			];
 
-			let powerups = vec![
-				Powerup::new(
-					PowerupKind::Speed,
-					Transform::origin().with_position(glm::vec3(22.5, 1.5, 17.5))
-				),
-				Powerup::new(
-					PowerupKind::Energy,
-					Transform::origin().with_position(glm::vec3(22.5, 1.5, 22.5))
-				),
-				Powerup::new(
-					PowerupKind::Health,
-					Transform::origin().with_position(glm::vec3(22.5, 1.5, 27.5))
-				),
-				Powerup::new(
-					PowerupKind::Health,
-					Transform::origin().with_position(glm::vec3(32.5, 1.5, 17.5))
-				),
-				Powerup::new(
-					PowerupKind::Speed,
-					Transform::origin().with_position(glm::vec3(32.5, 1.5, 22.5))
-				),
-				Powerup::new(
-					PowerupKind::Energy,
-					Transform::origin().with_position(glm::vec3(32.5, 1.5, 27.5))
-				),
-				Powerup::new(
-					PowerupKind::Energy,
-					Transform::origin().with_position(glm::vec3(27.5, 1.5, 17.5))
-				),
-				Powerup::new(
-					PowerupKind::Health,
-					Transform::origin().with_position(glm::vec3(27.5, 1.5, 22.5))
-				),
-				Powerup::new(
-					PowerupKind::Speed,
-					Transform::origin().with_position(glm::vec3(27.5, 1.5, 27.5))
-				),
-			];
+			let powerups = PowerupManager::new();
 
 			Scene {
 				camera,
@@ -605,9 +547,7 @@ impl App {
 
 		self.audio.update_position(pos.into(), rot);
 
-		for powerup in &mut self.scene.powerups {
-			powerup.update(dt);
-		}
+		self.scene.powerups.update(dt);
 
 		let aspect = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
 		let projection_mtx = glm::perspective(
@@ -686,18 +626,7 @@ impl App {
 
 		let mut transparent = TransparentRenderer::new(self.gl.clone());
 
-		for powerup in &self.scene.powerups {
-			let (model, color) = match powerup.kind {
-				PowerupKind::Health => (&self.assets.powerup_hp, &[1.0, 0.0, 0.0]),
-				PowerupKind::Energy => (&self.assets.powerup_energy, &[0.0, 0.0, 1.0]),
-				PowerupKind::Speed => (&self.assets.powerup_speed, &[0.0, 1.0, 0.0]),
-			};
-
-			transparent.add_object(&powerup.transform, || {
-				self.assets.powerup_program.set_uniform_f32_3("base_color", color);
-				model.draw(&powerup.transform, &self.assets.powerup_program, "model");
-			});
-		}
+		self.scene.powerups.render(&self.assets, &mut transparent);
 
 		transparent.render(view_mtx);
 
