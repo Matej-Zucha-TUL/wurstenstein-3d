@@ -366,9 +366,9 @@ impl App {
 	}
 
 	fn redraw_ui(&mut self, event_loop: &ActiveEventLoop) {
-		if !self.params.debug_window_visible && self.params.cursor_lock { return }
-
 		self.egui.run(&self.window, |ctx| {
+			if !self.params.debug_window_visible && self.params.cursor_lock { return }
+
 			egui::Window::new("Debug window")
 				.resizable(false)
 				.show(ctx, |ui| {
