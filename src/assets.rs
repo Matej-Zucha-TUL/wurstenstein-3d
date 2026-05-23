@@ -5,6 +5,7 @@ use crate::shader::{Program, ProgramBuilder, ShaderType};
 use std::io::Cursor;
 use std::sync::Arc;
 
+use log::info;
 use nalgebra_glm as glm;
 use glow::Context;
 use image::{DynamicImage, ImageReader};
@@ -138,9 +139,13 @@ impl BoundingBox {
 
 impl Assets {
 	pub fn init(gl: Arc<Context>) -> Self {
+		info!("Loading assets archive...");
+
 		let files = assets::Assets::parse_from_data(&std::fs::read("assets.bin").unwrap()).unwrap();
 
 		// Load shaders
+
+		info!("Loading shaders...");
 
 		let normal_program = ProgramBuilder::new(gl.clone())
 			.add_shader(ShaderType::Vertex, &files.main_vert_program)
@@ -169,15 +174,21 @@ impl Assets {
 
 		// Load models
 
+		info!("Loading meshes...");
+
 		let player_mesh = load_mesh(&files.player);
 		let enemy_mesh = load_mesh(&files.enemy);
 		let powerup_hp_mesh = load_mesh(&files.powerup_hp);
 		let powerup_energy_mesh = load_mesh(&files.powerup_energy);
 		let powerup_speed_mesh = load_mesh(&files.powerup_speed);
 
+		info!("Loading textures...");
+
 		let terrain_tex = load_texture(&files.terrain_tex);
 		let player_tex = load_texture(&files.player_tex);
 		let enemy_tex = load_texture(&files.enemy_tex);
+
+		info!("Linking models...");
 
 		let player_scale = 20.0;
 
@@ -225,6 +236,8 @@ impl Assets {
 		let powerup_speed = Model::new(gl.clone())
 			.with_mesh(&normal_program, powerup_speed_mesh, &vertex_attribs)
 			.with_scale(glm::vec3(2.0, 2.0, 2.0));
+
+		info!("Assets loaded!");
 
 		Self {
 			normal_program,
