@@ -27,8 +27,8 @@ uniform vec3 point_diffuse [MAX_POINT_LIGHTS];
 uniform vec3 point_specular[MAX_POINT_LIGHTS];
 // Attenuation: 1 / (kc + kl*d + kq*d*d)
 uniform float point_atten_constant  = 1.0;
-uniform float point_atten_linear    = 0.009;
-uniform float point_atten_quadratic = 0.0032;
+uniform float point_atten_linear    = 0.09;
+uniform float point_atten_quadratic = 0.032;
 
 // ---- Spotlight (hard cone) ----
 uniform bool  spot_enabled         = false;

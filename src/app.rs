@@ -210,6 +210,35 @@ impl App {
 		let perf = Perf::default();
 		let params = Parameters::default();
 
+		// Start with the default fonts (we will be adding to them rather than replacing them).
+		let mut fonts = egui::FontDefinitions::default();
+
+		// Install my own font (maybe supporting non-latin characters).
+		// .ttf and .otf files supported.
+		fonts.font_data.insert(
+			"mono".to_owned(),
+			std::sync::Arc::new(egui::FontData::from_static(include_bytes!(
+				"../static_assets/notosansmono-ascii.ttf"
+			))),
+		);
+
+		// Put my font first (highest priority) for proportional text:
+		fonts
+			.families
+			.entry(egui::FontFamily::Proportional)
+			.or_default()
+			.insert(0, "mono".to_owned());
+
+		// Put my font as last fallback for monospace:
+		fonts
+			.families
+			.entry(egui::FontFamily::Monospace)
+			.or_default()
+			.push("mono".to_owned());
+
+		// Tell egui to use these fonts:
+		egui.egui_ctx.set_fonts(fonts);
+
 		window.set_visible(true);
 
 		let mut app = App {
@@ -330,7 +359,7 @@ impl App {
 
 	fn redraw_ui(&mut self, event_loop: &ActiveEventLoop) {
 		self.egui.run(&self.window, |ctx| {
-			egui::Window::new("Wokýnko")
+			egui::Window::new("Debug window")
 				.resizable(false)
 				.show(ctx, |ui| {
 					ui.label(&self.perf.fps_string);
@@ -575,10 +604,20 @@ impl App {
 		self.assets.background_program.set_uniform_f32("time", time);
 		self.assets.background_program.set_uniform_f32("screen_w", self.window.inner_size().width as f32);
 
-		// program.set_uniform_u32("point_enabled[0]", 1);
-		// program.set_uniform_f32_3("point_position[0]", self.camera.get_position().as_slice().try_into().unwrap());
-		// program.set_uniform_f32_3("point_diffuse[0]", &[0.0, 0.5, 0.0]);
-		// program.set_uniform_f32_3("point_specular[0]", &[0.5, 0.0, 0.0]);
+		program.set_uniform_u32("point_enabled[0]", 1);
+		program.set_uniform_f32_3("point_position[0]", &[22.5, 1.5, 17.5]);
+		program.set_uniform_f32_3("point_diffuse[0]", &[0.0, 1.0, 0.0]);
+		program.set_uniform_f32_3("point_specular[0]", &[0.5, 0.0, 0.0]);
+
+		program.set_uniform_u32("point_enabled[1]", 1);
+		program.set_uniform_f32_3("point_position[1]", &[27.5, 1.5, 17.5]);
+		program.set_uniform_f32_3("point_diffuse[1]", &[0.0, 0.0, 1.0]);
+		program.set_uniform_f32_3("point_specular[1]", &[0.5, 0.0, 0.0]);
+
+		program.set_uniform_u32("point_enabled[2]", 1);
+		program.set_uniform_f32_3("point_position[2]", &[22.5, 1.5, 22.5]);
+		program.set_uniform_f32_3("point_diffuse[2]", &[0.0, 0.0, 1.0]);
+		program.set_uniform_f32_3("point_specular[2]", &[0.5, 0.0, 0.0]);
 
 		// program.set_uniform_u32("spot_enabled", 1);
 		// program.set_uniform_f32_3("spot_position", &[0.0, 0.5, 10.0]);
