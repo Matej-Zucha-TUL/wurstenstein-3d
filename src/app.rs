@@ -547,7 +547,7 @@ impl App {
 
 		self.audio.update_position(pos.into(), rot);
 
-		self.scene.powerups.update(dt);
+		self.scene.powerups.update(&EXAMPLE_MAZE, dt);
 
 		let aspect = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
 		let projection_mtx = glm::perspective(
