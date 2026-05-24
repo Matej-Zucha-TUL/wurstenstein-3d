@@ -160,7 +160,7 @@ impl EnemyManager {
 	pub fn get_collision_shapes(&self) -> Vec<Option<(Ball, Pose)>> {
 		self.enemies.iter()
 			.map(|x| if let Some(x) = &x && x.state == EnemyState::Idle { Some(x) } else { None })
-			.map(|x| x.map(|x| (Ball::new(1.5), Pose::translation(x.transform.position[0], x.transform.position[2]))))
+			.map(|x| x.map(|x| (Ball::new(1.0), Pose::translation(x.transform.position[0], x.transform.position[2]))))
 			.collect::<Vec<_>>()
 	}
 
