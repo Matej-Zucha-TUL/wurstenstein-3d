@@ -603,6 +603,16 @@ impl<'a> App<'a> {
 		}
 	}
 
+	fn main_loop(&mut self, event_loop: &ActiveEventLoop) {
+		self.update_state();
+		self.update_shader_data();
+		self.redraw(event_loop);
+
+		self.enforce_fullscreen();
+		self.enforce_vsync();
+		self.enforce_cursor_lock();
+	}
+
 	fn enforce_cursor_lock(&self) {
 		let middle_point = winit::dpi::LogicalPosition::new(
 			self.window.inner_size().width / 2,
@@ -659,7 +669,7 @@ impl<'a> App<'a> {
 		self.window.request_redraw();
 	}
 
-	fn redraw(&mut self, event_loop: &ActiveEventLoop) {
+	fn update_state(&mut self) {
 		let new_time = Instant::now();
 		let dt = new_time
 			.duration_since(self.perf.last_time)
@@ -773,6 +783,10 @@ impl<'a> App<'a> {
 
 		self.scene.explosions.update(dt);
 
+		self.update_perf_data(dt);
+	}
+	
+	fn update_shader_data(&mut self) {
 		let aspect = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
 		let projection_mtx = glm::perspective(
 			aspect,
@@ -833,6 +847,15 @@ impl<'a> App<'a> {
 		} else {
 			program.set_uniform_u32("spot_enabled", 0);
 		}
+	}
+
+	fn redraw(&mut self, event_loop: &ActiveEventLoop) {
+		let view_mtx = self.scene.camera.get_view_matrix();
+
+		let program = match self.params.rizz_mode {
+			false => &self.assets.normal_program,
+			true => &self.assets.rizz_program,
+		};
 
 		self.init_drawing();
 
@@ -862,11 +885,6 @@ impl<'a> App<'a> {
 		self.redraw_ui(event_loop);
 
 		self.end_drawing();
-
-		self.update_perf_data(dt);
-		self.enforce_fullscreen();
-		self.enforce_vsync();
-		self.enforce_cursor_lock();
 	}
 
 	fn handle_resize_event(&mut self, new_size: PhysicalSize<u32>) {
@@ -920,7 +938,7 @@ impl<'a> App<'a> {
 				self.handle_resize_event(new_size);
 			}
 			WindowEvent::RedrawRequested => {
-				self.redraw(event_loop);
+				self.main_loop(event_loop);
 			}
 			WindowEvent::Focused(focused) => {
 				self.params.window_focused = focused;
