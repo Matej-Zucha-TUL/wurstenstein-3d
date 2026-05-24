@@ -92,6 +92,7 @@ struct Parameters {
 	specular_shininess: f32,
 	enable_background: bool,
 	debug_window_visible: bool,
+	flashlight_enabled: bool,
 	rizz_mode: bool,
 	pov_camera: bool,
 	cursor_lock: bool,
@@ -110,6 +111,7 @@ impl Default for Parameters {
 			specular_shininess: 20.0,
 			enable_background: true,
 			debug_window_visible: false,
+			flashlight_enabled: false,
 			rizz_mode: false,
 			pov_camera: true,
 			cursor_lock: true,
@@ -728,12 +730,21 @@ impl App {
 
 		self.scene.powerups.update_point_lights(program);
 
-		// program.set_uniform_u32("spot_enabled", 1);
-		// program.set_uniform_f32_3("spot_position", &[0.0, 0.5, 10.0]);
-		// program.set_uniform_f32_3("spot_direction", &[0.0, 0.0, -1.0]);
-		// program.set_uniform_f32("spot_cos_cutoff", 1.0f32.to_radians().cos());
-		// program.set_uniform_f32_3("spot_diffuse", &[0.0, 0.5, 0.0]);
-		// program.set_uniform_f32_3("spot_specular", &[0.5, 0.0, 0.0]);
+		if self.params.flashlight_enabled {
+			let mut transform = self.scene.player.get_transform().clone();
+			transform.position[1] += 1.0;
+
+			let rotated = glm::rotate_vec2(&glm::vec2(0.0, 1.0), std::f32::consts::PI - transform.rotation[0]);
+
+			program.set_uniform_u32("spot_enabled", 1);
+			program.set_uniform_f32_3("spot_position", &transform.position.as_slice().try_into().unwrap());
+			program.set_uniform_f32_3("spot_direction", &[rotated[0], 0.0, rotated[1]]);
+			program.set_uniform_f32("spot_cos_cutoff", 1.5f32.to_radians().cos());
+			program.set_uniform_f32_3("spot_diffuse", &[2.0, 2.0, 2.0]);
+			program.set_uniform_f32_3("spot_specular", &[0.0, 0.0, 0.0]);
+		} else {
+			program.set_uniform_u32("spot_enabled", 0);
+		}
 
 		self.init_drawing();
 
@@ -794,6 +805,10 @@ impl App {
 			DeviceEvent::Button { button, state } => {
 				if button == 1 && state == ElementState::Pressed {
 					self.fire_bullet_from_player();
+				}
+
+				if button == 3 {
+					self.params.flashlight_enabled = state == ElementState::Pressed;
 				}
 			}
 			_ => {}
