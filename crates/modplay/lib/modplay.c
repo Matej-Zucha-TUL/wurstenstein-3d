@@ -165,7 +165,7 @@ ModPlayerStatus_t *ProcessMOD() {
 				case 0x3:
 					if(effval_tmp) mp.ch[i].slideamount = effval_tmp;
 
-					[[fallthrough]];
+					// [[fallthrough]];
 
 				case 0x5:
 					mp.ch[i].slidenote = mp.ch[i].note;
@@ -175,7 +175,7 @@ ModPlayerStatus_t *ProcessMOD() {
 					if(effval_tmp & 0xF0) mp.ch[i].vibrato.speed = effval_tmp >> 4;
 					if(effval_tmp & 0x0F) mp.ch[i].vibrato.depth = effval_tmp & 0x0F;
 
-					[[fallthrough]];
+					// [[fallthrough]];
 
 				case 0x6:
 					_RecalculateWaveform(&mp.ch[i].vibrato);
@@ -333,7 +333,7 @@ ModPlayerStatus_t *ProcessMOD() {
 				
 				effval_tmp = 0;
 
-				[[fallthrough]];
+				// [[fallthrough]];
 
 			case 0x3:
 				if(mp.tick) {
@@ -367,7 +367,7 @@ ModPlayerStatus_t *ProcessMOD() {
 					_RecalculateWaveform(&mp.ch[i].vibrato);
 				}
 
-				[[fallthrough]];
+				// [[fallthrough]];
 
 			case 0xA:
 				if(mp.tick) {
