@@ -13,7 +13,9 @@ fn main() {
 			powerup_frag: include_str!("./files/shaders/frag/powerup.frag").to_string(),
 		},
 		models: Models {
-			player: include_bytes!("./files/objects/pastry/pastry.obj").to_vec(),
+			pastry: include_bytes!("./files/objects/pastry/pastry.obj").to_vec(),
+			sausage_bullet: include_bytes!("./files/objects/pastry/sausage_body.obj").to_vec(),
+			sausage_tip: include_bytes!("./files/objects/pastry/sausage_tip.obj").to_vec(),
 			enemy: include_bytes!("./files/objects/apple/apple.obj").to_vec(),
 			powerup_hp: include_bytes!("./files/objects/powerups/powerup-hp.obj").to_vec(),
 			powerup_energy: include_bytes!("./files/objects/powerups/powerup-energy.obj").to_vec(),

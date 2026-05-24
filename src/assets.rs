@@ -172,7 +172,9 @@ impl Assets {
 
 		info!("Loading meshes...");
 
-		let player_mesh = load_mesh(&models.player);
+		let pastry_mesh = load_mesh(&models.pastry);
+		let sausage_bullet_mesh = load_mesh(&models.sausage_bullet);
+		let sausage_tip_mesh = load_mesh(&models.sausage_tip);
 		let enemy_mesh = load_mesh(&models.enemy);
 		let powerup_hp_mesh = load_mesh(&models.powerup_hp);
 		let powerup_energy_mesh = load_mesh(&models.powerup_energy);
@@ -188,13 +190,13 @@ impl Assets {
 
 		let player_scale = 20.0;
 
-		let min_x = player_mesh.positions.chunks(3).map(|pos| pos[0]).min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
-		let min_y = player_mesh.positions.chunks(3).map(|pos| pos[1]).min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
-		let min_z = player_mesh.positions.chunks(3).map(|pos| pos[2]).min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
+		let min_x = pastry_mesh.positions.chunks(3).map(|pos| pos[0]).min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
+		let min_y = pastry_mesh.positions.chunks(3).map(|pos| pos[1]).min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
+		let min_z = pastry_mesh.positions.chunks(3).map(|pos| pos[2]).min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
 
-		let max_x = player_mesh.positions.chunks(3).map(|pos| pos[0]).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
-		let max_y = player_mesh.positions.chunks(3).map(|pos| pos[1]).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
-		let max_z = player_mesh.positions.chunks(3).map(|pos| pos[2]).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
+		let max_x = pastry_mesh.positions.chunks(3).map(|pos| pos[0]).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
+		let max_y = pastry_mesh.positions.chunks(3).map(|pos| pos[1]).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
+		let max_z = pastry_mesh.positions.chunks(3).map(|pos| pos[2]).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
 
 		let player_bounding_box = BoundingBox {
 			min: (min_x, min_y, min_z),
@@ -212,7 +214,7 @@ impl Assets {
 			.with_texture(&normal_program, terrain_tex, "tex_unit");
 
 		let player = Model::new(gl.clone())
-			.with_mesh(&normal_program, player_mesh, &vertex_attribs)
+			.with_mesh(&normal_program, pastry_mesh, &vertex_attribs)
 			.with_texture(&normal_program, player_tex, "tex_unit")
 			.with_scale(glm::vec3(player_scale, player_scale, player_scale));
 
@@ -243,6 +245,8 @@ impl Assets {
 			background,
 			terrain,
 			player,
+			sausage_tip,
+			sausage_bullet,
 			powerup_hp,
 			powerup_energy,
 			powerup_speed,

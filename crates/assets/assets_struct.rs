@@ -10,7 +10,9 @@ pub struct ShaderPrograms {
 
 #[derive(wincode::SchemaWrite, wincode::SchemaRead)]
 pub struct Models {
-	pub player: Vec<u8>,
+	pub pastry: Vec<u8>,
+	pub sausage_bullet: Vec<u8>,
+	pub sausage_tip: Vec<u8>,
 	pub enemy: Vec<u8>,
 	pub powerup_hp: Vec<u8>,
 	pub powerup_energy: Vec<u8>,
