@@ -448,15 +448,15 @@ impl App {
 					});
 				},
 				SceneState::Dead => {
-					let color = egui::Color32::from_rgba_unmultiplied(255, 0, 0, 128);
+					let color = egui::Color32::from_rgba_unmultiplied(255, 0, 0, 160);
 					let frame = egui::Frame::new().fill(color);
 					egui::CentralPanel::default().frame(frame).show(ctx, |ui| {
 						let height = ui.available_size().y;
 						ui.vertical_centered(|ui| {
 							ui.add_space((height - 80.0) / 2.0);
-							ui.label(egui::RichText::new("You are dead").size(40.0));
+							ui.label(egui::RichText::new("You are dead").size(40.0).color(egui::Color32::WHITE));
 							ui.add_space(20.0);
-							ui.label(egui::RichText::new("Press R to respawn").size(20.0));
+							ui.label(egui::RichText::new("Press R to respawn").size(20.0).color(egui::Color32::WHITE));
 						});
 					});
 				},
