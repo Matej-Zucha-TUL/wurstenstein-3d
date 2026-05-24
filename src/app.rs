@@ -102,6 +102,7 @@ struct Parameters {
 	enable_background: bool,
 	debug_window_visible: bool,
 	flashlight_enabled: bool,
+	invincible: bool,
 	rizz_mode: bool,
 	pov_camera: bool,
 	cursor_lock: bool,
@@ -120,6 +121,7 @@ impl Default for Parameters {
 			enable_background: true,
 			debug_window_visible: false,
 			flashlight_enabled: false,
+			invincible: false,
 			rizz_mode: false,
 			pov_camera: true,
 			cursor_lock: true,
@@ -418,6 +420,8 @@ impl<'a> App<'a> {
 
 						ui.checkbox(&mut self.params.debug_window_visible, "Debug window always visible");
 
+						ui.checkbox(&mut self.params.invincible, "Enable invincibility");
+
 						ui.checkbox(&mut self.params.vsync, "Enable Vsync");
 
 						ui.checkbox(&mut self.params.rizz_mode, "Rizz mode");
@@ -690,9 +694,18 @@ impl<'a> App<'a> {
 					}
 				}
 
-				if let Some(idx) = collision::check_with_enemies(&self.scene.player, &self.scene.enemies) && let Some(damage) = self.scene.enemies.collide_with_player(idx) {
-					if self.scene.player.decrease_hp(damage) {
-						self.audio.play_sound(SoundRequest::EnemyHit, None, 1.0);
+				if !self.params.invincible {
+					if let Some(idx) = collision::check_with_enemies(&self.scene.player, &self.scene.enemies) && let Some(damage) = self.scene.enemies.collide_with_player(idx) {
+						if self.scene.player.decrease_hp(damage) {
+							self.audio.play_sound(SoundRequest::EnemyHit, None, 1.0);
+						}
+					}
+
+					for bullet_idx in collision::check_player_with_bullet(&self.scene.player, &self.scene.bullets) {
+						if self.scene.player.decrease_hp(2) {
+							self.audio.play_sound(SoundRequest::EnemyHit, None, 1.0);
+						}
+						self.scene.bullets.despawn_bullet(bullet_idx);
 					}
 				}
 
@@ -703,13 +716,6 @@ impl<'a> App<'a> {
 					}
 
 					self.scene.enemies.collide_with_bullet(enemy_idx);
-					self.scene.bullets.despawn_bullet(bullet_idx);
-				}
-
-				for bullet_idx in collision::check_player_with_bullet(&self.scene.player, &self.scene.bullets) {
-					if self.scene.player.decrease_hp(2) {
-						self.audio.play_sound(SoundRequest::EnemyHit, None, 1.0);
-					}
 					self.scene.bullets.despawn_bullet(bullet_idx);
 				}
 
