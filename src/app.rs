@@ -73,7 +73,7 @@ impl Scene {
 		let mut camera = Camera::new(glm::vec3(0.0, 0.0, 0.0));
 		camera.set_pov(true);
 
-		let bullets = BulletManager::new();
+		let bullets = BulletManager::new(assets.bullet_bounding_box.clone());
 
 		let enemies = EnemyManager::new();
 

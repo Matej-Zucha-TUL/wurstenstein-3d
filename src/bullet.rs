@@ -1,7 +1,9 @@
+use parry2d::math::{Rot2, Vec2};
+use parry2d::shape::Cuboid;
 use parry2d::{math::Pose, shape::Ball};
 use nalgebra_glm as glm;
 
-use crate::assets::Assets;
+use crate::assets::{Assets, BoundingBox};
 use crate::model::Transform;
 use crate::shader::Program;
 
@@ -56,13 +58,15 @@ impl Bullet {
 }
 
 pub struct BulletManager {
-	bullets: Vec<Option<Bullet>>
+	bullets: Vec<Option<Bullet>>,
+	bounding_box: BoundingBox,
 }
 
 impl BulletManager {
-	pub fn new() -> Self {
+	pub fn new(bounding_box: BoundingBox) -> Self {
 		Self {
-			bullets: vec![]
+			bullets: vec![],
+			bounding_box
 		}
 	}
 
@@ -106,11 +110,17 @@ impl BulletManager {
 		self.bullets.push(Some(new_bullet));
 	}
 
-	pub fn get_collision_shapes(&self) -> Vec<Option<(Ball, Pose)>> {
-		// TODO - use the actual collision shape of the bullet
+	pub fn get_collision_shapes(&self) -> Vec<Option<(Cuboid, Pose)>> {
 		self.bullets.iter()
 			.map(|x| if let Some(x) = &x && x.state == BulletState::Flying && x.timer > 0.2 { Some(x) } else { None })
-			.map(|x| x.map(|x| (Ball::new(0.2), Pose::translation(x.transform.position[0], x.transform.position[2]))))
+			.map(|x| x.map(|x| {
+				let (shape, pose) = self.bounding_box.get_collision_shape();
+				let vect = glm::vec2(pose.translation[0], pose.translation[1]);
+				let vect = glm::rotate_vec2(&vect, -x.transform.rotation[0]);
+				let mut pose = Pose::translation(x.transform.position[0] + vect[0], x.transform.position[2] + vect[1]);
+				pose.rotation = Rot2::from_angle(-x.transform.rotation[0]);
+				(shape, pose)
+			}))
 			.collect::<Vec<_>>()
 	}
 
