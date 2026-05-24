@@ -124,7 +124,7 @@ impl Audio {
 		let params = OutputDeviceParameters {
 			channels_count: 2,
 			sample_rate: 44100,
-			channel_sample_count: 512,
+			channel_sample_count: 2048,
 		};
 
 		let (mut scene_handle, mut scene) = oddio::SpatialScene::new();
