@@ -3,8 +3,8 @@ use parry2d::shape::Cuboid;
 use nalgebra_glm as glm;
 
 use crate::assets::{Assets, BoundingBox};
-use crate::model::Transform;
-use crate::shader::Program;
+use crate::util::model::Transform;
+use crate::util::shader::Program;
 
 #[derive(PartialEq, Eq)]
 enum BulletState {

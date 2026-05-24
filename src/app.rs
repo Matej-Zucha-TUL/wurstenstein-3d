@@ -19,18 +19,18 @@ use std::time::{Duration, Instant};
 
 use crate::assets::Assets;
 use crate::audio::{Audio, MusicRequest, SoundRequest};
-use crate::bullet::{BulletManager, BulletKind};
-use crate::camera::{Camera, Directions};
-use crate::collision;
-use crate::config::Config;
-use crate::enemy::EnemyManager;
-use crate::explosion::ExplosionManager;
-use crate::model::Transform;
-use crate::player::{PlayerAction, PlayerController, MAX_AMMO, MAX_HEALTH};
 use crate::playfield::EXAMPLE_MAZE;
-use crate::powerup::{PowerupManager, PowerupKind};
-use crate::screenshot::take_screenshot;
-use crate::transparent::TransparentRenderer;
+use crate::controller::bullet::{BulletManager, BulletKind};
+use crate::controller::camera::{Camera, Directions};
+use crate::controller::collision;
+use crate::controller::enemy::EnemyManager;
+use crate::controller::explosion::ExplosionManager;
+use crate::controller::player::{PlayerAction, PlayerController, MAX_AMMO, MAX_HEALTH};
+use crate::controller::powerup::{PowerupManager, PowerupKind};
+use crate::util::config::Config;
+use crate::util::model::Transform;
+use crate::util::screenshot::take_screenshot;
+use crate::util::transparent::TransparentRenderer;
 
 pub struct App<'a> {
 	window: Window,

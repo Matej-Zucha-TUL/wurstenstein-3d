@@ -4,9 +4,9 @@ use rand::RngExt as _;
 use rand::rngs::ThreadRng;
 
 use crate::assets::Assets;
-use crate::model::Transform;
 use crate::playfield::{Playfield, PlayfieldPiece};
-use crate::shader::Program;
+use crate::util::model::Transform;
+use crate::util::shader::Program;
 
 pub enum EnemyKind {
 	Apple,

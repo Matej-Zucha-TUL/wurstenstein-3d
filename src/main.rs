@@ -16,34 +16,13 @@ mod assets;
 
 mod audio;
 
-mod background;
-
-mod bullet;
-
-mod camera;
-
-mod collision;
-
-mod config;
-use config::Config;
-
-mod enemy;
-
-mod explosion;
-
-mod model;
+mod controller;
 
 mod playfield;
 
-mod player;
+mod util;
 
-mod powerup;
-
-mod screenshot;
-
-mod shader;
-
-mod transparent;
+use util::config::Config;
 
 struct WinitApp<'a> {
 	preinit: Option<PreInitData<'a>>,

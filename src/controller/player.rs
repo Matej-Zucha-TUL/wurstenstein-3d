@@ -3,9 +3,9 @@ use parry2d::math::Pose;
 use parry2d::shape::Cuboid;
 
 use crate::assets::BoundingBox;
-use crate::model::Transform;
 use crate::playfield::{Playfield, PlayfieldPiece};
-use crate::powerup::PowerupKind;
+use crate::controller::powerup::PowerupKind;
+use crate::util::model::Transform;
 
 #[derive(PartialEq, Eq)]
 enum PlayerState {

@@ -6,7 +6,7 @@ use image::DynamicImage;
 use tobj::Mesh;
 use nalgebra_glm as glm;
 
-use crate::shader::Program;
+use crate::util::shader::Program;
 
 struct ModelVertices {
 	vao: NativeVertexArray,

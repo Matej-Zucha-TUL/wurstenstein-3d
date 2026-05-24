@@ -1,6 +1,6 @@
-use crate::background::Background;
-use crate::model::{Model, VertexAttributes};
-use crate::shader::{Program, ProgramBuilder, ShaderType};
+use crate::util::background::Background;
+use crate::util::model::{Model, VertexAttributes};
+use crate::util::shader::{Program, ProgramBuilder, ShaderType};
 
 use std::io::Cursor;
 use std::sync::Arc;

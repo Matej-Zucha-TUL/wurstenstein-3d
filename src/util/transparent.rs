@@ -3,7 +3,7 @@ use std::sync::Arc;
 use glow::*;
 use nalgebra_glm as glm;
 
-use crate::model::Transform;
+use crate::util::model::Transform;
 
 pub struct TransparentObject<'a> {
 	transform: &'a Transform,

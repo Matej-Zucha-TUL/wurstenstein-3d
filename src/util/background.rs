@@ -2,7 +2,7 @@ use std::sync::{Arc, OnceLock};
 
 use glow::*;
 
-use crate::shader::Program;
+use crate::util::shader::Program;
 
 struct ModelVertices {
 	vao: NativeVertexArray,

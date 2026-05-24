@@ -2,11 +2,11 @@ use parry2d::math::{Pose, Rot2, Vec2};
 use parry2d::query;
 use parry2d::shape::Cuboid;
 
-use crate::bullet::{BulletKind, BulletManager};
-use crate::enemy::EnemyManager;
+use crate::controller::bullet::{BulletKind, BulletManager};
+use crate::controller::enemy::EnemyManager;
+use crate::controller::player::PlayerController;
+use crate::controller::powerup::PowerupManager;
 use crate::playfield::{Playfield, PlayfieldPiece};
-use crate::player::PlayerController;
-use crate::powerup::PowerupManager;
 
 pub fn check_with_ground<T: PlayfieldPiece>(player: &PlayerController, world: &Playfield<'_, T>) -> bool {
 	let transform = player.get_transform();
