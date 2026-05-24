@@ -47,6 +47,7 @@ pub struct App {
 
 #[derive(PartialEq)]
 enum SceneState {
+	Title,
 	InGame { timer: f32, kills: usize },
 	Dead,
 	YoureWinner { kills: usize }
@@ -176,7 +177,8 @@ impl App {
 
 		let assets = Assets::init(gl.clone(), &files.shader_programs, &files.models, &files.textures);
 
-		let scene = Scene::new(gl.clone(), &assets);
+		let mut scene = Scene::new(gl.clone(), &assets);
+		scene.state = SceneState::Title;
 
 		let egui = egui_glow::EguiGlow::new(event_loop, gl.clone(), None, None, true);
 		let perf = Perf::default();
@@ -213,7 +215,7 @@ impl App {
 
 		window.set_visible(true);
 
-		audio.play_music(MusicRequest::InGame);
+		audio.play_music(MusicRequest::Title);
 
 		let mut app = App {
 			window,
@@ -299,7 +301,8 @@ impl App {
 				if event.physical_key == PhysicalKey::Code(KeyCode::KeyR) && enable {
 					self.respawn();
 				}
-			}
+			},
+			SceneState::Title => {},
 		}
 
 		if event.state == ElementState::Pressed {
@@ -352,9 +355,17 @@ impl App {
 	}
 
 	fn fire_bullet_from_player(&mut self) {
-		if let SceneState::InGame { .. } = self.scene.state && self.scene.player.fire_bullet() {
-			self.audio.play_sound(SoundRequest::PlayerShoot, None, 1.0);
-			self.scene.bullets.spawn_bullet(self.scene.player.get_transform().clone(), 15.0);
+		match self.scene.state {
+			SceneState::Title => {
+				self.respawn();
+			}
+			SceneState::InGame { .. } => {
+				if self.scene.player.fire_bullet() {
+					self.audio.play_sound(SoundRequest::PlayerShoot, None, 1.0);
+					self.scene.bullets.spawn_bullet(self.scene.player.get_transform().clone(), 15.0);
+				}
+			},
+			_ => {}
 		}
 	}
 
@@ -447,6 +458,19 @@ impl App {
 			}
 
 			match self.scene.state {
+				SceneState::Title => {
+					let color = egui::Color32::from_rgba_unmultiplied(0, 0, 0, 0);
+					let frame = egui::Frame::new().fill(color);
+					egui::CentralPanel::default().frame(frame).show(ctx, |ui| {
+						let height = ui.available_size().y;
+						ui.vertical_centered(|ui| {
+							ui.add_space((height - 80.0) / 2.0);
+							ui.label(egui::RichText::new("Wurstenstein 3D").size(40.0).color(egui::Color32::WHITE));
+							ui.add_space(20.0);
+							ui.label(egui::RichText::new("Shoot to start").size(20.0).color(egui::Color32::WHITE));
+						});
+					});
+				},
 				SceneState::InGame { timer, kills } => {
 					egui::TopBottomPanel::new(egui::panel::TopBottomSide::Bottom, egui::Id::new("hud")).show(ctx, |ui| {
 						ui.horizontal(|ui| {
@@ -809,22 +833,24 @@ impl App {
 			self.assets.background.draw(&self.assets.background_program);
 		}
 
-		self.assets.terrain.draw(&Transform::origin(), program, "model");
+		if self.scene.state != SceneState::Title {
+			self.assets.terrain.draw(&Transform::origin(), program, "model");
 
-		self.assets.player.draw(self.scene.player.get_transform(), program, "model");
-		if self.scene.player.get_stats().ammo > 0 {
-			self.assets.sausage_tip.draw(self.scene.player.get_transform(), program, "model");
+			self.assets.player.draw(self.scene.player.get_transform(), program, "model");
+			if self.scene.player.get_stats().ammo > 0 {
+				self.assets.sausage_tip.draw(self.scene.player.get_transform(), program, "model");
+			}
+
+			self.scene.enemies.render(&self.assets, program);
+			self.scene.bullets.render(&self.assets, program);
+			self.scene.explosions.render(&self.assets);
+
+			let mut transparent = TransparentRenderer::new(self.gl.clone());
+
+			self.scene.powerups.render(&self.assets, &mut transparent);
+
+			transparent.render(view_mtx);
 		}
-
-		self.scene.enemies.render(&self.assets, program);
-		self.scene.bullets.render(&self.assets, program);
-		self.scene.explosions.render(&self.assets);
-
-		let mut transparent = TransparentRenderer::new(self.gl.clone());
-
-		self.scene.powerups.render(&self.assets, &mut transparent);
-
-		transparent.render(view_mtx);
 
 		self.redraw_ui(event_loop);
 

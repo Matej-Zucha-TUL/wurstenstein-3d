@@ -7,6 +7,26 @@ use modplay::*;
 use tinyaudio::prelude::*;
 use nalgebra_glm as glm;
 
+const TITLE_RULES: *const *const ModRule_t = [
+	&ModRule_t {
+		order: 7,
+		row: 0,
+		actions: [
+			&ModAction_t {
+				kind: ModActionKind_t_Jump,
+				__bindgen_anon_1: ModAction_t__bindgen_ty_1 {
+					jump: ModActionJump_t {
+						order: 6,
+						row: 0
+					}
+				}
+			} as *const _,
+			std::ptr::null()
+		].as_ptr()
+	} as *const _,
+	std::ptr::null()
+].as_ptr();
+
 const INGAME_RULES: *const *const ModRule_t = [
 	&ModRule_t {
 		order: 0,
@@ -60,6 +80,7 @@ const INGAME_RULES: *const *const ModRule_t = [
 ].as_ptr();
 
 pub enum MusicRequest {
+	Title,
 	Stop,
 	InGame,
 	Death,
@@ -115,6 +136,13 @@ impl Audio {
 				match request {
 					MusicRequest::Stop => {
 						play_music = false;
+					},
+					MusicRequest::Title => {
+						play_music = true;
+						unsafe {
+							InitMOD(space_debris.as_ptr(), 44100);
+							UpdateMODRules(TITLE_RULES);
+						}
 					},
 					MusicRequest::InGame => {
 						play_music = true;
