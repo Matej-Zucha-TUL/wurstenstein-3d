@@ -217,34 +217,36 @@ pub const EXAMPLE_MAZE: Playfield<TestPiece> = Playfield {
 	height: 3.0,
 	death_barrier: -20.0,
 	field: &[
-		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
-		&[Stone, __,    __,    __,    __,    __,    __,    __,    __,    __,    Stone],
-		&[Stone, __,    Brick, Brick, __,    __,    __,    Brick, Brick, __,    Stone],
-		&[Stone, __,    Brick, __,    __,    __,    __,    __,    Brick, __,    Stone],
-		&[Stone, __,    __,    __,    Stone, Stone, Stone, __,    __,    __,    Stone],
-		&[Stone, __,    __,    __,    Stone, Stone, Stone, __,    __,    __,    Stone],
-		&[Stone, __,    __,    __,    Stone, Stone, Stone, __,    __,    __,    Stone],
-		&[Stone, __,    Brick, __,    __,    __,    __,    __,    Brick, __,    Stone],
-		&[Stone, __,    Brick, Brick, __,    __,    __,    Brick, Brick, __,    Stone],
-		&[Stone, __,    __,    __,    __,    __,    __,    __,    __,    __,    Stone],
-		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
+		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
+		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
+		&[Stone, Stone, __,    __,    __,    __,    __,    __,    __,    __,    __,    Stone, Stone],
+		&[Stone, Stone, __,    Brick, Brick, __,    __,    __,    Brick, Brick, __,    Stone, Stone],
+		&[Stone, Stone, __,    Brick, __,    __,    __,    __,    __,    Brick, __,    Stone, Stone],
+		&[Stone, Stone, __,    __,    __,    Stone, Stone, Stone, __,    __,    __,    Stone, Stone],
+		&[Stone, Stone, __,    __,    __,    Stone, Stone, Stone, __,    __,    __,    Stone, Stone],
+		&[Stone, Stone, __,    __,    __,    Stone, Stone, Stone, __,    __,    __,    Stone, Stone],
+		&[Stone, Stone, __,    Brick, __,    __,    __,    __,    __,    Brick, __,    Stone, Stone],
+		&[Stone, Stone, __,    Brick, Brick, __,    __,    __,    Brick, Brick, __,    Stone, Stone],
+		&[Stone, Stone, __,    __,    __,    __,    __,    __,    __,    __,    __,    Stone, Stone],
+		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
+		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
 	],
-	player_spawn_point: [5, 5],
+	player_spawn_point: [6, 6],
 	powerup_spawn_points: &[
 		[0, 0],
-		[10, 0],
-		[10, 10],
-		[0, 10]
+		[12, 0],
+		[12, 12],
+		[0, 12]
 	],
 	enemy_spawn_points: &[
 		// [5, 0],
 		// [5, 10],
 		// [0, 5],
 		// [10, 5],
-		[2, 2],
-		[2, 8],
-		[8, 8],
-		[8, 2]
+		[3, 3],
+		[3, 9],
+		[9, 9],
+		[9, 3]
 	]
 };
 
