@@ -16,7 +16,7 @@ uniform vec3 ambient_material   = vec3(0.5);
 uniform float specular_shininess = 32.0;
 
 // ---- Directional light ----
-uniform vec3 directional_light_direction = vec3(0.0, 0.0, 10.0);
+uniform vec3 directional_light_direction = vec3(0.0, -10.0, 10.0);
 uniform vec3 directional_diffuse  = vec3(0.5);
 uniform vec3 directional_specular = vec3(0.5);
 
