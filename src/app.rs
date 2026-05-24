@@ -19,7 +19,7 @@ use std::time::{Duration, Instant};
 
 use crate::assets::Assets;
 use crate::audio::{Audio, MusicRequest, SoundRequest};
-use crate::bullet::BulletManager;
+use crate::bullet::{BulletManager, BulletKind};
 use crate::camera::{Camera, Directions};
 use crate::collision;
 use crate::config::Config;
@@ -366,7 +366,7 @@ impl<'a> App<'a> {
 			SceneState::InGame { .. } => {
 				if self.scene.player.fire_bullet() {
 					self.audio.play_sound(SoundRequest::PlayerShoot, None, 1.0);
-					self.scene.bullets.spawn_bullet(self.scene.player.get_transform().clone(), 15.0);
+					self.scene.bullets.spawn_bullet(self.scene.player.get_transform().clone(), 15.0, BulletKind::FromPlayer);
 				}
 			},
 			_ => {}
@@ -762,7 +762,7 @@ impl<'a> App<'a> {
 
 				let transform = Transform::origin().with_position(bullet_pos.into()).with_rotation([std::f32::consts::PI - angle, 0.0, 0.0].into());
 
-				self.scene.bullets.spawn_bullet(transform, 15.0);
+				self.scene.bullets.spawn_bullet(transform, 15.0, BulletKind::FromEnemy);
 			}
 			for gone_pos in enemy_updates.enemies_gone {
 				self.audio.play_sound(SoundRequest::EnemyExplosion, Some(gone_pos), 10.0);

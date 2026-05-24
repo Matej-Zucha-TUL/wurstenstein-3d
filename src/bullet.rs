@@ -1,6 +1,5 @@
-use parry2d::math::{Rot2, Vec2};
+use parry2d::math::{Rot2, Pose};
 use parry2d::shape::Cuboid;
-use parry2d::{math::Pose, shape::Ball};
 use nalgebra_glm as glm;
 
 use crate::assets::{Assets, BoundingBox};
@@ -14,7 +13,14 @@ enum BulletState {
 	Gone,
 }
 
+#[derive(Copy, Clone, PartialEq, Eq)]
+pub enum BulletKind {
+	FromPlayer,
+	FromEnemy,
+}
+
 pub struct Bullet {
+	kind: BulletKind,
 	transform: Transform,
 	velocity: f32,
 	timer: f32,
@@ -90,10 +96,11 @@ impl BulletManager {
 		}
 	}
 
-	pub fn spawn_bullet(&mut self, transform: Transform, velocity: f32) {
+	pub fn spawn_bullet(&mut self, transform: Transform, velocity: f32, kind: BulletKind) {
 		// Try to find an existing slot
 
 		let new_bullet = Bullet {
+			kind,
 			transform,
 			velocity,
 			timer: 0.0,
@@ -110,16 +117,23 @@ impl BulletManager {
 		self.bullets.push(Some(new_bullet));
 	}
 
-	pub fn get_collision_shapes(&self) -> Vec<Option<(Cuboid, Pose)>> {
+	pub fn get_collision_shapes(&self) -> Vec<Option<(BulletKind, Cuboid, Pose)>> {
 		self.bullets.iter()
-			.map(|x| if let Some(x) = &x && x.state == BulletState::Flying && x.timer > 0.2 { Some(x) } else { None })
+			.map(|x| {
+				let Some(x) = &x else { None? };
+
+				match x.kind {
+					BulletKind::FromEnemy => if x.state == BulletState::Flying && x.timer > 0.2 { Some(x) } else { None },
+					BulletKind::FromPlayer => if x.state == BulletState::Flying { Some(x) } else { None },
+				}
+			})
 			.map(|x| x.map(|x| {
 				let (shape, pose) = self.bounding_box.get_collision_shape();
 				let vect = glm::vec2(pose.translation[0], pose.translation[1]);
 				let vect = glm::rotate_vec2(&vect, -x.transform.rotation[0]);
 				let mut pose = Pose::translation(x.transform.position[0] + vect[0], x.transform.position[2] + vect[1]);
 				pose.rotation = Rot2::from_angle(-x.transform.rotation[0]);
-				(shape, pose)
+				(x.kind, shape, pose)
 			}))
 			.collect::<Vec<_>>()
 	}

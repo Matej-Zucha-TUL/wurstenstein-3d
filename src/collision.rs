@@ -2,7 +2,7 @@ use parry2d::math::{Pose, Rot2, Vec2};
 use parry2d::query;
 use parry2d::shape::Cuboid;
 
-use crate::bullet::BulletManager;
+use crate::bullet::{BulletKind, BulletManager};
 use crate::enemy::EnemyManager;
 use crate::playfield::{Playfield, PlayfieldPiece};
 use crate::player::PlayerController;
@@ -105,7 +105,7 @@ pub fn check_enemies_with_bullets(enemies: &EnemyManager, bullets: &BulletManage
 		let Some((enemy_shape, enemy_pose)) = enemy else { continue };
 
 		for (bullet_idx, bullet) in bullets.iter().enumerate() {
-			let Some((bullet_shape, bullet_pose)) = bullet else { continue };
+			let Some((_, bullet_shape, bullet_pose)) = bullet else { continue };
 
 			if query::intersection_test(bullet_pose, bullet_shape, enemy_pose, enemy_shape).unwrap() {
 				out.push((enemy_idx, bullet_idx));
@@ -128,7 +128,9 @@ pub fn check_player_with_bullet(player: &PlayerController, bullets: &BulletManag
 	let bullets = bullets.get_collision_shapes();
 
 	for (idx, bullet) in bullets.iter().enumerate() {
-		let Some((bullet_shape, bullet_pose)) = bullet else { continue };
+		let Some((kind, bullet_shape, bullet_pose)) = bullet else { continue };
+
+		if *kind == BulletKind::FromPlayer { continue };
 
 		if query::intersection_test(&player_pose, &player_shape, bullet_pose, bullet_shape).unwrap() {
 			out.push(idx);
