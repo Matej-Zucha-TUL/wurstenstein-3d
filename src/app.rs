@@ -44,9 +44,9 @@ pub struct App {
 	params: Parameters,
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq)]
 enum SceneState {
-	InGame,
+	InGame { timer: f32, kills: usize },
 	Dead,
 	YoureWinner
 }
@@ -74,7 +74,7 @@ impl Scene {
 		let powerups = PowerupManager::new();
 
 		Self {
-			state: SceneState::InGame,
+			state: SceneState::InGame { timer: 60.0, kills: 0 },
 			camera,
 			player,
 			bullets,
@@ -239,7 +239,7 @@ impl App {
 		let enable = event.state == ElementState::Pressed;
 
 		match self.scene.state {
-			SceneState::InGame => {
+			SceneState::InGame { .. } => {
 				if self.params.pov_camera {
 					match event.physical_key {
 						PhysicalKey::Code(KeyCode::KeyW) => {
@@ -342,7 +342,7 @@ impl App {
 	}
 
 	fn fire_bullet_from_player(&mut self) {
-		if self.scene.state == SceneState::InGame && self.scene.player.fire_bullet() {
+		if let SceneState::InGame { .. } = self.scene.state && self.scene.player.fire_bullet() {
 			self.audio.play_sound(SoundRequest::PlayerShoot, None, 1.0);
 			self.scene.bullets.spawn_bullet(self.scene.player.get_transform().clone(), 15.0);
 		}
@@ -437,7 +437,7 @@ impl App {
 			}
 
 			match self.scene.state {
-				SceneState::InGame => {
+				SceneState::InGame { timer, kills } => {
 					egui::TopBottomPanel::new(egui::panel::TopBottomSide::Bottom, egui::Id::new("hud")).show(ctx, |ui| {
 						ui.horizontal(|ui| {
 							let stats = self.scene.player.get_stats();
@@ -459,6 +459,17 @@ impl App {
 							ui.label(speed);
 							ui.separator();
 							ui.label(ammo);
+
+							let remaining = timer as u32;
+							let timer = egui::RichText::new(format!("{:02}:{:02}", remaining / 60, remaining % 60)).size(20.0).strong();
+
+							let kills = egui::RichText::new(format!("Kills: {}", kills)).size(20.0).strong();
+
+							ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
+								ui.label(timer);
+								ui.separator();
+								ui.label(kills);
+							});
 						});
 					});
 				},
@@ -601,7 +612,7 @@ impl App {
 			.as_secs_f32();
 		self.perf.last_time = new_time;
 
-		if !self.scene.player.is_dead() {
+		if let SceneState::InGame { timer, kills } = &mut self.scene.state {
 			self.scene.player.has_contact_with_world = collision::check_with_ground(&self.scene.player, &EXAMPLE_MAZE);
 
 			if let Some(idx) = collision::check_with_powerups(&self.scene.player, &self.scene.powerups) && let Some(kind) = self.scene.powerups.pick_up(idx) {
@@ -621,6 +632,7 @@ impl App {
 			}
 
 			for (enemy_idx, bullet_idx) in collision::check_enemies_with_bullets(&self.scene.enemies, &self.scene.bullets) {
+				*kills += 1;
 				self.scene.enemies.collide_with_bullet(enemy_idx);
 				self.scene.bullets.despawn_bullet(bullet_idx);
 			}
@@ -633,6 +645,8 @@ impl App {
 			}
 
 			self.scene.player.update_yaw(self.scene.camera.get_yaw_pitch().0);
+
+			*timer = (*timer - dt).max(0.0);
 		}
 
 		if let Some(action) = self.scene.player.update(&EXAMPLE_MAZE, dt) {
