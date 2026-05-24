@@ -20,7 +20,7 @@ impl PowerupKind {
 	pub fn get_color(&self) -> [f32; 3] {
 		match self {
 			PowerupKind::Health => [1.0, 0.0, 0.0],
-			PowerupKind::Energy => [0.0, 0.0, 1.0],
+			PowerupKind::Energy => [0.5, 0.5, 1.0],
 			PowerupKind::Speed => [0.0, 1.0, 0.0],
 		}
 	}

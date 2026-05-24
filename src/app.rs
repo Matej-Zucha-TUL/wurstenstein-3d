@@ -491,9 +491,9 @@ impl<'a> App<'a> {
 							};
 							let ammo = format!("Ammo: {}/{}", stats.ammo, MAX_AMMO);
 
-							let health = egui::RichText::new(health).size(50.0).color(egui::Color32::RED);
-							let speed = egui::RichText::new(speed).size(50.0).color(egui::Color32::GREEN);
-							let ammo = egui::RichText::new(ammo).size(50.0).color(egui::Color32::BLUE);
+							let health = egui::RichText::new(health).size(50.0).color(egui::Color32::from_rgb(255, 0, 0));
+							let speed = egui::RichText::new(speed).size(50.0).color(egui::Color32::from_rgb(0, 255, 0));
+							let ammo = egui::RichText::new(ammo).size(50.0).color(egui::Color32::from_rgb(128, 128, 255));
 
 							ui.label(health);
 							ui.separator();
