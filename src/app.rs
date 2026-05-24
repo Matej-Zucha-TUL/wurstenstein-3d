@@ -214,6 +214,8 @@ impl<'a> App<'a> {
 		// Tell egui to use these fonts:
 		egui.egui_ctx.set_fonts(fonts);
 
+		egui.egui_ctx.set_theme(egui::Theme::Dark);
+
 		window.set_visible(true);
 
 		audio.play_music(MusicRequest::Title);
