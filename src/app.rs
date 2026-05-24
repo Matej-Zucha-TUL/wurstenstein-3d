@@ -48,7 +48,7 @@ pub struct App {
 enum SceneState {
 	InGame { timer: f32, kills: usize },
 	Dead,
-	YoureWinner
+	YoureWinner { kills: usize }
 }
 
 struct Scene {
@@ -74,7 +74,7 @@ impl Scene {
 		let powerups = PowerupManager::new();
 
 		Self {
-			state: SceneState::InGame { timer: 60.0, kills: 0 },
+			state: SceneState::InGame { timer: 120.0, kills: 0 },
 			camera,
 			player,
 			bullets,
@@ -289,7 +289,11 @@ impl App {
 					self.respawn();
 				}
 			},
-			SceneState::YoureWinner => todo!()
+			SceneState::YoureWinner { .. } => {
+				if event.physical_key == PhysicalKey::Code(KeyCode::KeyR) && enable {
+					self.respawn();
+				}
+			}
 		}
 
 		if event.state == ElementState::Pressed {
@@ -486,9 +490,22 @@ impl App {
 						});
 					});
 				},
-				SceneState::YoureWinner => todo!(),
+				SceneState::YoureWinner { kills } => {
+					let color = egui::Color32::from_rgba_unmultiplied(0, 255, 0, 160);
+					let frame = egui::Frame::new().fill(color);
+					egui::CentralPanel::default().frame(frame).show(ctx, |ui| {
+						let height = ui.available_size().y;
+						ui.vertical_centered(|ui| {
+							ui.add_space((height - 120.0) / 2.0);
+							ui.label(egui::RichText::new("You win!").size(40.0).color(egui::Color32::WHITE));
+							ui.add_space(20.0);
+							ui.label(egui::RichText::new(format!("{} bad guys were eliminated.", kills)).size(20.0).color(egui::Color32::WHITE));
+							ui.add_space(20.0);
+							ui.label(egui::RichText::new("Press R to play again.").size(20.0).color(egui::Color32::WHITE));
+						});
+					});
+				}
 			}
-
 		});
 
 		self.egui.paint(&self.window);
@@ -612,97 +629,103 @@ impl App {
 			.as_secs_f32();
 		self.perf.last_time = new_time;
 
-		if let SceneState::InGame { timer, kills } = &mut self.scene.state && !self.scene.player.is_dead() {
-			self.scene.player.has_contact_with_world = collision::check_with_ground(&self.scene.player, &EXAMPLE_MAZE);
+		if let SceneState::InGame { timer, kills } = &mut self.scene.state {
+			if !self.scene.player.is_dead() {
+				self.scene.player.has_contact_with_world = collision::check_with_ground(&self.scene.player, &EXAMPLE_MAZE);
 
-			if let Some(idx) = collision::check_with_powerups(&self.scene.player, &self.scene.powerups) && let Some(kind) = self.scene.powerups.pick_up(idx) {
-				self.scene.player.pick_up_powerup(kind);
+				if let Some(idx) = collision::check_with_powerups(&self.scene.player, &self.scene.powerups) && let Some(kind) = self.scene.powerups.pick_up(idx) {
+					self.scene.player.pick_up_powerup(kind);
 
-				match kind {
-					PowerupKind::Health => self.audio.play_sound(SoundRequest::PowerupHpPickup, None, 1.0),
-					PowerupKind::Energy => self.audio.play_sound(SoundRequest::PowerupEnergyPickup, None, 1.0),
-					PowerupKind::Speed => self.audio.play_sound(SoundRequest::PowerupSpeedPickup, None, 1.0),
+					match kind {
+						PowerupKind::Health => self.audio.play_sound(SoundRequest::PowerupHpPickup, None, 1.0),
+						PowerupKind::Energy => self.audio.play_sound(SoundRequest::PowerupEnergyPickup, None, 1.0),
+						PowerupKind::Speed => self.audio.play_sound(SoundRequest::PowerupSpeedPickup, None, 1.0),
+					}
+				}
+
+				if let Some(idx) = collision::check_with_enemies(&self.scene.player, &self.scene.enemies) && let Some(damage) = self.scene.enemies.collide_with_player(idx) {
+					if self.scene.player.decrease_hp(damage) {
+						self.audio.play_sound(SoundRequest::EnemyHit, None, 1.0);
+					}
+				}
+
+				for (enemy_idx, bullet_idx) in collision::check_enemies_with_bullets(&self.scene.enemies, &self.scene.bullets) {
+					*kills += 1;
+					if let Some(transform) = self.scene.enemies.get_transform(enemy_idx) {
+						self.audio.play_sound(SoundRequest::EnemyDeath, Some(transform.position.into()), 10.0);
+					}
+
+					self.scene.enemies.collide_with_bullet(enemy_idx);
+					self.scene.bullets.despawn_bullet(bullet_idx);
+				}
+
+				for bullet_idx in collision::check_player_with_bullet(&self.scene.player, &self.scene.bullets) {
+					if self.scene.player.decrease_hp(2) {
+						self.audio.play_sound(SoundRequest::EnemyHit, None, 1.0);
+					}
+					self.scene.bullets.despawn_bullet(bullet_idx);
+				}
+
+				self.scene.player.update_yaw(self.scene.camera.get_yaw_pitch().0);
+
+				*timer = (*timer - dt).max(0.0);
+
+				if *timer == 0.0 {
+					self.scene.state = SceneState::YoureWinner { kills: *kills };
 				}
 			}
 
-			if let Some(idx) = collision::check_with_enemies(&self.scene.player, &self.scene.enemies) && let Some(damage) = self.scene.enemies.collide_with_player(idx) {
-				if self.scene.player.decrease_hp(damage) {
-					self.audio.play_sound(SoundRequest::EnemyHit, None, 1.0);
+			if let Some(action) = self.scene.player.update(&EXAMPLE_MAZE, dt) {
+				match action {
+					PlayerAction::Jumped => {
+						self.audio.play_sound(SoundRequest::PlayerJump, None, 1.0);
+					},
+					PlayerAction::StartedDying => {
+						self.audio.play_sound(SoundRequest::PlayerDeath, None, 1.0);
+						self.audio.play_music(MusicRequest::Stop);
+					},
+					PlayerAction::Dead => {
+						self.audio.play_sound(SoundRequest::PlayerExplosion, None, 1.0);
+						self.audio.play_music(MusicRequest::Death);
+						self.scene.state = SceneState::Dead;
+					}
 				}
 			}
 
-			for (enemy_idx, bullet_idx) in collision::check_enemies_with_bullets(&self.scene.enemies, &self.scene.bullets) {
-				*kills += 1;
-				if let Some(transform) = self.scene.enemies.get_transform(enemy_idx) {
-					self.audio.play_sound(SoundRequest::EnemyDeath, Some(transform.position.into()), 10.0);
-				}
+			self.update_camera(dt);
 
-				self.scene.enemies.collide_with_bullet(enemy_idx);
-				self.scene.bullets.despawn_bullet(bullet_idx);
-			}
+			let pos = self.scene.player.get_transform().position;
+			let rot = self.scene.player.get_transform().rotation[0];
 
-			for bullet_idx in collision::check_player_with_bullet(&self.scene.player, &self.scene.bullets) {
-				if self.scene.player.decrease_hp(2) {
-					self.audio.play_sound(SoundRequest::EnemyHit, None, 1.0);
-				}
-				self.scene.bullets.despawn_bullet(bullet_idx);
-			}
+			self.audio.update_position(pos.into(), rot);
 
-			self.scene.player.update_yaw(self.scene.camera.get_yaw_pitch().0);
+			self.scene.powerups.update(&EXAMPLE_MAZE, dt);
+			for bullet_pos in self.scene.enemies.update(&EXAMPLE_MAZE, dt) {
+				let angle = {
+					let bullet_pos = glm::vec2(bullet_pos[0], bullet_pos[2]);
 
-			*timer = (*timer - dt).max(0.0);
-		}
+					let player_pos = self.scene.player.get_transform().position;
+					let player_pos = glm::vec2(player_pos[0], player_pos[2]);
 
-		if let Some(action) = self.scene.player.update(&EXAMPLE_MAZE, dt) {
-			match action {
-				PlayerAction::Jumped => {
-					self.audio.play_sound(SoundRequest::PlayerJump, None, 1.0);
-				},
-				PlayerAction::StartedDying => {
-					self.audio.play_sound(SoundRequest::PlayerDeath, None, 1.0);
-					self.audio.play_music(MusicRequest::Stop);
-				},
-				PlayerAction::Dead => {
-					self.audio.play_sound(SoundRequest::PlayerExplosion, None, 1.0);
-					self.audio.play_music(MusicRequest::Death);
-					self.scene.state = SceneState::Dead;
-				}
-			}
-		}
+					let diff = player_pos - bullet_pos;
 
-		self.update_camera(dt);
+					let base = glm::vec2(0.0, 1.0);
 
-		let pos = self.scene.player.get_transform().position;
-		let rot = self.scene.player.get_transform().rotation[0];
+					let mul = if glm::cross2d(&base, &diff) >= 0.0 {
+						1.0
+					} else {
+						-1.0
+					};
 
-		self.audio.update_position(pos.into(), rot);
-
-		self.scene.powerups.update(&EXAMPLE_MAZE, dt);
-		for bullet_pos in self.scene.enemies.update(&EXAMPLE_MAZE, dt) {
-			let angle = {
-				let bullet_pos = glm::vec2(bullet_pos[0], bullet_pos[2]);
-
-				let player_pos = self.scene.player.get_transform().position;
-				let player_pos = glm::vec2(player_pos[0], player_pos[2]);
-
-				let diff = player_pos - bullet_pos;
-
-				let base = glm::vec2(0.0, 1.0);
-
-				let mul = if glm::cross2d(&base, &diff) >= 0.0 {
-					1.0
-				} else {
-					-1.0
+					glm::angle(&glm::vec2(0.0, 1.0), &diff) * mul
 				};
 
-				glm::angle(&glm::vec2(0.0, 1.0), &diff) * mul
-			};
+				let transform = Transform::origin().with_position(bullet_pos.into()).with_rotation([std::f32::consts::PI - angle, 0.0, 0.0].into());
 
-			let transform = Transform::origin().with_position(bullet_pos.into()).with_rotation([std::f32::consts::PI - angle, 0.0, 0.0].into());
-
-			self.scene.bullets.spawn_bullet(transform, 10.0);
+				self.scene.bullets.spawn_bullet(transform, 10.0);
+			}
+			self.scene.bullets.update(dt);
 		}
-		self.scene.bullets.update(dt);
 
 		let aspect = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
 		let projection_mtx = glm::perspective(
