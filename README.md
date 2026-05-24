@@ -242,7 +242,7 @@ There are even more realistic (complicated) models (object mass, applied force, 
 
 
 
-# ❌ 9th lab: Transparency, Physics
+# ✅ 9th lab: Transparency, Physics
 
 ## ✔️ Task 1: Transparency
 
@@ -261,11 +261,11 @@ The very basic collision detection is to disallow the player to leave the map. B
   - [X] detect hit (touch) of the enemy with player
   - [X] some other idea... (collision with floor)
 
-## ⏱️ Task 3: Implement simple particle effect
+## ✔️ Task 3: Implement simple particle effect
 
 Particles exists only for short time, no collision detection is usually performed. You can dynamically add simple object to the scene, and after short moment (lifetime of whole particle effect) remove it. You can implement particles with several simple methods:
 
-- [ ] point cloud (GL_POINT)
+- [X] point cloud (GL_POINT)
 - [ ] small non-textured mesh (minimal mesh is tetraedron - four vertices forming GL_TRIANGLE_STRIP)
 - [ ] (OPTIONAL) point sprites
 
