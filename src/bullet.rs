@@ -109,7 +109,7 @@ impl BulletManager {
 	pub fn get_collision_shapes(&self) -> Vec<Option<(Ball, Pose)>> {
 		// TODO - use the actual collision shape of the bullet
 		self.bullets.iter()
-			.map(|x| if let Some(x) = &x && x.state == BulletState::Flying { Some(x) } else { None })
+			.map(|x| if let Some(x) = &x && x.state == BulletState::Flying && x.timer > 0.5 { Some(x) } else { None })
 			.map(|x| x.map(|x| (Ball::new(0.2), Pose::translation(x.transform.position[0], x.transform.position[2]))))
 			.collect::<Vec<_>>()
 	}

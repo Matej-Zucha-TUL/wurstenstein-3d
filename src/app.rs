@@ -623,6 +623,13 @@ impl App {
 				self.scene.bullets.despawn_bullet(bullet_idx);
 			}
 
+			for bullet_idx in collision::check_player_with_bullet(&self.scene.player, &self.scene.bullets) {
+				if self.scene.player.decrease_hp(1) {
+					self.audio.play_sound(SoundRequest::EnemyHit, None, 1.0);
+				}
+				self.scene.bullets.despawn_bullet(bullet_idx);
+			}
+
 			self.scene.player.update_yaw(self.scene.camera.get_yaw_pitch().0);
 		}
 
