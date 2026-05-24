@@ -18,14 +18,16 @@ fn main() {
 			pastry: include_bytes!("./files/objects/pastry/pastry.obj").to_vec(),
 			sausage_bullet: include_bytes!("./files/objects/pastry/sausage_body.obj").to_vec(),
 			sausage_tip: include_bytes!("./files/objects/pastry/sausage_tip.obj").to_vec(),
-			enemy: include_bytes!("./files/objects/apple/apple.obj").to_vec(),
+			apple: include_bytes!("./files/objects/apple/apple.obj").to_vec(),
+			pear: include_bytes!("./files/objects/pear/pear.obj").to_vec(),
 			powerup_hp: include_bytes!("./files/objects/powerups/powerup-hp.obj").to_vec(),
 			powerup_energy: include_bytes!("./files/objects/powerups/powerup-energy.obj").to_vec(),
 			powerup_speed: include_bytes!("./files/objects/powerups/powerup-speed.obj").to_vec(),
 		},
 		textures: Textures {
 			player: include_bytes!("./files/objects/pastry/pastry.png").to_vec(),
-			enemy: include_bytes!("./files/objects/apple/apple_tex.png").to_vec(),
+			apple: include_bytes!("./files/objects/apple/apple_tex.png").to_vec(),
+			pear: include_bytes!("./files/objects/pear/pear_tex.png").to_vec(),
 			terrain: include_bytes!("./files/textures/ferris.png").to_vec(),
 		},
 		music: Music {

@@ -15,7 +15,8 @@ pub struct Models {
 	pub pastry: Vec<u8>,
 	pub sausage_bullet: Vec<u8>,
 	pub sausage_tip: Vec<u8>,
-	pub enemy: Vec<u8>,
+	pub apple: Vec<u8>,
+	pub pear: Vec<u8>,
 	pub powerup_hp: Vec<u8>,
 	pub powerup_energy: Vec<u8>,
 	pub powerup_speed: Vec<u8>,
@@ -24,7 +25,8 @@ pub struct Models {
 #[derive(wincode::SchemaWrite, wincode::SchemaRead)]
 pub struct Textures {
 	pub player: Vec<u8>,
-	pub enemy: Vec<u8>,
+	pub apple: Vec<u8>,
+	pub pear: Vec<u8>,
 	pub terrain: Vec<u8>,
 }
 

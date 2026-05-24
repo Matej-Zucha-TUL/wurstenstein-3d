@@ -9,7 +9,8 @@ use crate::playfield::{Playfield, PlayfieldPiece};
 use crate::shader::Program;
 
 pub enum EnemyKind {
-	Apple
+	Apple,
+	Pear
 }
 
 #[derive(PartialEq, Eq)]
@@ -105,7 +106,7 @@ impl EnemyManager {
 	}
 
 	fn spawn_new_enemy<T: PlayfieldPiece>(&mut self, world: &Playfield<'_, T>) {
-		let kind = self.rng.random_range(0..=0);
+		let kind = self.rng.random_range(0..=1);
 
 		let spawn_point_num = world.enemy_spawn_points.len();
 
@@ -125,6 +126,7 @@ impl EnemyManager {
 
 			let kind = match kind {
 				0 => EnemyKind::Apple,
+				1 => EnemyKind::Pear,
 				_ => unreachable!()
 			};
 
@@ -174,7 +176,8 @@ impl EnemyManager {
 			let Some(enemy) = enemy else { continue };
 
 			let model = match enemy.kind {
-				EnemyKind::Apple => &assets.enemy,
+				EnemyKind::Apple => &assets.apple,
+				EnemyKind::Pear => &assets.pear,
 			};
 
 			model.draw(&enemy.transform, program, "model");
@@ -209,7 +212,8 @@ impl EnemyManager {
 	pub fn collide_with_player(&mut self, idx: usize) -> Option<usize> {
 		self.enemies[idx].as_mut().map(|x| {
 			match x.kind {
-				EnemyKind::Apple => 3
+				EnemyKind::Apple => 3,
+				EnemyKind::Pear => 3
 			}
 		})
 	}

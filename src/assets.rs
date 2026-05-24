@@ -58,7 +58,8 @@ pub struct Assets {
 	pub player: Model,
 	pub sausage_bullet: Model,
 	pub sausage_tip: Model,
-	pub enemy: Model,
+	pub apple: Model,
+	pub pear: Model,
 	pub powerup_hp: Model,
 	pub powerup_energy: Model,
 	pub powerup_speed: Model,
@@ -199,7 +200,8 @@ impl Assets {
 		let pastry_mesh = load_mesh(&models.pastry);
 		let sausage_bullet_mesh = load_mesh(&models.sausage_bullet);
 		let sausage_tip_mesh = load_mesh(&models.sausage_tip);
-		let enemy_mesh = load_mesh(&models.enemy);
+		let apple_mesh = load_mesh(&models.apple);
+		let pear_mesh = load_mesh(&models.pear);
 		let powerup_hp_mesh = load_mesh(&models.powerup_hp);
 		let powerup_energy_mesh = load_mesh(&models.powerup_energy);
 		let powerup_speed_mesh = load_mesh(&models.powerup_speed);
@@ -208,7 +210,8 @@ impl Assets {
 
 		let terrain_tex = load_texture(&textures.terrain);
 		let player_tex = load_texture(&textures.player);
-		let enemy_tex = load_texture(&textures.enemy);
+		let apple_tex = load_texture(&textures.apple);
+		let pear_tex = load_texture(&textures.pear);
 
 		info!("Linking models...");
 
@@ -240,10 +243,15 @@ impl Assets {
 			.with_mesh(&normal_program, sausage_tip_mesh, &vertex_attribs)
 			.with_scale(glm::vec3(player_scale, player_scale, player_scale));
 
-		let enemy = Model::new(gl.clone())
-			.with_mesh(&normal_program, enemy_mesh, &vertex_attribs)
-			.with_texture(&normal_program, enemy_tex, "tex_unit")
+		let apple = Model::new(gl.clone())
+			.with_mesh(&normal_program, apple_mesh, &vertex_attribs)
+			.with_texture(&normal_program, apple_tex, "tex_unit")
 			.with_scale(glm::vec3(30.0, 30.0, 30.0));
+
+		let pear = Model::new(gl.clone())
+			.with_mesh(&normal_program, pear_mesh, &vertex_attribs)
+			.with_texture(&normal_program, pear_tex, "tex_unit")
+			.with_scale(glm::vec3(20.0, 20.0, 20.0));
 
 		let powerup_hp = Model::new(gl.clone())
 			.with_mesh(&normal_program, powerup_hp_mesh, &vertex_attribs)
@@ -273,7 +281,8 @@ impl Assets {
 			powerup_hp,
 			powerup_energy,
 			powerup_speed,
-			enemy,
+			apple,
+			pear,
 			player_bounding_box,
 			bullet_bounding_box,
 		}
