@@ -474,7 +474,10 @@ impl<'a> App<'a> {
 					});
 				},
 				SceneState::InGame { timer, kills } => {
-					egui::TopBottomPanel::new(egui::panel::TopBottomSide::Bottom, egui::Id::new("hud")).show(ctx, |ui| {
+					let color = egui::Color32::from_rgba_unmultiplied(40, 40, 40, 128);
+					let frame = egui::Frame::new().fill(color);
+
+					egui::TopBottomPanel::new(egui::panel::TopBottomSide::Bottom, egui::Id::new("hud")).frame(frame).show(ctx, |ui| {
 						ui.horizontal(|ui| {
 							let stats = self.scene.player.get_stats();
 
@@ -486,9 +489,9 @@ impl<'a> App<'a> {
 							};
 							let ammo = format!("Ammo: {}/{}", stats.ammo, MAX_AMMO);
 
-							let health = egui::RichText::new(health).size(20.0).color(egui::Color32::RED);
-							let speed = egui::RichText::new(speed).size(20.0).color(egui::Color32::GREEN);
-							let ammo = egui::RichText::new(ammo).size(20.0).color(egui::Color32::BLUE);
+							let health = egui::RichText::new(health).size(50.0).color(egui::Color32::RED);
+							let speed = egui::RichText::new(speed).size(50.0).color(egui::Color32::GREEN);
+							let ammo = egui::RichText::new(ammo).size(50.0).color(egui::Color32::BLUE);
 
 							ui.label(health);
 							ui.separator();
@@ -497,9 +500,9 @@ impl<'a> App<'a> {
 							ui.label(ammo);
 
 							let remaining = timer as u32;
-							let timer = egui::RichText::new(format!("{:02}:{:02}", remaining / 60, remaining % 60)).size(20.0).strong();
+							let timer = egui::RichText::new(format!("{:02}:{:02}", remaining / 60, remaining % 60)).size(50.0).strong();
 
-							let kills = egui::RichText::new(format!("Kills: {}", kills)).size(20.0).strong();
+							let kills = egui::RichText::new(format!("Kills: {}", kills)).size(50.0).strong();
 
 							ui.with_layout(egui::Layout::right_to_left(egui::Align::Center), |ui| {
 								ui.label(timer);
