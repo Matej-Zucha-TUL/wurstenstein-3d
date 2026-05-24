@@ -143,7 +143,7 @@ impl EnemyManager {
 		self.spawn_timer -= dt;
 
 		if self.spawn_timer < 0.0 {
-			self.spawn_timer = 3.0;
+			self.spawn_timer = 2.0;
 			self.spawn_new_enemy(world);
 		}
 

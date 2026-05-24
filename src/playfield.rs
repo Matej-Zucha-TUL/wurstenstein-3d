@@ -22,6 +22,8 @@ pub struct Playfield<'a, T: PlayfieldPiece> {
 	pub death_barrier: f32,
 	// Vector of rows, containing a vector of cells.
 	pub field: &'a [&'a [T]],
+	// Spawn point for the player.
+	pub player_spawn_point: [usize; 2],
 	// Possible spawn points for powerups.
 	pub powerup_spawn_points: &'a [[usize; 2]],
 	// Possible spawn points for enemies.
@@ -215,28 +217,34 @@ pub const EXAMPLE_MAZE: Playfield<TestPiece> = Playfield {
 	height: 3.0,
 	death_barrier: -20.0,
 	field: &[
-		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
-		&[Stone, __,    __,    __,    __,    __,    __,    __,    __,    Stone],
-		&[Stone, __,    Brick, Brick, __,    __,    Brick, Brick, __,    Stone],
-		&[Stone, __,    Brick, __,    __,    __,    __,    Brick, __,    Stone],
-		&[Stone, __,    __,    __,    __,    __,    __,    __,    __,    Stone],
-		&[Stone, __,    __,    __,    __,    __,    __,    __,    __,    Stone],
-		&[Stone, __,    Brick, __,    __,    __,    __,    Brick, __,    Stone],
-		&[Stone, __,    Brick, Brick, __,    __,    Brick, Brick, __,    Stone],
-		&[Stone, __,    __,    __,    __,    __,    __,    __,    __,    Stone],
-		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
+		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
+		&[Stone, __,    __,    __,    __,    __,    __,    __,    __,    __,    Stone],
+		&[Stone, __,    Brick, Brick, __,    __,    __,    Brick, Brick, __,    Stone],
+		&[Stone, __,    Brick, __,    __,    __,    __,    __,    Brick, __,    Stone],
+		&[Stone, __,    __,    __,    Stone, Stone, Stone, __,    __,    __,    Stone],
+		&[Stone, __,    __,    __,    Stone, Stone, Stone, __,    __,    __,    Stone],
+		&[Stone, __,    __,    __,    Stone, Stone, Stone, __,    __,    __,    Stone],
+		&[Stone, __,    Brick, __,    __,    __,    __,    __,    Brick, __,    Stone],
+		&[Stone, __,    Brick, Brick, __,    __,    __,    Brick, Brick, __,    Stone],
+		&[Stone, __,    __,    __,    __,    __,    __,    __,    __,    __,    Stone],
+		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
 	],
+	player_spawn_point: [5, 5],
 	powerup_spawn_points: &[
 		[0, 0],
-		[9, 0],
-		[9, 9],
-		[0, 9]
+		[10, 0],
+		[10, 10],
+		[0, 10]
 	],
 	enemy_spawn_points: &[
+		// [5, 0],
+		// [5, 10],
+		// [0, 5],
+		// [10, 5],
 		[2, 2],
-		[2, 7],
-		[7, 7],
-		[7, 2]
+		[2, 8],
+		[8, 8],
+		[8, 2]
 	]
 };
 

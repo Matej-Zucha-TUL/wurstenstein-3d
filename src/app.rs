@@ -64,7 +64,8 @@ struct Scene {
 
 impl Scene {
 	pub fn new(gl: Arc<Context>, assets: &Assets) -> Self {
-		let player = PlayerController::new(Transform::origin().with_position(glm::vec3(7.5, 0.0, 7.5)), assets.player_bounding_box.clone());
+		let spawn = EXAMPLE_MAZE.player_spawn_point.map(|x| (x as f32 + 0.5) * EXAMPLE_MAZE.scale);
+		let player = PlayerController::new(Transform::origin().with_position(glm::vec3(spawn[0], 0.0, spawn[1])), assets.player_bounding_box.clone());
 
 		let mut camera = Camera::new(glm::vec3(0.0, 0.0, 0.0));
 		camera.set_pov(true);
@@ -730,7 +731,7 @@ impl App {
 
 				let transform = Transform::origin().with_position(bullet_pos.into()).with_rotation([std::f32::consts::PI - angle, 0.0, 0.0].into());
 
-				self.scene.bullets.spawn_bullet(transform, 10.0);
+				self.scene.bullets.spawn_bullet(transform, 15.0);
 			}
 			for gone_pos in enemy_updates.enemies_gone {
 				self.audio.play_sound(SoundRequest::EnemyExplosion, Some(gone_pos), 10.0);
