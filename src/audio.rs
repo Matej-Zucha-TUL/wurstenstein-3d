@@ -63,6 +63,7 @@ pub enum MusicRequest {
 	Stop,
 	InGame,
 	Death,
+	Win,
 }
 
 pub enum SoundRequest {
@@ -97,6 +98,7 @@ impl Audio {
 
 		let space_debris = music.space_debris.clone();
 		let humntrgt = music.humntrgt.clone();
+		let brewery = music.brewery.clone();
 
 		let params = OutputDeviceParameters {
 			channels_count: 2,
@@ -126,7 +128,13 @@ impl Audio {
 						unsafe {
 							InitMOD(humntrgt.as_ptr(), 44100);
 						}
-					}
+					},
+					MusicRequest::Win => {
+						play_music = true;
+						unsafe {
+							InitMOD(brewery.as_ptr(), 44100);
+						}
+					},
 				}
 			}
 

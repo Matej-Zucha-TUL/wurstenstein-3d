@@ -29,6 +29,7 @@ fn main() {
 		music: Music {
 			space_debris: include_bytes!("./files/music/space_debris.mod").to_vec(),
 			humntrgt: include_bytes!("./files/music/humntrgt.mod").to_vec(),
+			brewery: include_bytes!("./files/music/brewery.mod").to_vec(),
 		},
 		sounds: Sounds {
 			player_jump: include_bytes!("./files/sounds/sfx_movement_jump14.wav").to_vec(),

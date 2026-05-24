@@ -672,6 +672,7 @@ impl App {
 
 				if *timer == 0.0 {
 					self.scene.state = SceneState::YoureWinner { kills: *kills };
+					self.audio.play_music(MusicRequest::Win);
 				}
 			}
 

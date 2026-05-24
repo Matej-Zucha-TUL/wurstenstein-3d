@@ -30,6 +30,7 @@ pub struct Textures {
 pub struct Music {
 	pub space_debris: Vec<u8>,
 	pub humntrgt: Vec<u8>,
+	pub brewery: Vec<u8>,
 }
 
 #[derive(wincode::SchemaWrite, wincode::SchemaRead)]
