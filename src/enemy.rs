@@ -37,7 +37,7 @@ impl Enemy {
 		}
 	}
 
-	fn update(&mut self, dt: f32) {
+	fn update(&mut self, dt: f32) -> bool {
 		self.timer += dt;
 
 		match self.state {
@@ -52,8 +52,16 @@ impl Enemy {
 					self.timer = 0.0;
 					self.state = EnemyState::Idle;
 				}
+				false
 			},
-			EnemyState::Idle => {},
+			EnemyState::Idle => {
+				if self.timer >= 0.5 {
+					self.timer = 0.0;
+					true
+				} else {
+					false
+				}
+			},
 			EnemyState::Despawn => {
 				self.transform.rotation[0] += 8.0 * dt;
 				let scale = (1.0 - self.timer * 2.0).max(0.0);
@@ -64,11 +72,13 @@ impl Enemy {
 				if self.timer >= 0.5 {
 					self.state = EnemyState::Gone;
 				}
+				false
 			},
 			EnemyState::Gone => {
 				self.transform.scale[0] = 0.0;
 				self.transform.scale[1] = 0.0;
 				self.transform.scale[2] = 0.0;
+				false
 			}
 		}
 	}
@@ -122,7 +132,7 @@ impl EnemyManager {
 		}
 	}
 
-	pub fn update<T: PlayfieldPiece>(&mut self, world: &Playfield<'_, T>, dt: f32) {
+	pub fn update<T: PlayfieldPiece>(&mut self, world: &Playfield<'_, T>, dt: f32) -> Vec<[f32; 3]> {
 		self.enemies.resize_with(world.enemy_spawn_points.len(), || None);
 
 		self.spawn_timer -= dt;
@@ -132,15 +142,21 @@ impl EnemyManager {
 			self.spawn_new_enemy(world);
 		}
 
+		let mut shot_bullets = vec![];
+
 		for enemy in &mut self.enemies {
 			let Some(enemak) = enemy else { continue };
 
-			enemak.update(dt);
+			if enemak.update(dt) {
+				shot_bullets.push(enemak.transform.position.as_slice().try_into().unwrap());
+			}
 
 			if enemak.state == EnemyState::Gone {
 				*enemy = None;
 			}
 		}
+
+		shot_bullets
 	}
 
 	pub fn render(&self, assets: &Assets, program: &Program) {

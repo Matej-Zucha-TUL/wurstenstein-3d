@@ -658,7 +658,32 @@ impl App {
 		self.audio.update_position(pos.into(), rot);
 
 		self.scene.powerups.update(&EXAMPLE_MAZE, dt);
-		self.scene.enemies.update(&EXAMPLE_MAZE, dt);
+		for bullet_pos in self.scene.enemies.update(&EXAMPLE_MAZE, dt) {
+			let angle = {
+				let bullet_pos = glm::vec2(bullet_pos[0], bullet_pos[2]);
+
+				let player_pos = self.scene.player.get_transform().position;
+				let player_pos = glm::vec2(player_pos[0], player_pos[2]);
+
+				let diff = player_pos - bullet_pos;
+
+				let base = glm::vec2(0.0, 1.0);
+
+				let mul = if glm::cross2d(&base, &diff) >= 0.0 {
+					1.0
+				} else {
+					-1.0
+				};
+
+				glm::angle(&glm::vec2(0.0, 1.0), &diff) * mul
+			};
+
+			println!("{}", angle);
+
+			let transform = Transform::origin().with_position(bullet_pos.into()).with_rotation([std::f32::consts::PI - angle, 0.0, 0.0].into());
+
+			self.scene.bullets.spawn_bullet(transform, 10.0);
+		}
 		self.scene.bullets.update(dt);
 
 		let aspect = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
