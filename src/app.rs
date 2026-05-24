@@ -633,6 +633,10 @@ impl App {
 
 			for (enemy_idx, bullet_idx) in collision::check_enemies_with_bullets(&self.scene.enemies, &self.scene.bullets) {
 				*kills += 1;
+				if let Some(transform) = self.scene.enemies.get_transform(enemy_idx) {
+					self.audio.play_sound(SoundRequest::EnemyDeath, Some(transform.position.into()), 10.0);
+				}
+
 				self.scene.enemies.collide_with_bullet(enemy_idx);
 				self.scene.bullets.despawn_bullet(bullet_idx);
 			}

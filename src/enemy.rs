@@ -185,6 +185,10 @@ impl EnemyManager {
 			.collect::<Vec<_>>()
 	}
 
+	pub fn get_transform(&self, idx: usize) -> Option<&Transform> {
+		self.enemies[idx].as_ref().map(|x| &x.transform)
+	}
+
 	pub fn collide_with_bullet(&mut self, idx: usize) {
 		if let Some(enemy) = self.enemies[idx].as_mut() {
 			enemy.timer = 0.0;
