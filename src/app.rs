@@ -564,10 +564,13 @@ impl App {
 				PlayerAction::Jumped => {
 					self.audio.play_sound(SoundRequest::PlayerJump, None, 1.0);
 				},
-				PlayerAction::FellToDeath | PlayerAction::DiedFromDamage => {
+				PlayerAction::StartedDying => {
 					self.audio.play_sound(SoundRequest::PlayerDeath, None, 1.0);
-					self.audio.play_music(MusicRequest::Death);
+					self.audio.play_music(MusicRequest::Stop);
 				},
+				PlayerAction::Dead => {
+					self.audio.play_music(MusicRequest::Death);
+				}
 			}
 		}
 		self.update_camera(dt);
