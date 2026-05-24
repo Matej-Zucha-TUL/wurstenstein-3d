@@ -29,6 +29,8 @@ use config::Config;
 
 mod enemy;
 
+mod explosion;
+
 mod model;
 
 mod playfield;

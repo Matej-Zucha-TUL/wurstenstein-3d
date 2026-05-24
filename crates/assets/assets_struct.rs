@@ -6,6 +6,8 @@ pub struct ShaderPrograms {
 	pub powerup_frag: String,
 	pub background_vert: String,
 	pub background_frag: String,
+	pub explosion_vert: String,
+	pub explosion_frag: String,
 }
 
 #[derive(wincode::SchemaWrite, wincode::SchemaRead)]

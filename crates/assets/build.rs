@@ -11,6 +11,8 @@ fn main() {
 			background_frag: include_str!("./files/shaders/frag/starfield.frag").to_string(),
 			background_vert: include_str!("./files/shaders/vert/screen.vert").to_string(),
 			powerup_frag: include_str!("./files/shaders/frag/powerup.frag").to_string(),
+			explosion_frag: include_str!("./files/shaders/frag/explosion.frag").to_string(),
+			explosion_vert: include_str!("./files/shaders/vert/explosion.vert").to_string(),
 		},
 		models: Models {
 			pastry: include_bytes!("./files/objects/pastry/pastry.obj").to_vec(),

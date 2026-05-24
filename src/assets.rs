@@ -52,6 +52,7 @@ pub struct Assets {
 	pub rizz_program: Program,
 	pub background_program: Program,
 	pub powerup_program: Program,
+	pub explosion_program: Program,
 	pub background: Background,
 	pub terrain: Model,
 	pub player: Model,
@@ -181,6 +182,11 @@ impl Assets {
 			.add_shader(ShaderType::Fragment, &shader_programs.background_frag)
 			.link();
 
+		let explosion_program = ProgramBuilder::new(gl.clone())
+			.add_shader(ShaderType::Vertex, &shader_programs.explosion_vert)
+			.add_shader(ShaderType::Fragment, &shader_programs.explosion_frag)
+			.link();
+
 		// Load background effect
 
 		let mut background = Background::new(gl.clone());
@@ -258,6 +264,7 @@ impl Assets {
 			rizz_program,
 			background_program,
 			powerup_program,
+			explosion_program,
 			background,
 			terrain,
 			player,

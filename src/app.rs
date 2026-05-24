@@ -23,6 +23,7 @@ use crate::bullet::BulletManager;
 use crate::camera::{Camera, Directions};
 use crate::collision;
 use crate::enemy::EnemyManager;
+use crate::explosion::ExplosionManager;
 use crate::model::Transform;
 use crate::player::{PlayerAction, PlayerController, MAX_AMMO, MAX_HEALTH};
 use crate::playfield::EXAMPLE_MAZE;
@@ -57,11 +58,12 @@ struct Scene {
 	player: PlayerController,
 	bullets: BulletManager,
 	enemies: EnemyManager,
-	powerups: PowerupManager
+	powerups: PowerupManager,
+	explosions: ExplosionManager,
 }
 
 impl Scene {
-	pub fn new(assets: &Assets) -> Self {
+	pub fn new(gl: Arc<Context>, assets: &Assets) -> Self {
 		let player = PlayerController::new(Transform::origin().with_position(glm::vec3(7.5, 0.0, 7.5)), assets.player_bounding_box.clone());
 
 		let mut camera = Camera::new(glm::vec3(0.0, 0.0, 0.0));
@@ -73,13 +75,16 @@ impl Scene {
 
 		let powerups = PowerupManager::new();
 
+		let explosions = ExplosionManager::new(gl, assets);
+
 		Self {
 			state: SceneState::InGame { timer: 120.0, kills: 0 },
 			camera,
 			player,
 			bullets,
 			enemies,
-			powerups
+			powerups,
+			explosions,
 		}
 	}
 }
@@ -170,7 +175,7 @@ impl App {
 
 		let assets = Assets::init(gl.clone(), &files.shader_programs, &files.models, &files.textures);
 
-		let scene = Scene::new(&assets);
+		let scene = Scene::new(gl.clone(), &assets);
 
 		let egui = egui_glow::EguiGlow::new(event_loop, gl.clone(), None, None, true);
 		let perf = Perf::default();
@@ -229,7 +234,7 @@ impl App {
 	}
 
 	fn respawn(&mut self) {
-		self.scene = Scene::new(&self.assets);
+		self.scene = Scene::new(self.gl.clone(), &self.assets);
 		self.audio.play_music(MusicRequest::InGame);
 	}
 
@@ -687,6 +692,7 @@ impl App {
 					},
 					PlayerAction::Dead => {
 						self.audio.play_sound(SoundRequest::PlayerExplosion, None, 1.0);
+						self.scene.explosions.add_explosion(self.scene.player.get_transform().position.into());
 						self.audio.play_music(MusicRequest::Death);
 						self.scene.state = SceneState::Dead;
 					}
@@ -728,9 +734,12 @@ impl App {
 			}
 			for gone_pos in enemy_updates.enemies_gone {
 				self.audio.play_sound(SoundRequest::EnemyExplosion, Some(gone_pos), 10.0);
+				self.scene.explosions.add_explosion(gone_pos);
 			}
 			self.scene.bullets.update(dt);
 		}
+
+		self.scene.explosions.update(dt);
 
 		let aspect = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
 		let projection_mtx = glm::perspective(
@@ -755,6 +764,9 @@ impl App {
 		self.assets.powerup_program.set_uniform_f32_3("camera_position", camera_pos.as_slice().try_into().unwrap());
 		self.assets.powerup_program.set_uniform_matrix_f32_4("view", view_mtx.as_slice().try_into().unwrap());
 		self.assets.powerup_program.set_uniform_matrix_f32_4("projection", projection_mtx.as_slice().try_into().unwrap());
+
+		self.assets.explosion_program.set_uniform_matrix_f32_4("view", view_mtx.as_slice().try_into().unwrap());
+		self.assets.explosion_program.set_uniform_matrix_f32_4("projection", projection_mtx.as_slice().try_into().unwrap());
 
 		let time = self.perf
 			.last_time
@@ -805,6 +817,7 @@ impl App {
 
 		self.scene.enemies.render(&self.assets, program);
 		self.scene.bullets.render(&self.assets, program);
+		self.scene.explosions.render(&self.assets);
 
 		let mut transparent = TransparentRenderer::new(self.gl.clone());
 
