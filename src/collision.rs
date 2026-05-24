@@ -98,7 +98,7 @@ pub fn check_with_enemies(player: &PlayerController, enemies: &EnemyManager) -> 
 pub fn check_enemies_with_bullets(enemies: &EnemyManager, bullets: &BulletManager) -> Vec<(usize, usize)> {
 	let mut out = vec![];
 
-	let enemies = enemies.get_collision_shapes();
+	let enemies = enemies.get_collision_shapes_as_targets();
 	let bullets = bullets.get_collision_shapes();
 
 	for (enemy_idx, enemy) in enemies.iter().enumerate() {
