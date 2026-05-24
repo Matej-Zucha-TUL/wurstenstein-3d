@@ -700,7 +700,8 @@ impl App {
 			self.audio.update_position(pos.into(), rot);
 
 			self.scene.powerups.update(&EXAMPLE_MAZE, dt);
-			for bullet_pos in self.scene.enemies.update(&EXAMPLE_MAZE, dt) {
+			let enemy_updates = self.scene.enemies.update(&EXAMPLE_MAZE, dt);
+			for bullet_pos in enemy_updates.shot_bullets {
 				let angle = {
 					let bullet_pos = glm::vec2(bullet_pos[0], bullet_pos[2]);
 
@@ -723,6 +724,9 @@ impl App {
 				let transform = Transform::origin().with_position(bullet_pos.into()).with_rotation([std::f32::consts::PI - angle, 0.0, 0.0].into());
 
 				self.scene.bullets.spawn_bullet(transform, 10.0);
+			}
+			for gone_pos in enemy_updates.enemies_gone {
+				self.audio.play_sound(SoundRequest::EnemyExplosion, Some(gone_pos), 10.0);
 			}
 			self.scene.bullets.update(dt);
 		}

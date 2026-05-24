@@ -90,6 +90,11 @@ pub struct EnemyManager {
 	spawn_timer: f32,
 }
 
+pub struct EnemyUpdate {
+	pub shot_bullets: Vec<[f32; 3]>,
+	pub enemies_gone: Vec<[f32; 3]>,
+}
+
 impl EnemyManager {
 	pub fn new() -> Self {
 		Self {
@@ -132,7 +137,7 @@ impl EnemyManager {
 		}
 	}
 
-	pub fn update<T: PlayfieldPiece>(&mut self, world: &Playfield<'_, T>, dt: f32) -> Vec<[f32; 3]> {
+	pub fn update<T: PlayfieldPiece>(&mut self, world: &Playfield<'_, T>, dt: f32) -> EnemyUpdate {
 		self.enemies.resize_with(world.enemy_spawn_points.len(), || None);
 
 		self.spawn_timer -= dt;
@@ -143,6 +148,7 @@ impl EnemyManager {
 		}
 
 		let mut shot_bullets = vec![];
+		let mut enemies_gone = vec![];
 
 		for enemy in &mut self.enemies {
 			let Some(enemak) = enemy else { continue };
@@ -152,11 +158,15 @@ impl EnemyManager {
 			}
 
 			if enemak.state == EnemyState::Gone {
+				enemies_gone.push(enemak.transform.position.into());
 				*enemy = None;
 			}
 		}
 
-		shot_bullets
+		EnemyUpdate {
+			shot_bullets,
+			enemies_gone
+		}
 	}
 
 	pub fn render(&self, assets: &Assets, program: &Program) {
