@@ -221,7 +221,7 @@ There are even more realistic (complicated) models (object mass, applied force, 
 - [X] load OBJ model with texture coordinates
 - [X] ...enjoy
 
-# ❌ 8th lab: Lighting
+# ✅ 8th lab: Lighting
 
 ## ✔️ Task 1: Implement most simple light source - directional light (sun)
 
@@ -234,7 +234,7 @@ There are even more realistic (complicated) models (object mass, applied force, 
 - [X] Create at least 3 point lights with different parameters.
 - [X] Move lights independently: light position is just point in space. Create model matrix for some model transformations (translate, rotate, scale), and transform original position of the light (point) to new position by matrix multiplication.
 
-## ⏱️ Task 3: Implement at least one spot light
+## ✔️ Task 3: Implement at least one spot light
 
 - [X] Implement spot light = reflector light source, for example as a light attached to the camera (headlight).
 
@@ -251,13 +251,13 @@ Allow the App to correctly draw transparent objects.
 - [X] create at least 3 (semi)transparent objects. Use either material with A<1.0 or texture with alpha channel.
 - [X] use correct, full scale transparency (NOT if(alpha<0.1) {discard;} )
 
-## ⏱️ Task 2: Implement collision detection
+## ✔️ Task 2: Implement collision detection
 
 The very basic collision detection is to disallow the player to leave the map. Better version should be implemented.
 
 - [X] implement at least two of
   - [ ] correct behaviour of hit-wall (sliding)
-  - [ ] detect hit of some object with projectile (touch player-object)
+  - [X] detect hit of some object with projectile (touch player-object)
   - [X] detect hit (touch) of the enemy with player
   - [X] some other idea... (collision with floor)
 
@@ -293,7 +293,7 @@ Each missing (non-functional) Essential nets -25 points (partial functionality =
 - [X] event processing (camera, object, app behaviour, ...): mouse (both axes, wheel), keyboard
 - [X] multiple different independently moving 3D models, at least two loaded from file
 - [X] at least three different textures (or subtextures from texture atlas etc.)
-- [ ] lighting model, all basic lights types (1x anbient, min. 1x directional, min. 2x point, min. Ix reflector; at least two are moving independently
+- [X] lighting model, all basic lights types (1x anbient, min. 1x directional, min. 2x point, min. Ix reflector; at least two are moving independently
 - [X] correct full alpha scale transparency (at least two transparent objects; NOT if(alpha<0.1) {discard;} )
 - [X] correct collisions
 
@@ -305,7 +305,8 @@ Each working Extra nets +10 points
 - [X] audio (better than just background)
 - [ ] particle effects
 - [ ] scripting (useful)
-- [ ] some other nice complicated effect..
+- [X] some other nice complicated effect..
+  - does the starfield count? xD
 
 ## Instafail
 
