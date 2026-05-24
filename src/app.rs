@@ -22,6 +22,7 @@ use crate::audio::{Audio, MusicRequest, SoundRequest};
 use crate::bullet::BulletManager;
 use crate::camera::{Camera, Directions};
 use crate::collision;
+use crate::config::Config;
 use crate::enemy::EnemyManager;
 use crate::explosion::ExplosionManager;
 use crate::model::Transform;
@@ -31,12 +32,13 @@ use crate::powerup::{PowerupManager, PowerupKind};
 use crate::screenshot::take_screenshot;
 use crate::transparent::TransparentRenderer;
 
-pub struct App {
+pub struct App<'a> {
 	window: Window,
 	egui: egui_glow::EguiGlow,
 	gl: Arc<Context>,
 	gl_context: PossiblyCurrentContext,
 	gl_surface: Surface<WindowSurface>,
+	config: &'a mut Config,
 
 	assets: Assets,
 	audio: Audio,
@@ -103,7 +105,6 @@ struct Parameters {
 	rizz_mode: bool,
 	pov_camera: bool,
 	cursor_lock: bool,
-	fullscreen: bool,
 	vsync: bool,
 	window_focused: bool,
 }
@@ -122,7 +123,6 @@ impl Default for Parameters {
 			rizz_mode: false,
 			pov_camera: true,
 			cursor_lock: true,
-			fullscreen: false,
 			vsync: true,
 			window_focused: true,
 		}
@@ -155,13 +155,14 @@ impl Default for Perf {
 	}
 }
 
-impl App {
+impl<'a> App<'a> {
 	pub fn init(
 		event_loop: &ActiveEventLoop,
 		window: Window,
 		gl: Arc<Context>,
 		gl_context: PossiblyCurrentContext,
-		gl_surface: Surface<WindowSurface>
+		gl_surface: Surface<WindowSurface>,
+		config: &'a mut Config
 	) -> Self {
 		gl_surface
 			.set_swap_interval(&gl_context, SwapInterval::Wait(NonZeroU32::new(1).unwrap()))
@@ -223,6 +224,7 @@ impl App {
 			gl,
 			gl_context,
 			gl_surface,
+			config,
 
 			assets,
 			audio,
@@ -317,8 +319,8 @@ impl App {
 					info!("POV camera = {}", self.params.pov_camera);
 				}
 				Key::Character(x) if x == "f" => {
-					self.params.fullscreen = !self.params.fullscreen;
-					info!("Fullscreen = {}", self.params.fullscreen);
+					self.config.window.fullscreen = !self.config.window.fullscreen;
+					info!("Fullscreen = {}", self.config.window.fullscreen);
 				}
 				Key::Character(x) if x == "o" => {
 					take_screenshot(&self.gl, self.window.inner_size());
@@ -627,7 +629,7 @@ impl App {
 
 	fn enforce_fullscreen(&self) {
 		self.window.set_fullscreen(
-			self.params
+			self.config.window
 				.fullscreen
 				.then_some(Fullscreen::Borderless(self.window.current_monitor())),
 		);

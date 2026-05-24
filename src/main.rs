@@ -45,32 +45,34 @@ mod shader;
 
 mod transparent;
 
-struct WinitApp {
-	preinit: Option<PreInitData>,
-	app: OnceLock<App>,
+struct WinitApp<'a> {
+	preinit: Option<PreInitData<'a>>,
+	app: OnceLock<App<'a>>,
 }
 
-struct PreInitData {
+struct PreInitData<'a> {
 	window: Window,
 	gl: Arc<Context>,
 	gl_context: PossiblyCurrentContext,
-	gl_surface: Surface<WindowSurface>
+	gl_surface: Surface<WindowSurface>,
+	config: &'a mut Config
 }
 
-impl ApplicationHandler for WinitApp {
+impl<'a> ApplicationHandler for WinitApp<'a> {
 	fn resumed(&mut self, event_loop: &ActiveEventLoop) {
 		let Some(PreInitData {
 			window,
 			gl,
 			gl_context,
-			gl_surface
+			gl_surface,
+			config
 		}) = self.preinit.take()
 		else {
 			return;
 		};
 		let _ = self
 			.app
-			.set(App::init(event_loop, window, gl, gl_context, gl_surface));
+			.set(App::init(event_loop, window, gl, gl_context, gl_surface, config));
 	}
 
 	fn device_event(
@@ -216,26 +218,29 @@ fn main() {
 
 	// Run the app
 
-	let mut app = WinitApp {
-		preinit: Some(PreInitData {
-			window,
-			gl,
-			gl_context,
-			gl_surface
-		}),
-		app: OnceLock::new(),
+	let (pos, size, scale) = {
+		let mut app = WinitApp {
+			preinit: Some(PreInitData {
+				window,
+				gl,
+				gl_context,
+				gl_surface,
+				config: &mut config
+			}),
+			app: OnceLock::new(),
+		};
+
+		let _ = event_loop.run_app(&mut app);
+
+		let window = app.app.get().unwrap().get_window();
+
+		(window.outer_position(), window.inner_size(), window.scale_factor())
 	};
 
-	let _ = event_loop.run_app(&mut app);
+	config.window.width = (size.width as f64 / scale) as u32;
+	config.window.height = (size.height as f64 / scale) as u32;
 
-	let window = app.app.get().unwrap().get_window();
-
-	let size = window.inner_size();
-
-	config.window.width = (size.width as f64 / window.scale_factor()) as u32;
-	config.window.height = (size.height as f64 / window.scale_factor()) as u32;
-
-	if let Ok(pos) = window.outer_position() {
+	if let Ok(pos) = pos {
 		config.window.x = Some(pos.x);
 		config.window.y = Some(pos.y);
 	}

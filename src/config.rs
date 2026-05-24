@@ -4,6 +4,7 @@ use serde::{Serialize, Deserialize};
 pub struct WindowConfig {
 	pub width: u32,
 	pub height: u32,
+	pub fullscreen: bool,
 	pub x: Option<i32>,
 	pub y: Option<i32>
 }
@@ -79,6 +80,7 @@ impl Default for Config {
 			window: WindowConfig {
 				width: 1024,
 				height: 768,
+				fullscreen: false,
 				x: None,
 				y: None
 			},
