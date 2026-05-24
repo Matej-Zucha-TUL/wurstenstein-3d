@@ -742,7 +742,11 @@ impl App {
 		}
 
 		self.assets.terrain.draw(&Transform::origin(), program, "model");
+
 		self.assets.player.draw(self.scene.player.get_transform(), program, "model");
+		if self.scene.player.get_stats().ammo > 0 {
+			self.assets.sausage_tip.draw(self.scene.player.get_transform(), program, "model");
+		}
 
 		self.scene.enemies.render(&self.assets, program);
 		self.scene.bullets.render(&self.assets, program);
