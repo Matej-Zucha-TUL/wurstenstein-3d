@@ -167,25 +167,30 @@ impl PowerupManager {
 	}
 
 	pub fn update_point_lights(&self, program: &Program) {
-		// TODO - upload entire array at once
+		let mut enabled_array = [0; 16];
+		let mut position_array = [[0.0; 3]; 16];
+		let mut diffuse_array = [[0.0; 3]; 16];
+		let mut specular_array = [[0.0; 3]; 16];
 
 		for (idx, powerup) in self.powerups.iter().enumerate() {
-			let enabled = format!("point_enabled[{idx}]");
-			let position = format!("point_position[{idx}]");
-			let diffuse = format!("point_diffuse[{idx}]");
-			let specular = format!("point_specular[{idx}]");
-
 			if let Some(powerup) = powerup {
 				let color = powerup.kind.get_color().map(|x| x * powerup.transform.scale[0]);
 
-				program.set_uniform_u32(&enabled, 1);
-				program.set_uniform_f32_3(&position, &powerup.transform.position.as_slice().try_into().unwrap());
-				program.set_uniform_f32_3(&diffuse, &color);
-				program.set_uniform_f32_3(&specular, &color);
-			} else {
-				program.set_uniform_u32(&enabled, 0);
+				enabled_array[idx] = 1;
+				position_array[idx] = powerup.transform.position.as_slice().try_into().unwrap();
+				diffuse_array[idx] = color;
+				specular_array[idx] = color;
 			}
 		}
+
+		let position_array = position_array.concat();
+		let diffuse_array = diffuse_array.concat();
+		let specular_array = specular_array.concat();
+
+		program.set_uniform_slice_i32_1("point_enabled", &enabled_array);
+		program.set_uniform_slice_f32_3("point_position", &position_array);
+		program.set_uniform_slice_f32_3("point_diffuse", &diffuse_array);
+		program.set_uniform_slice_f32_3("point_specular", &specular_array);
 	}
 
 	pub fn render<'a>(&'a self, assets: &'a Assets, transparent: &mut TransparentRenderer<'a>) {
