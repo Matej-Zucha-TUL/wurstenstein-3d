@@ -11,7 +11,6 @@ out vec3 world_normal;
 uniform mat4 model;
 uniform mat4 view;
 uniform mat4 projection;
-uniform mat3 normal_matrix; // transpose(inverse(mat3(model))), computed CPU-side
 
 void main() {
 	vec4 model_coord = model * vec4(aPos, 1.0);
