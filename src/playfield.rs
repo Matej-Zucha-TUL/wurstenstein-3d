@@ -63,6 +63,7 @@ impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
 
 				{
 					let (tx1, ty1, tx2, ty2) = piece.horiz_top_texture();
+					let (tx1, ty1, tx2, ty2) = (tx1 + 0.0001, ty1 + 0.0001, tx2 - 0.0001, ty2 - 0.0001);
 
 					// Create 4 points
 
@@ -99,6 +100,7 @@ impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
 
 				{
 					let (tx1, ty1, tx2, ty2) = piece.horiz_bottom_texture();
+					let (tx1, ty1, tx2, ty2) = (tx1 + 0.0001, ty1 + 0.0001, tx2 - 0.0001, ty2 - 0.0001);
 
 					// Create 4 points
 
@@ -135,6 +137,7 @@ impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
 
 				{
 					let (tx1, ty1, tx2, ty2) = piece.vert_texture();
+					let (tx1, ty1, tx2, ty2) = (tx1 + 0.0001, ty1 + 0.0001, tx2 - 0.0001, ty2 - 0.0001);
 
 					let left_wall = match x {
 						0 => true,
