@@ -200,7 +200,7 @@ impl PlayerController {
 				self.ammo = 0;
 				self.powerup_speed_timer = 0.0;
 
-				self.transform.rotation[0] += 8.0 * self.timer;
+				self.transform.rotation[0] += 8.0 * dt;
 				let scale = (1.0 - self.timer * 2.0).max(0.0);
 				self.transform.scale[0] = scale;
 				self.transform.scale[1] = scale;
@@ -220,6 +220,10 @@ impl PlayerController {
 				Some(PlayerAction::Dead)
 			}
 		}
+	}
+
+	pub fn is_dead(&self) -> bool {
+		self.state == PlayerState::StartedDying || self.state == PlayerState::Dead
 	}
 
 	pub fn get_transform(&self) -> &Transform {

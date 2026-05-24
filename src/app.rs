@@ -50,6 +50,26 @@ struct Scene {
 	powerups: PowerupManager
 }
 
+impl Scene {
+	pub fn new(assets: &Assets) -> Self {
+		let player = PlayerController::new(Transform::origin().with_position(glm::vec3(7.5, 0.0, 7.5)), assets.player_bounding_box.clone());
+
+		let mut camera = Camera::new(glm::vec3(0.0, 0.0, 0.0));
+		camera.set_pov(true);
+
+		let enemies = EnemyManager::new();
+
+		let powerups = PowerupManager::new();
+
+		Self {
+			camera,
+			player,
+			enemies,
+			powerups
+		}
+	}
+}
+
 struct Parameters {
 	background_color: [f32; 4],
 	ambient_color: [f32; 3],
@@ -134,23 +154,7 @@ impl App {
 
 		let assets = Assets::init(gl.clone(), &files.shader_programs, &files.models, &files.textures);
 
-		let scene = {
-			let player = PlayerController::new(Transform::origin().with_position(glm::vec3(7.5, 0.0, 7.5)), assets.player_bounding_box.clone());
-
-			let mut camera = Camera::new(glm::vec3(0.0, 0.0, 0.0));
-			camera.set_pov(true);
-
-			let enemies = EnemyManager::new();
-
-			let powerups = PowerupManager::new();
-
-			Scene {
-				camera,
-				player,
-				enemies,
-				powerups
-			}
-		};
+		let scene = Scene::new(&assets);
 
 		let egui = egui_glow::EguiGlow::new(event_loop, gl.clone(), None, None, true);
 		let perf = Perf::default();
@@ -208,10 +212,23 @@ impl App {
 		app
 	}
 
+	fn respawn(&mut self) {
+		self.scene = Scene::new(&self.assets);
+		self.audio.play_music(MusicRequest::InGame);
+	}
+
 	fn handle_key_event(&mut self, event_loop: &ActiveEventLoop, event: KeyEvent) {
 		info!("{:?} key: {:?}", event.state, event.physical_key);
 
 		let enable = event.state == ElementState::Pressed;
+
+		if self.scene.player.is_dead() {
+			if event.physical_key == PhysicalKey::Code(KeyCode::KeyR) && enable {
+				self.respawn();
+			}
+
+			return;
+		}
 
 		if self.params.pov_camera {
 			match event.physical_key {
@@ -540,25 +557,28 @@ impl App {
 			.as_secs_f32();
 		self.perf.last_time = new_time;
 
-		self.scene.player.has_contact_with_world = collision::check_with_ground(&self.scene.player, &EXAMPLE_MAZE);
+		if !self.scene.player.is_dead() {
+			self.scene.player.has_contact_with_world = collision::check_with_ground(&self.scene.player, &EXAMPLE_MAZE);
 
-		if let Some(idx) = collision::check_with_powerups(&self.scene.player, &self.scene.powerups) && let Some(kind) = self.scene.powerups.pick_up(idx) {
-			self.scene.player.pick_up_powerup(kind);
+			if let Some(idx) = collision::check_with_powerups(&self.scene.player, &self.scene.powerups) && let Some(kind) = self.scene.powerups.pick_up(idx) {
+				self.scene.player.pick_up_powerup(kind);
 
-			match kind {
-				PowerupKind::Health => self.audio.play_sound(SoundRequest::PowerupHpPickup, None, 1.0),
-				PowerupKind::Energy => self.audio.play_sound(SoundRequest::PowerupEnergyPickup, None, 1.0),
-				PowerupKind::Speed => self.audio.play_sound(SoundRequest::PowerupSpeedPickup, None, 1.0),
+				match kind {
+					PowerupKind::Health => self.audio.play_sound(SoundRequest::PowerupHpPickup, None, 1.0),
+					PowerupKind::Energy => self.audio.play_sound(SoundRequest::PowerupEnergyPickup, None, 1.0),
+					PowerupKind::Speed => self.audio.play_sound(SoundRequest::PowerupSpeedPickup, None, 1.0),
+				}
 			}
+
+			if let Some(idx) = collision::check_with_enemies(&self.scene.player, &self.scene.enemies) && let Some(damage) = self.scene.enemies.collide_with_player(idx) {
+				if self.scene.player.decrease_hp(damage) {
+					self.audio.play_sound(SoundRequest::EnemyHit, None, 1.0);
+				}
+			}
+
+			self.scene.player.update_yaw(self.scene.camera.get_yaw_pitch().0);
 		}
 
-		if let Some(idx) = collision::check_with_enemies(&self.scene.player, &self.scene.enemies) && let Some(damage) = self.scene.enemies.collide_with_player(idx) {
-			if self.scene.player.decrease_hp(damage) {
-				self.audio.play_sound(SoundRequest::EnemyHit, None, 1.0);
-			}
-		}
-
-		self.scene.player.update_yaw(self.scene.camera.get_yaw_pitch().0);
 		if let Some(action) = self.scene.player.update(&EXAMPLE_MAZE, dt) {
 			match action {
 				PlayerAction::Jumped => {
@@ -569,10 +589,12 @@ impl App {
 					self.audio.play_music(MusicRequest::Stop);
 				},
 				PlayerAction::Dead => {
+					self.audio.play_sound(SoundRequest::PlayerExplosion, None, 1.0);
 					self.audio.play_music(MusicRequest::Death);
 				}
 			}
 		}
+
 		self.update_camera(dt);
 
 		let pos = self.scene.player.get_transform().position;
