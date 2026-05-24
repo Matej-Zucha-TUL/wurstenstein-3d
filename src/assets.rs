@@ -212,6 +212,8 @@ impl Assets {
 		let player_tex = load_texture(&textures.player);
 		let apple_tex = load_texture(&textures.apple);
 		let pear_tex = load_texture(&textures.pear);
+		let sausage_tip_tex = load_texture(&textures.sausage_tip);
+		let sausage_bullet_tex = load_texture(&textures.sausage_bullet);
 
 		info!("Linking models...");
 
@@ -237,10 +239,12 @@ impl Assets {
 
 		let sausage_bullet = Model::new(gl.clone())
 			.with_mesh(&normal_program, sausage_bullet_mesh, &vertex_attribs)
+			.with_texture(&normal_program, sausage_bullet_tex, "tex_unit")
 			.with_scale(glm::vec3(player_scale, player_scale, player_scale));
 
 		let sausage_tip = Model::new(gl.clone())
 			.with_mesh(&normal_program, sausage_tip_mesh, &vertex_attribs)
+			.with_texture(&normal_program, sausage_tip_tex, "tex_unit")
 			.with_scale(glm::vec3(player_scale, player_scale, player_scale));
 
 		let apple = Model::new(gl.clone())

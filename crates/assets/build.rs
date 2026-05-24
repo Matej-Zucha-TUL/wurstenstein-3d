@@ -26,6 +26,8 @@ fn main() {
 		},
 		textures: Textures {
 			player: include_bytes!("./files/objects/pastry/pastry.png").to_vec(),
+			sausage_bullet: include_bytes!("./files/objects/pastry/sausage_body.png").to_vec(),
+			sausage_tip: include_bytes!("./files/objects/pastry/sausage_tip.png").to_vec(),
 			apple: include_bytes!("./files/objects/apple/apple_tex.png").to_vec(),
 			pear: include_bytes!("./files/objects/pear/pear_tex.png").to_vec(),
 			terrain: include_bytes!("./files/textures/ferris.png").to_vec(),
