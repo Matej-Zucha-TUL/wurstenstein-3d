@@ -61,8 +61,6 @@ impl Enemy {
 				self.transform.scale[1] = scale;
 				self.transform.scale[2] = scale;
 
-				self.transform.position[1] += dt * 3.0;
-
 				if self.timer >= 0.5 {
 					self.state = EnemyState::Gone;
 				}
@@ -162,6 +160,13 @@ impl EnemyManager {
 			.map(|x| if let Some(x) = &x && x.state == EnemyState::Idle { Some(x) } else { None })
 			.map(|x| x.map(|x| (Ball::new(1.0), Pose::translation(x.transform.position[0], x.transform.position[2]))))
 			.collect::<Vec<_>>()
+	}
+
+	pub fn collide_with_bullet(&mut self, idx: usize) {
+		if let Some(enemy) = self.enemies[idx].as_mut() {
+			enemy.timer = 0.0;
+			enemy.state = EnemyState::Despawn;
+		}
 	}
 
 	pub fn collide_with_player(&mut self, idx: usize) -> Option<usize> {
