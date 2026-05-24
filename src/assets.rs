@@ -230,31 +230,31 @@ impl Assets {
 
 		let terrain = Model::new(gl.clone())
 			.with_mesh(&normal_program, crate::playfield::EXAMPLE_MAZE.generate_mesh(), &vertex_attribs)
-			.with_texture(&normal_program, terrain_tex, "tex_unit");
+			.with_texture(&normal_program, terrain_tex, "tex_unit", false);
 
 		let player = Model::new(gl.clone())
 			.with_mesh(&normal_program, pastry_mesh, &vertex_attribs)
-			.with_texture(&normal_program, player_tex, "tex_unit")
+			.with_texture(&normal_program, player_tex, "tex_unit", true)
 			.with_scale(glm::vec3(player_scale, player_scale, player_scale));
 
 		let sausage_bullet = Model::new(gl.clone())
 			.with_mesh(&normal_program, sausage_bullet_mesh, &vertex_attribs)
-			.with_texture(&normal_program, sausage_bullet_tex, "tex_unit")
+			.with_texture(&normal_program, sausage_bullet_tex, "tex_unit", true)
 			.with_scale(glm::vec3(player_scale, player_scale, player_scale));
 
 		let sausage_tip = Model::new(gl.clone())
 			.with_mesh(&normal_program, sausage_tip_mesh, &vertex_attribs)
-			.with_texture(&normal_program, sausage_tip_tex, "tex_unit")
+			.with_texture(&normal_program, sausage_tip_tex, "tex_unit", true)
 			.with_scale(glm::vec3(player_scale, player_scale, player_scale));
 
 		let apple = Model::new(gl.clone())
 			.with_mesh(&normal_program, apple_mesh, &vertex_attribs)
-			.with_texture(&normal_program, apple_tex, "tex_unit")
+			.with_texture(&normal_program, apple_tex, "tex_unit", true)
 			.with_scale(glm::vec3(30.0, 30.0, 30.0));
 
 		let pear = Model::new(gl.clone())
 			.with_mesh(&normal_program, pear_mesh, &vertex_attribs)
-			.with_texture(&normal_program, pear_tex, "tex_unit")
+			.with_texture(&normal_program, pear_tex, "tex_unit", true)
 			.with_scale(glm::vec3(20.0, 20.0, 20.0));
 
 		let powerup_hp = Model::new(gl.clone())

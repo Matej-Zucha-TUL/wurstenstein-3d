@@ -3,7 +3,6 @@ use std::sync::{Arc, OnceLock};
 
 use glow::*;
 use image::DynamicImage;
-use log::*;
 use tobj::Mesh;
 use nalgebra_glm as glm;
 
@@ -155,7 +154,7 @@ impl Model {
 		});
 	}
 
-	pub fn add_texture(&mut self, program: &Program, image: DynamicImage, sampler_attrib: &str) {
+	pub fn add_texture(&mut self, program: &Program, image: DynamicImage, sampler_attrib: &str, linear_filter: bool) {
 		let width = image.width() as i32;
 		let height = image.height() as i32;
 		let raw_img = image.flipv().into_rgb8().into_raw();
@@ -181,8 +180,13 @@ impl Model {
 			);
 			self.gl
 				.texture_parameter_i32(tex, TEXTURE_MIN_FILTER, NEAREST as i32);
-			self.gl
-				.texture_parameter_i32(tex, TEXTURE_MAG_FILTER, LINEAR as i32);
+			if linear_filter {
+				self.gl
+					.texture_parameter_i32(tex, TEXTURE_MAG_FILTER, LINEAR as i32);
+			} else {
+				self.gl
+					.texture_parameter_i32(tex, TEXTURE_MAG_FILTER, NEAREST as i32);
+			}
 		}
 
 		self.tex.push(ModelTexture { tex, sampler });
@@ -193,8 +197,8 @@ impl Model {
 		self
 	}
 
-	pub fn with_texture(mut self, program: &Program, image: DynamicImage, sampler_attrib: &str) -> Self {
-		self.add_texture(program, image, sampler_attrib);
+	pub fn with_texture(mut self, program: &Program, image: DynamicImage, sampler_attrib: &str, linear_filter: bool) -> Self {
+		self.add_texture(program, image, sampler_attrib, linear_filter);
 		self
 	}
 
