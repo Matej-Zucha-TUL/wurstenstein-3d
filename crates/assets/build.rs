@@ -30,7 +30,7 @@ fn main() {
 			sausage_tip: include_bytes!("./files/objects/pastry/sausage_tip.png").to_vec(),
 			apple: include_bytes!("./files/objects/apple/apple_tex.png").to_vec(),
 			pear: include_bytes!("./files/objects/pear/pear_tex.png").to_vec(),
-			terrain: include_bytes!("./files/textures/ferris.png").to_vec(),
+			terrain: include_bytes!("./files/textures/terrain.png").to_vec(),
 		},
 		music: Music {
 			space_debris: include_bytes!("./files/music/space_debris.mod").to_vec(),

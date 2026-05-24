@@ -10,7 +10,11 @@ pub trait PlayfieldPiece {
 
 	// Returns coordinates for the floor texture.
 	// (X1, Y1, X2, Y2) - all in range 0.0..=1.0.
-	fn horiz_texture(&self) -> (f32, f32, f32, f32);
+	fn horiz_top_texture(&self) -> (f32, f32, f32, f32);
+
+	// Returns coordinates for the "ceiling" texture.
+	// (X1, Y1, X2, Y2) - all in range 0.0..=1.0.
+	fn horiz_bottom_texture(&self) -> (f32, f32, f32, f32);
 }
 
 pub struct Playfield<'a, T: PlayfieldPiece> {
@@ -58,7 +62,7 @@ impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
 				// Generate horizontal wall
 
 				{
-					let (tx1, ty1, tx2, ty2) = piece.horiz_texture();
+					let (tx1, ty1, tx2, ty2) = piece.horiz_top_texture();
 
 					// Create 4 points
 
@@ -89,6 +93,42 @@ impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
 					indices.push(pos_start + 2);
 					indices.push(pos_start + 3);
 					indices.push(pos_start + 1);
+				}
+
+				// Generate horizontal bottom wall
+
+				{
+					let (tx1, ty1, tx2, ty2) = piece.horiz_bottom_texture();
+
+					// Create 4 points
+
+					let pos_start = positions.len() as u32 / 3;
+
+					for inc_z in 0..=1 {
+						for inc_x in 0..=1 {
+							positions.push((x + inc_x) as f32 * self.scale);
+							positions.push(-self.height);
+							positions.push((z + inc_z) as f32 * self.scale);
+
+							// Normals will always point down
+							normals.push(0.0);
+							normals.push(-1.0);
+							normals.push(0.0);
+
+							texcoords.push(if inc_x == 0 { tx1 } else { tx2 });
+							texcoords.push(if inc_z == 0 { ty1 } else { ty2 });
+						}
+					}
+
+					// Create 2 CCW polygons
+
+					indices.push(pos_start + 2);
+					indices.push(pos_start);
+					indices.push(pos_start + 1);
+
+					indices.push(pos_start + 2);
+					indices.push(pos_start + 1);
+					indices.push(pos_start + 3);
 				}
 
 				// Generate up to 4 vertical walls
@@ -193,7 +233,8 @@ impl<'a, T: PlayfieldPiece> Playfield<'a, T> {
 pub enum TestPiece {
 	__,
 	Stone,
-	Brick
+	Brick,
+	Grass
 }
 
 impl PlayfieldPiece for TestPiece {
@@ -202,11 +243,30 @@ impl PlayfieldPiece for TestPiece {
 	}
 
 	fn vert_texture(&self) -> (f32, f32, f32, f32) {
-		(0.0, 0.0, 1.0, 1.0)
+		match self {
+			TestPiece::Stone => (0.0, 0.875, 0.0625, 0.9375),
+			TestPiece::Brick => (0.4375, 0.9375, 0.5, 1.0),
+			TestPiece::Grass => (0.1875, 0.9375, 0.25, 1.0),
+			TestPiece::__ => unreachable!(),
+		}
 	}
 
-	fn horiz_texture(&self) -> (f32, f32, f32, f32) {
-		(0.0, 0.0, 1.0, 1.0)
+	fn horiz_top_texture(&self) -> (f32, f32, f32, f32) {
+		match self {
+			TestPiece::Stone => (0.0, 0.875, 0.0625, 0.9375),
+			TestPiece::Brick => (0.4375, 0.9375, 0.5, 1.0),
+			TestPiece::Grass => (0.0, 0.9375, 0.0625, 1.0),
+			TestPiece::__ => unreachable!(),
+		}
+	}
+
+	fn horiz_bottom_texture(&self) -> (f32, f32, f32, f32) {
+		match self {
+			TestPiece::Stone => (0.0, 0.875, 0.0625, 0.9375),
+			TestPiece::Brick => (0.4375, 0.9375, 0.5, 1.0),
+			TestPiece::Grass => (0.125, 0.9375, 0.1875, 1.0),
+			TestPiece::__ => unreachable!(),
+		}
 	}
 }
 
@@ -217,19 +277,19 @@ pub const EXAMPLE_MAZE: Playfield<TestPiece> = Playfield {
 	height: 3.0,
 	death_barrier: -20.0,
 	field: &[
-		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
-		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
-		&[Stone, Stone, __,    __,    __,    __,    __,    __,    __,    __,    __,    Stone, Stone],
-		&[Stone, Stone, __,    Brick, Brick, __,    __,    __,    Brick, Brick, __,    Stone, Stone],
-		&[Stone, Stone, __,    Brick, __,    __,    __,    __,    __,    Brick, __,    Stone, Stone],
-		&[Stone, Stone, __,    __,    __,    Stone, Stone, Stone, __,    __,    __,    Stone, Stone],
-		&[Stone, Stone, __,    __,    __,    Stone, Stone, Stone, __,    __,    __,    Stone, Stone],
-		&[Stone, Stone, __,    __,    __,    Stone, Stone, Stone, __,    __,    __,    Stone, Stone],
-		&[Stone, Stone, __,    Brick, __,    __,    __,    __,    __,    Brick, __,    Stone, Stone],
-		&[Stone, Stone, __,    Brick, Brick, __,    __,    __,    Brick, Brick, __,    Stone, Stone],
-		&[Stone, Stone, __,    __,    __,    __,    __,    __,    __,    __,    __,    Stone, Stone],
-		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
-		&[Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone, Stone],
+		&[Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass],
+		&[Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass],
+		&[Grass, Grass, __,    __,    __,    __,    __,    __,    __,    __,    __,    Grass, Grass],
+		&[Grass, Grass, __,    Brick, Brick, __,    __,    __,    Brick, Brick, __,    Grass, Grass],
+		&[Grass, Grass, __,    Brick, __,    __,    __,    __,    __,    Brick, __,    Grass, Grass],
+		&[Grass, Grass, __,    __,    __,    Stone, Stone, Stone, __,    __,    __,    Grass, Grass],
+		&[Grass, Grass, __,    __,    __,    Stone, Stone, Stone, __,    __,    __,    Grass, Grass],
+		&[Grass, Grass, __,    __,    __,    Stone, Stone, Stone, __,    __,    __,    Grass, Grass],
+		&[Grass, Grass, __,    Brick, __,    __,    __,    __,    __,    Brick, __,    Grass, Grass],
+		&[Grass, Grass, __,    Brick, Brick, __,    __,    __,    Brick, Brick, __,    Grass, Grass],
+		&[Grass, Grass, __,    __,    __,    __,    __,    __,    __,    __,    __,    Grass, Grass],
+		&[Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass],
+		&[Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass, Grass],
 	],
 	player_spawn_point: [6, 6],
 	powerup_spawn_points: &[
