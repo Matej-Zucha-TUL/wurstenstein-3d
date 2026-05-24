@@ -612,7 +612,7 @@ impl App {
 			.as_secs_f32();
 		self.perf.last_time = new_time;
 
-		if let SceneState::InGame { timer, kills } = &mut self.scene.state {
+		if let SceneState::InGame { timer, kills } = &mut self.scene.state && !self.scene.player.is_dead() {
 			self.scene.player.has_contact_with_world = collision::check_with_ground(&self.scene.player, &EXAMPLE_MAZE);
 
 			if let Some(idx) = collision::check_with_powerups(&self.scene.player, &self.scene.powerups) && let Some(kind) = self.scene.powerups.pick_up(idx) {
