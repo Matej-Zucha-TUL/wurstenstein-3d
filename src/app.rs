@@ -698,8 +698,6 @@ impl App {
 				glm::angle(&glm::vec2(0.0, 1.0), &diff) * mul
 			};
 
-			println!("{}", angle);
-
 			let transform = Transform::origin().with_position(bullet_pos.into()).with_rotation([std::f32::consts::PI - angle, 0.0, 0.0].into());
 
 			self.scene.bullets.spawn_bullet(transform, 10.0);
