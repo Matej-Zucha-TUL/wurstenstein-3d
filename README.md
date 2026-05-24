@@ -229,10 +229,10 @@ There are even more realistic (complicated) models (object mass, applied force, 
   - [x] start with shaders: create static light source with hardcoded settings - create light model parameters as __uniforms with default value__. This will later allow you to override them from CPU side (C++).
   - [x] if it works for default values, go to C++ and create data structures for light parameters. Modify params in time (moving sun, sun changing color, etc.) and update uniforms dynamically.
 
-## ⏱️ Task 2: Implement at least 3 different point lights
+## ✔️ Task 2: Implement at least 3 different point lights
 
 - [X] Create at least 3 point lights with different parameters.
-- [ ] Move lights independently: light position is just point in space. Create model matrix for some model transformations (translate, rotate, scale), and transform original position of the light (point) to new position by matrix multiplication.
+- [X] Move lights independently: light position is just point in space. Create model matrix for some model transformations (translate, rotate, scale), and transform original position of the light (point) to new position by matrix multiplication.
 
 ## ⏱️ Task 3: Implement at least one spot light
 
@@ -258,7 +258,7 @@ The very basic collision detection is to disallow the player to leave the map. B
 - [X] implement at least two of
   - [ ] correct behaviour of hit-wall (sliding)
   - [ ] detect hit of some object with projectile (touch player-object)
-  - [ ] detect hit (touch) of the enemy with player
+  - [X] detect hit (touch) of the enemy with player
   - [X] some other idea... (collision with floor)
 
 ## ⏱️ Task 3: Implement simple particle effect
