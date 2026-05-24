@@ -74,7 +74,10 @@ impl Model {
 		}
 	}
 
-	pub fn add_mesh(&mut self, program: &Program, mesh: Mesh, attribs: &VertexAttributes) {
+	pub fn add_mesh(&mut self, program: &Program, mut mesh: Mesh, attribs: &VertexAttributes) {
+		if mesh.texcoords.len() == 0 {
+			mesh.texcoords.resize(mesh.positions.len() / 3 * 2, 0.0);
+		}
 		assert_eq!(mesh.positions.len() / 3, mesh.normals.len() / 3);
 		assert_eq!(mesh.positions.len() / 3, mesh.texcoords.len() / 2);
 

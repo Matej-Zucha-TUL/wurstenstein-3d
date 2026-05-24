@@ -40,6 +40,8 @@ pub struct Assets {
 	pub background: Background,
 	pub terrain: Model,
 	pub player: Model,
+	pub sausage_bullet: Model,
+	pub sausage_tip: Model,
 	pub enemy: Model,
 	pub powerup_hp: Model,
 	pub powerup_energy: Model,
@@ -216,6 +218,14 @@ impl Assets {
 		let player = Model::new(gl.clone())
 			.with_mesh(&normal_program, pastry_mesh, &vertex_attribs)
 			.with_texture(&normal_program, player_tex, "tex_unit")
+			.with_scale(glm::vec3(player_scale, player_scale, player_scale));
+
+		let sausage_bullet = Model::new(gl.clone())
+			.with_mesh(&normal_program, sausage_bullet_mesh, &vertex_attribs)
+			.with_scale(glm::vec3(player_scale, player_scale, player_scale));
+
+		let sausage_tip = Model::new(gl.clone())
+			.with_mesh(&normal_program, sausage_tip_mesh, &vertex_attribs)
 			.with_scale(glm::vec3(player_scale, player_scale, player_scale));
 
 		let enemy = Model::new(gl.clone())
