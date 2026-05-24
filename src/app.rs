@@ -7,7 +7,7 @@ use log::*;
 use nalgebra_glm as glm;
 use winit::{
 	dpi::PhysicalSize,
-	event::{DeviceEvent, ElementState, KeyEvent, MouseScrollDelta, WindowEvent},
+	event::{DeviceEvent, ElementState, KeyEvent, MouseButton, MouseScrollDelta, WindowEvent},
 	event_loop::ActiveEventLoop,
 	keyboard::{Key, KeyCode, NamedKey, PhysicalKey},
 	window::{CursorGrabMode, Fullscreen, Window},
@@ -886,15 +886,6 @@ impl App {
 					self.handle_mouse_wheel(y);
 				}
 			},
-			DeviceEvent::Button { button, state } => {
-				if button == 1 && state == ElementState::Pressed {
-					self.fire_bullet_from_player();
-				}
-
-				if button == 3 {
-					self.params.flashlight_enabled = state == ElementState::Pressed;
-				}
-			}
 			_ => {}
 		}
 	}
@@ -906,6 +897,15 @@ impl App {
 			WindowEvent::KeyboardInput { event, .. } if !event.repeat => {
 				self.handle_key_event(event_loop, event);
 			}
+			WindowEvent::MouseInput { state, button, .. } => {
+				if button == MouseButton::Left && state == ElementState::Pressed {
+					self.fire_bullet_from_player();
+				}
+
+				if button == MouseButton::Right {
+					self.params.flashlight_enabled = state == ElementState::Pressed;
+				}
+			},
 			WindowEvent::CloseRequested => {
 				event_loop.exit();
 			}
