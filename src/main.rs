@@ -18,6 +18,8 @@ mod audio;
 
 mod background;
 
+mod bullet;
+
 mod camera;
 
 mod collision;

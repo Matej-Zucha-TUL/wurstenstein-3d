@@ -272,5 +272,14 @@ impl PlayerController {
 
 		true
 	}
+
+	pub fn fire_bullet(&mut self) -> bool {
+		if self.ammo == 0 {
+			return false;
+		}
+
+		self.ammo -= 1;
+		true
+	}
 }
 

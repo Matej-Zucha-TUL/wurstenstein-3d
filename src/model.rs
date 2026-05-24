@@ -25,6 +25,7 @@ pub struct VertexAttributes {
 	pub texcoord: Option<Cow<'static, str>>,
 }
 
+#[derive(Clone)]
 pub struct Transform {
 	pub position: glm::Vec3,
 	pub scale: glm::Vec3,

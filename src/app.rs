@@ -19,6 +19,7 @@ use std::time::{Duration, Instant};
 
 use crate::assets::Assets;
 use crate::audio::{Audio, MusicRequest, SoundRequest};
+use crate::bullet::BulletManager;
 use crate::camera::{Camera, Directions};
 use crate::collision;
 use crate::enemy::EnemyManager;
@@ -43,6 +44,7 @@ pub struct App {
 	params: Parameters,
 }
 
+#[derive(PartialEq, Eq)]
 enum SceneState {
 	InGame,
 	Dead,
@@ -53,6 +55,7 @@ struct Scene {
 	state: SceneState,
 	camera: Camera,
 	player: PlayerController,
+	bullets: BulletManager,
 	enemies: EnemyManager,
 	powerups: PowerupManager
 }
@@ -64,6 +67,8 @@ impl Scene {
 		let mut camera = Camera::new(glm::vec3(0.0, 0.0, 0.0));
 		camera.set_pov(true);
 
+		let bullets = BulletManager::new();
+
 		let enemies = EnemyManager::new();
 
 		let powerups = PowerupManager::new();
@@ -72,6 +77,7 @@ impl Scene {
 			state: SceneState::InGame,
 			camera,
 			player,
+			bullets,
 			enemies,
 			powerups
 		}
@@ -331,6 +337,13 @@ impl App {
 		self.scene.camera.set_pitch_range(pitch_range);
 		self.scene.camera.set_target(self.scene.player.get_transform().position);
 		self.scene.camera.update_position(dt);
+	}
+
+	fn fire_bullet_from_player(&mut self) {
+		if self.scene.state == SceneState::InGame && self.scene.player.fire_bullet() {
+			self.audio.play_sound(SoundRequest::PlayerShoot, None, 1.0);
+			self.scene.bullets.spawn_bullet(self.scene.player.get_transform().clone(), 15.0);
+		}
 	}
 
 	fn redraw_ui(&mut self, event_loop: &ActiveEventLoop) {
@@ -634,6 +647,7 @@ impl App {
 
 		self.scene.powerups.update(&EXAMPLE_MAZE, dt);
 		self.scene.enemies.update(&EXAMPLE_MAZE, dt);
+		self.scene.bullets.update(dt);
 
 		let aspect = self.window.inner_size().width as f32 / self.window.inner_size().height as f32;
 		let projection_mtx = glm::perspective(
@@ -694,6 +708,7 @@ impl App {
 		self.assets.player.draw(self.scene.player.get_transform(), program, "model");
 
 		self.scene.enemies.render(&self.assets, program);
+		self.scene.bullets.render(&self.assets, program);
 
 		let mut transparent = TransparentRenderer::new(self.gl.clone());
 
@@ -725,7 +740,7 @@ impl App {
 				if self.params.cursor_lock {
 					self.handle_mouse_motion_event(delta);
 				}
-			}
+			},
 			DeviceEvent::MouseWheel { delta } => {
 				if !self.params.cursor_lock {
 					return;
@@ -733,6 +748,11 @@ impl App {
 
 				if let MouseScrollDelta::LineDelta(_, y) = delta {
 					self.handle_mouse_wheel(y);
+				}
+			},
+			DeviceEvent::Button { button, state } => {
+				if button == 1 && state == ElementState::Pressed {
+					self.fire_bullet_from_player();
 				}
 			}
 			_ => {}

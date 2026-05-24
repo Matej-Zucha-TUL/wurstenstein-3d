@@ -32,6 +32,21 @@ fn load_texture(bytes: &[u8]) -> DynamicImage {
 		.unwrap()
 }
 
+fn get_bounding_box_from_mesh(mesh: &Mesh, scale: f32) -> BoundingBox {
+	let min_x = mesh.positions.chunks(3).map(|pos| pos[0]).min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * scale;
+	let min_y = mesh.positions.chunks(3).map(|pos| pos[1]).min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * scale;
+	let min_z = mesh.positions.chunks(3).map(|pos| pos[2]).min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * scale;
+
+	let max_x = mesh.positions.chunks(3).map(|pos| pos[0]).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * scale;
+	let max_y = mesh.positions.chunks(3).map(|pos| pos[1]).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * scale;
+	let max_z = mesh.positions.chunks(3).map(|pos| pos[2]).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * scale;
+
+	BoundingBox {
+		min: (min_x, min_y, min_z),
+		max: (max_x, max_y, max_z)
+	}
+}
+
 pub struct Assets {
 	pub normal_program: Program,
 	pub rizz_program: Program,
@@ -47,6 +62,7 @@ pub struct Assets {
 	pub powerup_energy: Model,
 	pub powerup_speed: Model,
 	pub player_bounding_box: BoundingBox,
+	pub bullet_bounding_box: BoundingBox,
 }
 
 #[derive(Debug, Clone)]
@@ -192,18 +208,8 @@ impl Assets {
 
 		let player_scale = 20.0;
 
-		let min_x = pastry_mesh.positions.chunks(3).map(|pos| pos[0]).min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
-		let min_y = pastry_mesh.positions.chunks(3).map(|pos| pos[1]).min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
-		let min_z = pastry_mesh.positions.chunks(3).map(|pos| pos[2]).min_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
-
-		let max_x = pastry_mesh.positions.chunks(3).map(|pos| pos[0]).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
-		let max_y = pastry_mesh.positions.chunks(3).map(|pos| pos[1]).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
-		let max_z = pastry_mesh.positions.chunks(3).map(|pos| pos[2]).max_by(|a, b| a.partial_cmp(b).unwrap()).unwrap() * player_scale;
-
-		let player_bounding_box = BoundingBox {
-			min: (min_x, min_y, min_z),
-			max: (max_x, max_y, max_z)
-		};
+		let player_bounding_box = get_bounding_box_from_mesh(&pastry_mesh, player_scale);
+		let bullet_bounding_box = get_bounding_box_from_mesh(&sausage_bullet_mesh, player_scale);
 
 		let vertex_attribs = VertexAttributes {
 			position: Some("aPos".into()),
@@ -262,6 +268,7 @@ impl Assets {
 			powerup_speed,
 			enemy,
 			player_bounding_box,
+			bullet_bounding_box,
 		}
 	}
 }
