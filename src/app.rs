@@ -43,7 +43,14 @@ pub struct App {
 	params: Parameters,
 }
 
+enum SceneState {
+	InGame,
+	Dead,
+	YoureWinner
+}
+
 struct Scene {
+	state: SceneState,
 	camera: Camera,
 	player: PlayerController,
 	enemies: EnemyManager,
@@ -62,6 +69,7 @@ impl Scene {
 		let powerups = PowerupManager::new();
 
 		Self {
+			state: SceneState::InGame,
 			camera,
 			player,
 			enemies,
@@ -222,56 +230,58 @@ impl App {
 
 		let enable = event.state == ElementState::Pressed;
 
-		if self.scene.player.is_dead() {
-			if event.physical_key == PhysicalKey::Code(KeyCode::KeyR) && enable {
-				self.respawn();
-			}
-
-			return;
-		}
-
-		if self.params.pov_camera {
-			match event.physical_key {
-				PhysicalKey::Code(KeyCode::KeyW) => {
-					self.scene.player.move_forward = enable;
+		match self.scene.state {
+			SceneState::InGame => {
+				if self.params.pov_camera {
+					match event.physical_key {
+						PhysicalKey::Code(KeyCode::KeyW) => {
+							self.scene.player.move_forward = enable;
+						}
+						PhysicalKey::Code(KeyCode::KeyS) => {
+							self.scene.player.move_backward = enable;
+						}
+						PhysicalKey::Code(KeyCode::KeyA) => {
+							self.scene.player.move_left = enable;
+						}
+						PhysicalKey::Code(KeyCode::KeyD) => {
+							self.scene.player.move_right = enable;
+						}
+						PhysicalKey::Code(KeyCode::Space) => {
+							self.scene.player.jump = enable;
+						}
+						_ => {}
+					}
+				} else {
+					match event.physical_key {
+						PhysicalKey::Code(KeyCode::ShiftLeft) => self.scene.camera.move_fast(enable),
+						PhysicalKey::Code(KeyCode::KeyW) => {
+							self.scene.camera.key_interact(Directions::Forward, enable)
+						}
+						PhysicalKey::Code(KeyCode::KeyS) => {
+							self.scene.camera.key_interact(Directions::Backward, enable)
+						}
+						PhysicalKey::Code(KeyCode::KeyA) => {
+							self.scene.camera.key_interact(Directions::Left, enable)
+						}
+						PhysicalKey::Code(KeyCode::KeyD) => {
+							self.scene.camera.key_interact(Directions::Right, enable)
+						}
+						PhysicalKey::Code(KeyCode::ControlLeft) => {
+							self.scene.camera.key_interact(Directions::Down, enable)
+						}
+						PhysicalKey::Code(KeyCode::Space) => {
+							self.scene.camera.key_interact(Directions::Up, enable)
+						}
+						_ => {}
+					}
 				}
-				PhysicalKey::Code(KeyCode::KeyS) => {
-					self.scene.player.move_backward = enable;
+			},
+			SceneState::Dead => {
+				if event.physical_key == PhysicalKey::Code(KeyCode::KeyR) && enable {
+					self.respawn();
 				}
-				PhysicalKey::Code(KeyCode::KeyA) => {
-					self.scene.player.move_left = enable;
-				}
-				PhysicalKey::Code(KeyCode::KeyD) => {
-					self.scene.player.move_right = enable;
-				}
-				PhysicalKey::Code(KeyCode::Space) => {
-					self.scene.player.jump = enable;
-				}
-				_ => {}
-			}
-		} else {
-			match event.physical_key {
-				PhysicalKey::Code(KeyCode::ShiftLeft) => self.scene.camera.move_fast(enable),
-				PhysicalKey::Code(KeyCode::KeyW) => {
-					self.scene.camera.key_interact(Directions::Forward, enable)
-				}
-				PhysicalKey::Code(KeyCode::KeyS) => {
-					self.scene.camera.key_interact(Directions::Backward, enable)
-				}
-				PhysicalKey::Code(KeyCode::KeyA) => {
-					self.scene.camera.key_interact(Directions::Left, enable)
-				}
-				PhysicalKey::Code(KeyCode::KeyD) => {
-					self.scene.camera.key_interact(Directions::Right, enable)
-				}
-				PhysicalKey::Code(KeyCode::ControlLeft) => {
-					self.scene.camera.key_interact(Directions::Down, enable)
-				}
-				PhysicalKey::Code(KeyCode::Space) => {
-					self.scene.camera.key_interact(Directions::Up, enable)
-				}
-				_ => {}
-			}
+			},
+			SceneState::YoureWinner => todo!()
 		}
 
 		if event.state == ElementState::Pressed {
@@ -411,29 +421,48 @@ impl App {
 
 			}
 
-			egui::TopBottomPanel::new(egui::panel::TopBottomSide::Bottom, egui::Id::new("hud")).show(ctx, |ui| {
-				ui.horizontal(|ui| {
-					let stats = self.scene.player.get_stats();
+			match self.scene.state {
+				SceneState::InGame => {
+					egui::TopBottomPanel::new(egui::panel::TopBottomSide::Bottom, egui::Id::new("hud")).show(ctx, |ui| {
+						ui.horizontal(|ui| {
+							let stats = self.scene.player.get_stats();
 
-					let health = format!("Health: {}/{}", stats.health, MAX_HEALTH);
-					let speed = if stats.speed_timer > 0.0 {
-						format!("Speed: turbo {:.1}s", stats.speed_timer)
-					} else {
-						"Speed: normal".to_string()
-					};
-					let ammo = format!("Ammo: {}/{}", stats.ammo, MAX_AMMO);
+							let health = format!("Health: {}/{}", stats.health, MAX_HEALTH);
+							let speed = if stats.speed_timer > 0.0 {
+								format!("Speed: turbo {:.1}s", stats.speed_timer)
+							} else {
+								"Speed: normal".to_string()
+							};
+							let ammo = format!("Ammo: {}/{}", stats.ammo, MAX_AMMO);
 
-					let health = egui::RichText::new(health).size(20.0).color(egui::Color32::RED);
-					let speed = egui::RichText::new(speed).size(20.0).color(egui::Color32::GREEN);
-					let ammo = egui::RichText::new(ammo).size(20.0).color(egui::Color32::BLUE);
+							let health = egui::RichText::new(health).size(20.0).color(egui::Color32::RED);
+							let speed = egui::RichText::new(speed).size(20.0).color(egui::Color32::GREEN);
+							let ammo = egui::RichText::new(ammo).size(20.0).color(egui::Color32::BLUE);
 
-					ui.label(health);
-					ui.separator();
-					ui.label(speed);
-					ui.separator();
-					ui.label(ammo);
-				});
-			});
+							ui.label(health);
+							ui.separator();
+							ui.label(speed);
+							ui.separator();
+							ui.label(ammo);
+						});
+					});
+				},
+				SceneState::Dead => {
+					let color = egui::Color32::from_rgba_unmultiplied(255, 0, 0, 128);
+					let frame = egui::Frame::new().fill(color);
+					egui::CentralPanel::default().frame(frame).show(ctx, |ui| {
+						let height = ui.available_size().y;
+						ui.vertical_centered(|ui| {
+							ui.add_space((height - 80.0) / 2.0);
+							ui.label(egui::RichText::new("You are dead").size(40.0));
+							ui.add_space(20.0);
+							ui.label(egui::RichText::new("Press R to respawn").size(20.0));
+						});
+					});
+				},
+				SceneState::YoureWinner => todo!(),
+			}
+
 		});
 
 		self.egui.paint(&self.window);
@@ -591,6 +620,7 @@ impl App {
 				PlayerAction::Dead => {
 					self.audio.play_sound(SoundRequest::PlayerExplosion, None, 1.0);
 					self.audio.play_music(MusicRequest::Death);
+					self.scene.state = SceneState::Dead;
 				}
 			}
 		}
